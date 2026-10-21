@@ -1,0 +1,9 @@
+{
+  "name": "Order.Content",
+  "rootNamespace": "Order.Content",
+  "references": [
+    "Order.Contracts"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": true
+}

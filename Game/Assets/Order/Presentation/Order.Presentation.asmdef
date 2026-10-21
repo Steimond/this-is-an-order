@@ -1,0 +1,12 @@
+{
+  "name": "Order.Presentation",
+  "rootNamespace": "Order.Presentation",
+  "references": [
+    "Order.Contracts",
+    "Order.Application",
+    "Order.Content",
+    "Order.Input"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}

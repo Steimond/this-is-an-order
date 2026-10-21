@@ -1,0 +1,19 @@
+.order-root { flex-grow: 1; padding: 24px; background-color: rgb(14, 22, 32); color: rgb(225, 234, 241); font-size: 16px; }
+.order-root > * { flex-shrink: 0; }
+#command-panel > * { flex-shrink: 0; }
+#title { font-size: 30px; -unity-font-style: bold; color: rgb(111, 223, 208); margin-bottom: 4px; }
+#subtitle { font-size: 14px; color: rgb(146, 165, 180); margin-bottom: 12px; }
+#navigation { flex-direction: row; margin-bottom: 12px; flex-wrap: wrap; }
+Button { min-height: 38px; padding-left: 16px; padding-right: 16px; margin-right: 8px; margin-bottom: 8px; background-color: rgb(34, 54, 72); color: rgb(225, 234, 241); }
+Button:hover { background-color: rgb(44, 76, 94); }
+.unity-base-field__input { background-color: rgb(32, 48, 64); color: rgb(225, 234, 241); }
+#page { padding: 16px; background-color: rgb(24, 37, 51); min-height: 140px; max-width: 1000px; margin-bottom: 12px; }
+#page-title { font-size: 24px; -unity-font-style: bold; margin-bottom: 14px; }
+#page Label { white-space: normal; margin-bottom: 8px; }
+#assistant { color: rgb(111, 223, 208); margin-bottom: 8px; }
+#command-panel { max-width: 1000px; }
+#command-panel Label { white-space: normal; font-size: 15px; margin-bottom: 8px; }
+#command-input { min-height: 38px; margin-bottom: 10px; }
+#feedback { white-space: normal; margin-top: 12px; font-size: 18px; }
+#feedback.rejected { color: rgb(255, 193, 117); }
+#voice-status { white-space: normal; margin-top: 18px; font-size: 14px; color: rgb(146, 165, 180); }

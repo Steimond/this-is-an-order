@@ -1,0 +1,22 @@
+{
+  "name": "Order.Tests.EditMode",
+  "rootNamespace": "Order.Tests.EditMode",
+  "references": [
+    "Order.Contracts",
+    "Order.Application",
+    "Order.Content",
+    "Order.Voice",
+    "Order.Input",
+    "Order.Simulation",
+    "Unity.Entities",
+    "Unity.Collections"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

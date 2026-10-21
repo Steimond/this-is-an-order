@@ -1,0 +1,12 @@
+{
+  "name": "Order.Editor",
+  "rootNamespace": "Order.Editor",
+  "references": [
+    "Order.Bootstrap"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false,
+  "includePlatforms": [
+    "Editor"
+  ]
+}

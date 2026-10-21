@@ -1,0 +1,13 @@
+{
+  "name": "Order.Bootstrap",
+  "rootNamespace": "Order.Bootstrap",
+  "references": [
+    "Order.Contracts",
+    "Order.Application",
+    "Order.Input",
+    "Order.Voice",
+    "Order.Presentation"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}

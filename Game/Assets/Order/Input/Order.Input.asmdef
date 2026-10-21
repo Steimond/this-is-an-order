@@ -1,0 +1,10 @@
+{
+  "name": "Order.Input",
+  "rootNamespace": "Order.Input",
+  "references": [
+    "Order.Contracts",
+    "Order.Voice"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": true
+}

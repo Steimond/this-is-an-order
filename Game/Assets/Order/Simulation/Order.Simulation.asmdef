@@ -1,0 +1,11 @@
+{
+  "name": "Order.Simulation",
+  "rootNamespace": "Order.Simulation",
+  "references": [
+    "Order.Contracts",
+    "Unity.Entities",
+    "Unity.Collections"
+  ],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}
