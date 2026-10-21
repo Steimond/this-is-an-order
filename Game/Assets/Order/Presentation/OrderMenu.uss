@@ -1,20 +1,585 @@
-.order-root { flex-grow: 1; padding: 24px; background-color: rgb(14, 22, 32); color: rgb(225, 234, 241); font-size: 16px; }
-.order-root > * { flex-shrink: 0; }
-#command-panel > * { flex-shrink: 0; }
-#title { font-size: 30px; -unity-font-style: bold; color: rgb(111, 223, 208); margin-bottom: 4px; }
-#subtitle { font-size: 14px; color: rgb(146, 165, 180); margin-bottom: 12px; }
-#navigation { flex-direction: row; margin-bottom: 12px; flex-wrap: wrap; }
-Button { min-height: 38px; padding-left: 16px; padding-right: 16px; margin-right: 8px; margin-bottom: 8px; background-color: rgb(34, 54, 72); color: rgb(225, 234, 241); }
-Button:hover { background-color: rgb(44, 76, 94); }
-.unity-base-field__input { background-color: rgb(32, 48, 64); color: rgb(225, 234, 241); }
-#page { padding: 16px; background-color: rgb(24, 37, 51); min-height: 140px; max-width: 1000px; margin-bottom: 12px; }
-#page-title { font-size: 24px; -unity-font-style: bold; margin-bottom: 14px; }
-#page Label { white-space: normal; margin-bottom: 8px; }
-#assistant { color: rgb(111, 223, 208); margin-bottom: 8px; }
-#command-panel { max-width: 1000px; }
-#command-panel Label { white-space: normal; font-size: 15px; margin-bottom: 8px; }
-#command-input { min-height: 38px; margin-bottom: 10px; }
-#feedback { white-space: normal; margin-top: 12px; font-size: 18px; }
-#feedback.rejected { color: rgb(255, 193, 117); }
-#command-timing { white-space: normal; font-size: 12px; color: rgb(146, 165, 180); margin-bottom: 8px; }
-#voice-status { white-space: normal; margin-top: 18px; font-size: 14px; color: rgb(146, 165, 180); }
+/* Main menu layout. Shared controls and theme tokens live in Hud/HudTheme.uss (imported by OrderTheme.tss). */
+
+.order-menu {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+
+.hud-backdrop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.menu-layout {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    padding: 16px 30px 10px 30px;
+}
+
+.order-menu.is-modal > .menu-layout {
+    filter: blur(3px);
+}
+
+.column-title {
+    font-size: 11px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: var(--hud-muted);
+    margin-bottom: 10px;
+}
+
+/* Top bar */
+.top-bar {
+    flex-direction: row;
+    align-items: center;
+    height: 60px;
+    flex-shrink: 0;
+    margin-bottom: 18px;
+    border-bottom-width: 1px;
+    border-color: var(--hud-line);
+}
+
+.brand {
+    width: 300px;
+    flex-shrink: 0;
+}
+
+.brand__title {
+    font-size: 25px;
+    letter-spacing: 7px;
+    -unity-font-style: bold;
+    color: var(--hud-hot);
+    text-shadow: 0 0 10px rgba(63, 212, 200, 0.6);
+}
+
+.brand__subtitle {
+    font-size: 10px;
+    letter-spacing: 4px;
+    margin-top: 2px;
+    color: var(--hud-accent);
+}
+
+.top-bar__center {
+    flex-grow: 1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.breadcrumb {
+    font-size: 12px;
+    letter-spacing: 3px;
+    margin-right: 18px;
+    color: var(--hud-muted);
+}
+
+.top-bar__telemetry {
+    width: 120px;
+    height: 18px;
+    color: var(--hud-line-bright);
+}
+
+.top-bar__readouts {
+    flex-direction: row;
+    align-items: center;
+}
+
+.readout { margin-left: 24px; }
+
+.readout__caption {
+    font-size: 9px;
+    letter-spacing: 2px;
+    margin-bottom: 3px;
+    color: var(--hud-muted);
+}
+
+.clock {
+    margin-left: 28px;
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: var(--hud-hot);
+}
+
+/* Body columns */
+.menu-body {
+    flex-grow: 1;
+    flex-direction: row;
+    min-height: 0;
+}
+
+.nav {
+    width: 300px;
+    flex-shrink: 0;
+}
+
+.nav__spacer {
+    flex-grow: 1;
+    min-height: 10px;
+}
+
+.center {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 360px;
+    margin: 0 30px;
+    align-items: center;
+}
+
+.channel {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    align-self: stretch;
+}
+
+.channel > .column-title { margin-bottom: 0; }
+
+#assistant-core {
+    flex-grow: 1;
+    align-self: stretch;
+    min-height: 170px;
+    max-height: 380px;
+}
+
+.assistant-name {
+    font-size: 13px;
+    letter-spacing: 4px;
+    -unity-font-style: bold;
+    color: var(--hud-accent);
+}
+
+.assistant-reply {
+    max-width: 620px;
+    min-height: 50px;
+    margin-top: 8px;
+    font-size: 19px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    color: var(--hud-hot);
+}
+
+.assistant-reply.is-alert { color: var(--hud-warn); }
+
+.comms-log {
+    width: 100%;
+    max-width: 640px;
+    min-height: 34px;
+    margin: 4px 0 10px 0;
+    justify-content: flex-end;
+}
+
+.comms-log__line {
+    margin-bottom: 2px;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--hud-muted);
+}
+
+.comms-log__line--assistant { color: var(--hud-text); }
+.comms-log__line.is-alert { color: var(--hud-warn); }
+.comms-log__line.is-old { opacity: 0.45; }
+
+/* Command console */
+.console {
+    flex-direction: row;
+    align-items: center;
+    align-self: stretch;
+    height: 56px;
+    flex-shrink: 0;
+    padding: 0 8px 0 10px;
+}
+
+.console > .hud-frame {
+    color: var(--hud-line-bright);
+    -unity-background-image-tint-color: var(--hud-panel);
+}
+
+.console.is-focused > .hud-frame { color: var(--hud-accent); }
+
+.console__mic {
+    flex-direction: row;
+    align-items: center;
+    height: 36px;
+    margin: 0 4px 0 0;
+    padding: 0 6px 0 10px;
+    border-width: 1px;
+    border-radius: 0;
+    border-color: var(--hud-line);
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+.console__mic > .hud-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    color: var(--hud-muted);
+}
+
+.console__mic:disabled { opacity: 0.6; }
+
+.console__prompt {
+    margin-left: 8px;
+    font-size: 24px;
+    color: var(--hud-accent);
+}
+
+.console__submit { min-height: 38px; }
+
+.console-hints {
+    align-self: stretch;
+    flex-shrink: 0;
+    margin-top: 8px;
+}
+
+.command-timing {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--hud-muted);
+}
+
+/* Context column */
+.context {
+    width: 340px;
+    flex-shrink: 0;
+}
+
+.context__spacer {
+    flex-grow: 1;
+    min-height: 8px;
+}
+
+.context__note {
+    margin-top: 8px;
+    font-size: 11px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    color: var(--hud-muted);
+}
+
+.faction-cards {
+    flex-direction: row;
+    margin: 12px -4px 0 -4px;
+}
+
+.faction-card {
+    flex-grow: 1;
+    flex-basis: 0;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 116px;
+    margin: 0 4px;
+    padding: 12px 8px;
+}
+
+.faction-card__emblem {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 8px;
+    color: var(--hud-muted);
+}
+
+.faction-card:hover .faction-card__emblem,
+.faction-card:focus .faction-card__emblem { color: var(--hud-accent); }
+
+.faction-card__title {
+    font-size: 13px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+}
+
+.faction-card__caption {
+    margin-top: 2px;
+    font-size: 10px;
+    color: var(--hud-muted);
+}
+
+.faction-card__mark {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--hud-accent);
+    opacity: 0;
+}
+
+.faction-card.is-selected > .hud-frame {
+    color: var(--hud-accent);
+    -unity-background-image-tint-color: var(--hud-accent-faint);
+}
+
+.faction-card.is-selected > .hud-button__bar { top: 0; bottom: 0; opacity: 1; }
+.faction-card.is-selected .faction-card__emblem { color: var(--hud-hot); }
+.faction-card.is-selected .faction-card__mark { opacity: 1; }
+
+.faction-card--enemy {
+    min-height: 100px;
+}
+
+.faction-card--enemy.is-selected > .hud-frame {
+    color: var(--hud-warn);
+    -unity-background-image-tint-color: var(--hud-warn-soft);
+}
+
+.faction-card--enemy.is-selected > .hud-button__bar { background-color: var(--hud-warn); }
+.faction-card--enemy.is-selected .faction-card__emblem,
+.faction-card--enemy.is-selected .faction-card__mark { color: var(--hud-warn); }
+
+.system-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom-width: 1px;
+    border-color: var(--hud-line);
+}
+
+.system-row__title { font-size: 13px; }
+
+.map-card {
+    height: 132px;
+    margin-bottom: 2px;
+}
+
+.map-preview {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.map-card__label {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    padding: 4px 8px;
+    background-color: rgba(4, 9, 12, 0.85);
+}
+
+.map-card__title {
+    font-size: 12px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: var(--hud-hot);
+}
+
+.map-card__caption {
+    font-size: 10px;
+    color: var(--hud-muted);
+}
+
+.field-title {
+    margin: 12px 0 6px 0;
+    font-size: 10px;
+    letter-spacing: 3px;
+    -unity-font-style: bold;
+    color: var(--hud-muted);
+}
+
+.match-summary {
+    margin-top: 10px;
+    font-size: 12px;
+    white-space: normal;
+}
+
+/* Status bar */
+.status-bar {
+    flex-direction: row;
+    align-items: center;
+    height: 30px;
+    flex-shrink: 0;
+    margin-top: 12px;
+    border-top-width: 1px;
+    border-color: var(--hud-line);
+}
+
+.status-bar__hint {
+    flex-direction: row;
+    align-items: center;
+    margin-right: 18px;
+}
+
+.status-bar__text {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--hud-muted);
+}
+
+.status-bar__spacer { flex-grow: 1; }
+
+.status-bar__build {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--hud-muted);
+}
+
+/* Options window */
+.options {
+    width: 88%;
+    max-width: 1060px;
+    height: 88%;
+    max-height: 700px;
+    padding: 22px 26px 18px 26px;
+}
+
+.options__header {
+    flex-shrink: 0;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom-width: 1px;
+    border-color: var(--hud-line);
+}
+
+.options__body {
+    flex-grow: 1;
+    flex-direction: row;
+    min-height: 0;
+}
+
+.options__tabs {
+    width: 240px;
+    flex-shrink: 0;
+    margin-right: 20px;
+}
+
+.options__tabs-spacer {
+    flex-grow: 1;
+    min-height: 12px;
+}
+
+.options__hint {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.options__hint-text {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--hud-muted);
+}
+
+.options__content {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.options__note {
+    flex-shrink: 0;
+    margin-bottom: 6px;
+    padding: 8px 12px;
+    border-left-width: 2px;
+    border-color: var(--hud-warn);
+    background-color: var(--hud-warn-soft);
+    font-size: 12px;
+    white-space: normal;
+    color: var(--hud-warn);
+}
+
+.options__scroll {
+    flex-grow: 1;
+    min-height: 0;
+}
+
+.options__footer {
+    flex-shrink: 0;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top-width: 1px;
+    border-color: var(--hud-line);
+}
+
+.options__info {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin-right: 12px;
+    font-size: 12px;
+    white-space: normal;
+    color: var(--hud-muted);
+}
+
+.options__done {
+    width: 180px;
+    min-height: 44px;
+    margin-left: 10px;
+}
+
+.options__done .hud-button__text {
+    font-size: 15px;
+    letter-spacing: 4px;
+}
+
+/* Exit dialog */
+.exit-dialog {
+    width: 470px;
+    padding: 26px 30px;
+}
+
+.exit-dialog__text {
+    margin: 10px 0 22px 0;
+    font-size: 14px;
+    white-space: normal;
+}
+
+.exit-dialog__buttons {
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.exit-dialog__buttons > .hud-button {
+    min-width: 124px;
+    margin-left: 10px;
+    justify-content: center;
+}
+
+/* Console docked above open windows */
+.order-menu.is-modal .hud-modal {
+    padding-bottom: 104px;
+}
+
+.console-dock {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 18px;
+    align-items: center;
+    display: none;
+}
+
+.console-dock.is-visible { display: flex; }
+
+.console-dock > .console {
+    width: 64%;
+    max-width: 760px;
+    align-self: center;
+}
+
+.console-dock__reply {
+    max-width: 760px;
+    margin-bottom: 6px;
+    font-size: 14px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    color: var(--hud-hot);
+    text-shadow: 0 0 6px rgba(4, 9, 12, 0.9);
+}
+
+.console-dock__reply.is-alert { color: var(--hud-warn); }

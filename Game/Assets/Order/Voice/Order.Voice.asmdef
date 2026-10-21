@@ -2,7 +2,8 @@
   "name": "Order.Voice",
   "rootNamespace": "Order.Voice",
   "references": [
-    "Order.Contracts"
+    "Order.Contracts",
+    "Order.Content"
   ],
   "autoReferenced": false,
   "noEngineReferences": true

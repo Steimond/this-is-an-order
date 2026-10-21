@@ -48,7 +48,7 @@ namespace Order.Input
                     return Finish(new CommandResult(CommandOutcome.StaleContext, "Состояние изменилось. Повторите команду."));
                 stage.Restart();
                 var result = parsed.HasCommand ? sink.Execute(parsed.Command, new CommandContext(state.Session, capturedContext.Source, state.Revision))
-                    : new CommandResult(CommandOutcome.NeedsClarification, parsed.Message);
+                    : new CommandResult(parsed.IsAnswer ? CommandOutcome.Answered : CommandOutcome.NeedsClarification, parsed.Message);
                 measurement.ExecutionMs = stage.Elapsed.TotalMilliseconds;
                 return Finish(result);
             }

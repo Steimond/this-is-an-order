@@ -67,7 +67,7 @@ namespace Order.Voice
 
         private static IntentDecision Empty(string action) => new IntentDecision { Action = action, Screen = "none" };
 
-        private static bool TryNumber(string text, out double number)
+        internal static bool TryNumber(string text, out double number)
         {
             number = 0;
             var digits = Regex.Matches(text, @"(?<![\d.,])-?\d+(?:[.,]\d+)?");
