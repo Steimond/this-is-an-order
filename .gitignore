@@ -1,0 +1,22 @@
+# Unity generated caches and local editor state
+/Game/[Ll]ibrary/
+/Game/[Tt]emp/
+/Game/[Oo]bj/
+/Game/[Ll]ogs/
+/Game/[Uu]ser[Ss]ettings/
+/Game/[Bb]uild/
+/Game/[Bb]uilds/
+/Game/[Mm]emoryCaptures/
+/Game/[Rr]ecordings/
+/Game/.vs/
+/Game/.idea/
+/Game/*.csproj
+/Game/*.sln
+/Game/*.slnx
+/Game/*.user
+/Game/*.pidb
+/Game/*.pdb
+/Game/*.opendb
+/Game/*.VC.db
+/Game/sysinfo.txt
+/Game/*.log
