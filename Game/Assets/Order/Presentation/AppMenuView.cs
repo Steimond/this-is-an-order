@@ -29,7 +29,7 @@ namespace Order.Presentation
         private Label timingLabel;
 #endif
 
-        public AppMenuView(VisualElement root, AppController app, AppCommandInput input)
+        public AppMenuView(VisualElement root, AppController app, AppCommandInput input, Action launchTestMap = null)
         {
             this.app = app; this.input = input;
             root.Clear();
@@ -46,6 +46,7 @@ namespace Order.Presentation
             navigation.Add(Button("Настройки звука", () => Send(AppCommand.Navigate(AppScreen.AudioSettings))));
             navigation.Add(Button("Матч против бота", () => Send(AppCommand.Navigate(AppScreen.MatchSetup))));
             root.Add(navigation);
+            if (launchTestMap != null) root.Add(Button("Тестовая карта · Temple Basin", launchTestMap));
             page = new VisualElement { name = "page" }; root.Add(page);
             assistant = new Label { name = "assistant" }; root.Add(assistant);
             var commandPanel = new VisualElement { name = "command-panel" };

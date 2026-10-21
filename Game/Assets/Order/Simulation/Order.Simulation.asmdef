@@ -4,7 +4,8 @@
   "references": [
     "Order.Contracts",
     "Unity.Entities",
-    "Unity.Collections"
+    "Unity.Collections",
+    "Order.Content"
   ],
   "autoReferenced": false,
   "noEngineReferences": false

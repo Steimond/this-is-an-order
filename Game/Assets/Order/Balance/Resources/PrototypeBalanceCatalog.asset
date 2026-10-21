@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7350f2a800ed58749bbceef7fed2ae98, type: 3}
+  m_Name: PrototypeBalanceCatalog
+  m_EditorClassIdentifier: Order.Balance::Order.Balance.BalanceCatalog
+  Worker: {fileID: 11400000, guid: db3d6dd4c07d6504b9921c0f0f02605e, type: 2}
+  Supply: {fileID: 11400000, guid: de12dedff54d1024f8387dbc99d37c19, type: 2}
+  Factory: {fileID: 11400000, guid: 56c846026e24ee34e8d601a7f0d15708, type: 2}
+  Headquarters: {fileID: 11400000, guid: 720d5115959f754438e353af438d1006, type: 2}
+  Economy: {fileID: 11400000, guid: 96c7291b177d491458539ac1f77f7a24, type: 2}

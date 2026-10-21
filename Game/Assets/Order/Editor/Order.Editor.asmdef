@@ -2,7 +2,10 @@
   "name": "Order.Editor",
   "rootNamespace": "Order.Editor",
   "references": [
-    "Order.Bootstrap"
+    "Order.Bootstrap",
+    "Order.Presentation",
+    "Order.Balance",
+    "Order.Content"
   ],
   "autoReferenced": false,
   "noEngineReferences": false,

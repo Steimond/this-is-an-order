@@ -36,6 +36,10 @@ Unity-проект находится в `Game/`: Unity `6000.6.6f1`, шабло
 
 EditMode-тесты находятся в сборке `Order.Tests.EditMode` и запускаются через Unity Test Runner. Технические инструменты: меню редактора `Order/Create Main Menu Scene` создаёт стартовую сцену, если её ещё нет. Первая платформа — Windows x64; минимальные требования ещё не измерены.
 
+## Тестовая RTS-карта
+
+Откройте `Game/Assets/Order/Scenes/TempleBasin.unity` и нажмите Play либо выберите «Тестовая карта · Temple Basin» в главном меню. Доступны возвышенные старты и рампы, движение рабочего, строительная сетка, два временных ресурса с упрощённой добычей, клеточный туман войны, миникарта и HUD. Управление и ограничения: [TEST_MAP.md](docs/TEST_MAP.md). Это полигон без бота и боя.
+
 ## Подключение редактора
 
 В проект установлен `com.unity.pipeline` версии `0.9.0-exp.1` для Unity CLI и MCP. Откройте `Game/` в Unity и дождитесь окончания компиляции. Проверка: `unity status --json`; запрос к проекту: `unity command --project-path C:/Projects/this-is-an-order/Game editor status --json`.

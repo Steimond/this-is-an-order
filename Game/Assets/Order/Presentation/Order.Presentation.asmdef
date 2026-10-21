@@ -6,7 +6,13 @@
     "Order.Application",
     "Order.Content",
     "Order.Input",
-    "Order.Voice"
+    "Order.Voice",
+    "Order.Simulation",
+    "Unity.Entities",
+    "Unity.InputSystem",
+    "Unity.Collections",
+    "Order.Balance",
+    "Unity.RenderPipelines.Universal.Runtime"
   ],
   "autoReferenced": false,
   "noEngineReferences": false
