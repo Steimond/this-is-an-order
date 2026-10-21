@@ -1,0 +1,182 @@
+{
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "set_volume"
+        },
+        "value": {
+          "type": "number"
+        },
+        "screen": {
+          "const": "none"
+        },
+        "faction": {
+          "type": "null"
+        },
+        "open_audio": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "action",
+        "value",
+        "screen",
+        "faction",
+        "open_audio"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "adjust_volume"
+        },
+        "value": {
+          "type": "number"
+        },
+        "screen": {
+          "const": "none"
+        },
+        "faction": {
+          "type": "null"
+        },
+        "open_audio": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "action",
+        "value",
+        "screen",
+        "faction",
+        "open_audio"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "navigate"
+        },
+        "value": {
+          "type": "null"
+        },
+        "screen": {
+          "enum": [
+            "main_menu",
+            "audio_settings",
+            "match_setup"
+          ]
+        },
+        "faction": {
+          "type": "null"
+        },
+        "open_audio": {
+          "const": false
+        }
+      },
+      "required": [
+        "action",
+        "value",
+        "screen",
+        "faction",
+        "open_audio"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "prepare_match"
+        },
+        "value": {
+          "type": "null"
+        },
+        "screen": {
+          "const": "none"
+        },
+        "faction": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "open_audio": {
+          "const": false
+        }
+      },
+      "required": [
+        "action",
+        "value",
+        "screen",
+        "faction",
+        "open_audio"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "assistant_faction"
+        },
+        "value": {
+          "type": "null"
+        },
+        "screen": {
+          "const": "none"
+        },
+        "faction": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "open_audio": {
+          "const": false
+        }
+      },
+      "required": [
+        "action",
+        "value",
+        "screen",
+        "faction",
+        "open_audio"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "action": {
+          "const": "clarify"
+        },
+        "value": {
+          "type": "null"
+        },
+        "screen": {
+          "const": "none"
+        },
+        "faction": {
+          "type": "null"
+        },
+        "open_audio": {
+          "const": false
+        }
+      },
+      "required": [
+        "action",
+        "value",
+        "screen",
+        "faction",
+        "open_audio"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

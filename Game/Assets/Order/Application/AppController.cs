@@ -8,6 +8,8 @@ namespace Order.Application
     {
         private readonly ISettingsStore store;
         public long Session { get; private set; } = 1;
+        public long Revision { get; private set; }
+        public AppCommandState State => new AppCommandState(Session, Revision, Screen, Settings.MasterVolume, Settings.AssistantFaction, EnemyFaction);
         public AppScreen Screen { get; private set; } = AppScreen.MainMenu;
         public SettingsSnapshot Settings { get; private set; }
         public FactionId EnemyFaction { get; private set; } = FactionId.Resonance;
@@ -25,12 +27,14 @@ namespace Order.Application
         }
 
         // Invalidate pending asynchronous work when a match/session is replaced or ended.
-        public void AdvanceSession() { Session++; Changed?.Invoke(); }
+        public void AdvanceSession() { Session++; Revision++; Changed?.Invoke(); }
 
         public CommandResult Execute(AppCommand command, CommandContext context)
         {
             if (context.Session != Session)
                 return new CommandResult(CommandOutcome.StaleContext, "Команда относится к предыдущему сеансу.");
+            if (context.Revision >= 0 && context.Revision != Revision)
+                return new CommandResult(CommandOutcome.StaleContext, "Состояние изменилось. Повторите команду.");
 
             switch (command.Kind)
             {
@@ -58,10 +62,11 @@ namespace Order.Application
                 default: return Reject("Неизвестная команда.");
             }
 
+            Revision++;
             Changed?.Invoke();
             var message = command.Kind == AppCommandKind.PrepareBotMatch
                 ? "Матч подготовлен. Игровая симуляция будет добавлена следующим этапом."
-                : command.Kind == AppCommandKind.SetMasterVolume ? $"Общая громкость: {Settings.MasterVolume * 100:0}%." : "Готово.";
+                : command.Kind == AppCommandKind.SetMasterVolume ? $"Общая громкость: {Settings.MasterVolume * 100:0.##}%." : "Готово.";
             return new CommandResult(CommandOutcome.Applied, message);
         }
 

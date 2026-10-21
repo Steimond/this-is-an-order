@@ -1,0 +1,9 @@
+{
+  "name": "Order.Voice.Local",
+  "rootNamespace": "Order.Voice.Local",
+  "references": ["Order.Contracts", "Order.Voice"],
+  "overrideReferences": true,
+  "precompiledReferences": ["Newtonsoft.Json.dll"],
+  "autoReferenced": false,
+  "noEngineReferences": true
+}

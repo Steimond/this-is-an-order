@@ -6,13 +6,27 @@ namespace Order.Contracts
     public enum FactionId { Expedition, Resonance }
     public enum AppCommandKind { Navigate, SetMasterVolume, PrepareBotMatch, SetAssistantFaction }
     public enum CommandSource { Manual, Text, Voice }
-    public enum CommandOutcome { Applied, Rejected, NeedsClarification, StaleContext }
+    public enum CommandOutcome { Applied, Rejected, NeedsClarification, StaleContext, Unavailable }
 
     public readonly struct CommandContext
     {
         public readonly long Session;
         public readonly CommandSource Source;
-        public CommandContext(long session, CommandSource source) { Session = session; Source = source; }
+        public readonly long Revision;
+        public CommandContext(long session, CommandSource source, long revision = -1)
+        { Session = session; Source = source; Revision = revision; }
+    }
+
+    public readonly struct AppCommandState
+    {
+        public readonly long Session;
+        public readonly long Revision;
+        public readonly AppScreen Screen;
+        public readonly float MasterVolume;
+        public readonly FactionId AssistantFaction;
+        public readonly FactionId EnemyFaction;
+        public AppCommandState(long session, long revision, AppScreen screen, float masterVolume, FactionId assistantFaction, FactionId enemyFaction)
+        { Session = session; Revision = revision; Screen = screen; MasterVolume = masterVolume; AssistantFaction = assistantFaction; EnemyFaction = enemyFaction; }
     }
 
     public readonly struct AppCommand
@@ -45,6 +59,7 @@ namespace Order.Contracts
     public interface IAppCommandSink
     {
         long Session { get; }
+        AppCommandState State { get; }
         CommandResult Execute(AppCommand command, CommandContext context);
     }
 

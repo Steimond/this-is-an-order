@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Order.Application;
 using Order.Content;
 using Order.Contracts;
@@ -21,6 +22,12 @@ namespace Order.Presentation
         private Slider volume;
         private DropdownField faction;
         private int lastKeyboardSubmitFrame = -1;
+        private readonly CancellationTokenSource lifetime = new CancellationTokenSource();
+        private Button submitButton;
+        private bool busy;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private Label timingLabel;
+#endif
 
         public AppMenuView(VisualElement root, AppController app, AppCommandInput input)
         {
@@ -54,10 +61,15 @@ namespace Order.Presentation
                 SubmitFromKeyboard(); evt.StopPropagation();
             }, TrickleDown.TrickleDown);
             commandPanel.Add(transcript);
-            commandPanel.Add(Button("Выполнить", Submit));
+            submitButton = Button("Выполнить", Submit);
+            commandPanel.Add(submitButton);
             feedback = new Label("Готов к приказам.") { name = "feedback" };
             commandPanel.Add(feedback);
-            commandPanel.Add(new Label("Например: «Перейди в настройки звука и убавь общую громкость до 50%»"));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            timingLabel = new Label { name = "command-timing" };
+            commandPanel.Add(timingLabel);
+#endif
+            commandPanel.Add(new Label("Например: «Громкость 11 процентов» или «Сделай потише»."));
             commandPanel.Add(new Label("Или: «Запускай матч против бота второй фракции»."));
             root.Add(commandPanel);
             root.Add(new Label("Голосовой ввод будет подключён следующим этапом. Режим: удержание кнопки.") { name = "voice-status" });
@@ -67,7 +79,40 @@ namespace Order.Presentation
 
         private static Button Button(string text, Action action) => new Button(action) { text = text };
         private void Send(AppCommand command) { if (!syncing) Show(input.SubmitManual(command)); }
-        private void Submit() => Show(input.SubmitTranscript(transcript.value, new CommandContext(app.Session, CommandSource.Text)));
+        private async void Submit()
+        {
+            if (busy || lifetime.IsCancellationRequested) return;
+            busy = true;
+            submitButton.SetEnabled(false);
+            transcript.SetEnabled(false);
+            feedback.text = "Разбираю команду…";
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            timingLabel.text = "";
+#endif
+            try
+            {
+                var result = await input.SubmitTranscriptAsync(transcript.value,
+                    new CommandContext(app.Session, CommandSource.Text, app.Revision), lifetime.Token);
+                if (!lifetime.IsCancellationRequested)
+                {
+                    Show(result);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    var measured = input.LastMeasurement;
+                    if (measured != null)
+                    {
+                        var intent = measured.Intent;
+                        var route = intent?.Route == "model" ? "модель" : intent?.Route == "direct" ? "быстрый путь" : "без разбора";
+                        timingLabel.text = $"Время: {measured.TotalMs:0.0} мс · {route} · выполнение {measured.ExecutionMs:0.00} мс";
+                        if (intent?.Route == "model") timingLabel.text += $" · ожидание {intent.QueueMs:0} · запуск {intent.StartupMs:0} · запрос {intent.HttpMs:0} мс";
+                    }
+#endif
+                }
+            }
+            finally
+            {
+                if (!lifetime.IsCancellationRequested) { busy = false; submitButton.SetEnabled(true); transcript.SetEnabled(true); }
+            }
+        }
         private void SubmitFromKeyboard()
         {
             if (lastKeyboardSubmitFrame == UnityEngine.Time.frameCount) return;
@@ -116,6 +161,6 @@ namespace Order.Presentation
             syncing = false;
         }
 
-        public void Dispose() { app.Changed -= Refresh; root.Clear(); }
+        public void Dispose() { lifetime.Cancel(); app.Changed -= Refresh; root.Clear(); }
     }
 }

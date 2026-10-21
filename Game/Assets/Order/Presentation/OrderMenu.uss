@@ -16,4 +16,5 @@ Button:hover { background-color: rgb(44, 76, 94); }
 #command-input { min-height: 38px; margin-bottom: 10px; }
 #feedback { white-space: normal; margin-top: 12px; font-size: 18px; }
 #feedback.rejected { color: rgb(255, 193, 117); }
+#command-timing { white-space: normal; font-size: 12px; color: rgb(146, 165, 180); margin-bottom: 8px; }
 #voice-status { white-space: normal; margin-top: 18px; font-size: 14px; color: rgb(146, 165, 180); }

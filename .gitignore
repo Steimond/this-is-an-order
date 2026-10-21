@@ -20,3 +20,4 @@
 /Game/*.VC.db
 /Game/sysinfo.txt
 /Game/*.log
+/.local-ai/

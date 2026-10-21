@@ -5,7 +5,8 @@
     "Order.Contracts",
     "Order.Application",
     "Order.Content",
-    "Order.Input"
+    "Order.Input",
+    "Order.Voice"
   ],
   "autoReferenced": false,
   "noEngineReferences": false

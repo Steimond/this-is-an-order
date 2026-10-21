@@ -1,0 +1,1064 @@
+{
+  "recordedUtc": "2026-10-21T14:32:00.5452083Z",
+  "cpu": "AMD Ryzen 7 7700 8-Core Processor",
+  "logicalProcessors": 16,
+  "memoryMb": 31861,
+  "unityVersion": "6000.6.6f1",
+  "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+  "runtime": "llama.cpp b11787",
+  "threads": 2,
+  "method": "Unity Editor EditMode; memory settings store; no audio recognition; no RTS simulation",
+  "percentiles": "nearest-rank; small sample; p95 equals max for n=16",
+  "summary": {
+    "cpu": "AMD Ryzen 7 7700 8-Core Processor ",
+    "memoryMb": 31861,
+    "cold": {
+      "TotalMs": 9155.1353,
+      "InterpretationMs": 9154.5237,
+      "ExecutionMs": 0.4168,
+      "Outcome": 0,
+      "Intent": {
+        "Route": "model",
+        "TotalMs": 9152.0704,
+        "PreprocessMs": 1.8072000000000001,
+        "QueueMs": 0.0246,
+        "StartupMs": 1230.4857,
+        "RequestBuildMs": 1.4744000000000002,
+        "HttpMs": 7914.373600000001,
+        "DecodeMs": 1.4741,
+        "GroundingMs": 1.4311,
+        "ProcessColdStart": true,
+        "ServerPromptMs": 6960.452,
+        "ServerGenerationMs": 926.356,
+        "PromptTokens": 1184,
+        "CachedTokens": 0,
+        "EvaluatedPromptTokens": 1184,
+        "GeneratedTokens": 25
+      }
+    },
+    "direct": {
+      "total": {
+        "n": 12,
+        "min": 0.0041,
+        "p50": 0.0128,
+        "p95": 0.38380000000000003,
+        "max": 0.38380000000000003,
+        "mean": 0.056641666666666673
+      },
+      "execution": {
+        "n": 12,
+        "min": 0,
+        "p50": 0.0012000000000000001,
+        "p95": 0.0092,
+        "max": 0.0092,
+        "mean": 0.0031583333333333337
+      }
+    },
+    "model": {
+      "total": {
+        "n": 16,
+        "min": 1009.6531,
+        "p50": 1216.6424,
+        "p95": 1319.6679000000001,
+        "max": 1319.6679000000001,
+        "mean": 1239.7317624999998
+      },
+      "execution": {
+        "n": 16,
+        "min": 0.0077,
+        "p50": 0.008400000000000001,
+        "p95": 0.037000000000000005,
+        "max": 0.037000000000000005,
+        "mean": 0.01076875
+      },
+      "QueueMs": {
+        "n": 16,
+        "min": 0.0005,
+        "p50": 0.0006000000000000001,
+        "p95": 0.0008,
+        "max": 0.0008,
+        "mean": 0.00065625
+      },
+      "StartupMs": {
+        "n": 16,
+        "min": 0.0291,
+        "p50": 0.031,
+        "p95": 0.0392,
+        "max": 0.0392,
+        "mean": 0.03174375
+      },
+      "RequestBuildMs": {
+        "n": 16,
+        "min": 0.23020000000000002,
+        "p50": 0.2637,
+        "p95": 4.3319,
+        "max": 4.3319,
+        "mean": 0.52949375
+      },
+      "HttpMs": {
+        "n": 16,
+        "min": 1009.0321,
+        "p50": 1216.1976,
+        "p95": 1315.1207000000002,
+        "max": 1315.1207000000002,
+        "mean": 1238.9135312500002
+      },
+      "DecodeMs": {
+        "n": 16,
+        "min": 0.08120000000000001,
+        "p50": 0.11170000000000001,
+        "p95": 0.3808,
+        "max": 0.3808,
+        "mean": 0.12369375
+      },
+      "GroundingMs": {
+        "n": 16,
+        "min": 0.0347,
+        "p50": 0.0636,
+        "p95": 0.46730000000000005,
+        "max": 0.46730000000000005,
+        "mean": 0.09085625
+      },
+      "ServerPromptMs": {
+        "n": 16,
+        "min": 39.478,
+        "p50": 248.026,
+        "p95": 344.555,
+        "max": 344.555,
+        "mean": 253.30368749999997
+      },
+      "ServerGenerationMs": {
+        "n": 16,
+        "min": 912.957,
+        "p50": 929.284,
+        "p95": 957.541,
+        "max": 957.541,
+        "mean": 930.1347499999998
+      },
+      "CachedTokens": {
+        "n": 16,
+        "min": 1155,
+        "p50": 1164,
+        "p95": 1183,
+        "max": 1183,
+        "mean": 1161.25
+      },
+      "GeneratedTokens": {
+        "n": 16,
+        "min": 24,
+        "p50": 24,
+        "p95": 25,
+        "max": 25,
+        "mean": 24.5
+      }
+    },
+    "byPhrase": [
+      {
+        "text": "Громкость 11 процентов",
+        "n": 4,
+        "min": 0.0419,
+        "p50": 0.0427,
+        "p95": 0.38380000000000003,
+        "max": 0.38380000000000003,
+        "mean": 0.128
+      },
+      {
+        "text": "Сделай потише",
+        "n": 4,
+        "min": 0.012,
+        "p50": 0.0123,
+        "p95": 0.0318,
+        "max": 0.0318,
+        "mean": 0.017225
+      },
+      {
+        "text": "Не меняй громкость",
+        "n": 4,
+        "min": 0.0041,
+        "p50": 0.0043,
+        "p95": 0.0852,
+        "max": 0.0852,
+        "mean": 0.0247
+      },
+      {
+        "text": "Выставь общую громкость на 37 процентов",
+        "n": 4,
+        "min": 1009.6531,
+        "p50": 1309.6979000000001,
+        "p95": 1319.6679000000001,
+        "max": 1319.6679000000001,
+        "mean": 1237.848625
+      },
+      {
+        "text": "Для общего звука поставь уровень 28 процентов",
+        "n": 4,
+        "min": 1214.7474,
+        "p50": 1215.6222,
+        "p95": 1232.0852,
+        "max": 1232.0852,
+        "mean": 1219.6506
+      },
+      {
+        "text": "Покажи настройки аудио",
+        "n": 4,
+        "min": 1112.9528,
+        "p50": 1211.9585,
+        "p95": 1216.6424,
+        "max": 1216.6424,
+        "mean": 1189.12135
+      },
+      {
+        "text": "Давай сыграем с ботом второй расы",
+        "n": 4,
+        "min": 1309.7785000000001,
+        "p50": 1311.1322,
+        "p95": 1314.8772000000001,
+        "max": 1314.8772000000001,
+        "mean": 1312.306475
+      }
+    ]
+  },
+  "samples": [
+    {
+      "Text": "Выставь общую громкость на 37 процентов",
+      "Phase": "cold-model",
+      "Round": -1,
+      "Measurement": {
+        "TotalMs": 9155.1353,
+        "InterpretationMs": 9154.5237,
+        "ExecutionMs": 0.4168,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 9152.0704,
+          "PreprocessMs": 1.8072000000000001,
+          "QueueMs": 0.0246,
+          "StartupMs": 1230.4857,
+          "RequestBuildMs": 1.4744000000000002,
+          "HttpMs": 7914.373600000001,
+          "DecodeMs": 1.4741,
+          "GroundingMs": 1.4311,
+          "ProcessColdStart": true,
+          "ServerPromptMs": 6960.452,
+          "ServerGenerationMs": 926.356,
+          "PromptTokens": 1184,
+          "CachedTokens": 0,
+          "EvaluatedPromptTokens": 1184,
+          "GeneratedTokens": 25
+        }
+      }
+    },
+    {
+      "Text": "Громкость 11 процентов",
+      "Phase": "warm",
+      "Round": 0,
+      "Measurement": {
+        "TotalMs": 0.38380000000000003,
+        "InterpretationMs": 0.377,
+        "ExecutionMs": 0.005200000000000001,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.10010000000000001,
+          "PreprocessMs": 0.0809,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.0152,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Сделай потише",
+      "Phase": "warm",
+      "Round": 0,
+      "Measurement": {
+        "TotalMs": 0.0318,
+        "InterpretationMs": 0.0268,
+        "ExecutionMs": 0.0041,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.0258,
+          "PreprocessMs": 0.0213,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.0045000000000000005,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Не меняй громкость",
+      "Phase": "warm",
+      "Round": 0,
+      "Measurement": {
+        "TotalMs": 0.0852,
+        "InterpretationMs": 0.0835,
+        "ExecutionMs": 0.0007,
+        "Outcome": 2,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.08120000000000001,
+          "PreprocessMs": 0.0054,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.07440000000000001,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Выставь общую громкость на 37 процентов",
+      "Phase": "warm",
+      "Round": 0,
+      "Measurement": {
+        "TotalMs": 1009.6531,
+        "InterpretationMs": 1009.6400000000001,
+        "ExecutionMs": 0.0118,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1009.6278000000001,
+          "PreprocessMs": 0.02,
+          "QueueMs": 0.0007,
+          "StartupMs": 0.032600000000000004,
+          "RequestBuildMs": 0.3448,
+          "HttpMs": 1009.0321,
+          "DecodeMs": 0.11230000000000001,
+          "GroundingMs": 0.0784,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 39.478,
+          "ServerGenerationMs": 918.863,
+          "PromptTokens": 1184,
+          "CachedTokens": 1183,
+          "EvaluatedPromptTokens": 1,
+          "GeneratedTokens": 25
+        }
+      }
+    },
+    {
+      "Text": "Для общего звука поставь уровень 28 процентов",
+      "Phase": "warm",
+      "Round": 0,
+      "Measurement": {
+        "TotalMs": 1215.6222,
+        "InterpretationMs": 1215.6102,
+        "ExecutionMs": 0.010100000000000001,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1215.5993,
+          "PreprocessMs": 0.019200000000000002,
+          "QueueMs": 0.0008,
+          "StartupMs": 0.031,
+          "RequestBuildMs": 0.3304,
+          "HttpMs": 1215.0091,
+          "DecodeMs": 0.1129,
+          "GroundingMs": 0.08950000000000001,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 257.53,
+          "ServerGenerationMs": 922.232,
+          "PromptTokens": 1184,
+          "CachedTokens": 1164,
+          "EvaluatedPromptTokens": 20,
+          "GeneratedTokens": 25
+        }
+      }
+    },
+    {
+      "Text": "Покажи настройки аудио",
+      "Phase": "warm",
+      "Round": 0,
+      "Measurement": {
+        "TotalMs": 1112.9528,
+        "InterpretationMs": 1112.914,
+        "ExecutionMs": 0.037000000000000005,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1112.9049,
+          "PreprocessMs": 0.013600000000000001,
+          "QueueMs": 0.0005,
+          "StartupMs": 0.0324,
+          "RequestBuildMs": 0.3352,
+          "HttpMs": 1112.2392,
+          "DecodeMs": 0.113,
+          "GroundingMs": 0.1656,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 187.895,
+          "ServerGenerationMs": 912.957,
+          "PromptTokens": 1180,
+          "CachedTokens": 1164,
+          "EvaluatedPromptTokens": 16,
+          "GeneratedTokens": 24
+        }
+      }
+    },
+    {
+      "Text": "Давай сыграем с ботом второй расы",
+      "Phase": "warm",
+      "Round": 0,
+      "Measurement": {
+        "TotalMs": 1314.8772000000001,
+        "InterpretationMs": 1314.8624,
+        "ExecutionMs": 0.0123,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1314.8486,
+          "PreprocessMs": 0.015600000000000001,
+          "QueueMs": 0.0007,
+          "StartupMs": 0.0356,
+          "RequestBuildMs": 0.2592,
+          "HttpMs": 1313.6859000000002,
+          "DecodeMs": 0.3808,
+          "GroundingMs": 0.46730000000000005,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 315.814,
+          "ServerGenerationMs": 920.776,
+          "PromptTokens": 1183,
+          "CachedTokens": 1155,
+          "EvaluatedPromptTokens": 28,
+          "GeneratedTokens": 24
+        }
+      }
+    },
+    {
+      "Text": "Громкость 11 процентов",
+      "Phase": "warm",
+      "Round": 1,
+      "Measurement": {
+        "TotalMs": 0.0436,
+        "InterpretationMs": 0.0359,
+        "ExecutionMs": 0.0068000000000000005,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.0346,
+          "PreprocessMs": 0.0268,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.007500000000000001,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Сделай потише",
+      "Phase": "warm",
+      "Round": 1,
+      "Measurement": {
+        "TotalMs": 0.0128,
+        "InterpretationMs": 0.0108,
+        "ExecutionMs": 0.0012000000000000001,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.010400000000000001,
+          "PreprocessMs": 0.008,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.0022,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Не меняй громкость",
+      "Phase": "warm",
+      "Round": 1,
+      "Measurement": {
+        "TotalMs": 0.0041,
+        "InterpretationMs": 0.0038,
+        "ExecutionMs": 0.0001,
+        "Outcome": 2,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.0032,
+          "PreprocessMs": 0.0029000000000000002,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.00030000000000000003,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Выставь общую громкость на 37 процентов",
+      "Phase": "warm",
+      "Round": 1,
+      "Measurement": {
+        "TotalMs": 1319.6679000000001,
+        "InterpretationMs": 1319.6576,
+        "ExecutionMs": 0.0091,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1319.6488000000002,
+          "PreprocessMs": 0.0134,
+          "QueueMs": 0.0008,
+          "StartupMs": 0.0318,
+          "RequestBuildMs": 4.3319,
+          "HttpMs": 1315.1207000000002,
+          "DecodeMs": 0.0834,
+          "GroundingMs": 0.061000000000000006,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 331.961,
+          "ServerGenerationMs": 935.443,
+          "PromptTokens": 1184,
+          "CachedTokens": 1155,
+          "EvaluatedPromptTokens": 29,
+          "GeneratedTokens": 25
+        }
+      }
+    },
+    {
+      "Text": "Для общего звука поставь уровень 28 процентов",
+      "Phase": "warm",
+      "Round": 1,
+      "Measurement": {
+        "TotalMs": 1232.0852,
+        "InterpretationMs": 1232.076,
+        "ExecutionMs": 0.0077,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1232.0700000000002,
+          "PreprocessMs": 0.014700000000000001,
+          "QueueMs": 0.0005,
+          "StartupMs": 0.0304,
+          "RequestBuildMs": 0.23020000000000002,
+          "HttpMs": 1231.6372000000001,
+          "DecodeMs": 0.0864,
+          "GroundingMs": 0.0659,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 248.026,
+          "ServerGenerationMs": 957.541,
+          "PromptTokens": 1184,
+          "CachedTokens": 1164,
+          "EvaluatedPromptTokens": 20,
+          "GeneratedTokens": 25
+        }
+      }
+    },
+    {
+      "Text": "Покажи настройки аудио",
+      "Phase": "warm",
+      "Round": 1,
+      "Measurement": {
+        "TotalMs": 1214.9317,
+        "InterpretationMs": 1214.9213,
+        "ExecutionMs": 0.008400000000000001,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1214.9097000000002,
+          "PreprocessMs": 0.0103,
+          "QueueMs": 0.0008,
+          "StartupMs": 0.030600000000000002,
+          "RequestBuildMs": 0.25630000000000003,
+          "HttpMs": 1214.4666,
+          "DecodeMs": 0.10650000000000001,
+          "GroundingMs": 0.0359,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 186.668,
+          "ServerGenerationMs": 937.829,
+          "PromptTokens": 1180,
+          "CachedTokens": 1164,
+          "EvaluatedPromptTokens": 16,
+          "GeneratedTokens": 24
+        }
+      }
+    },
+    {
+      "Text": "Давай сыграем с ботом второй расы",
+      "Phase": "warm",
+      "Round": 1,
+      "Measurement": {
+        "TotalMs": 1309.7785000000001,
+        "InterpretationMs": 1309.7685000000001,
+        "ExecutionMs": 0.0079,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1309.7583,
+          "PreprocessMs": 0.0148,
+          "QueueMs": 0.0006000000000000001,
+          "StartupMs": 0.0304,
+          "RequestBuildMs": 0.2838,
+          "HttpMs": 1309.2677,
+          "DecodeMs": 0.11170000000000001,
+          "GroundingMs": 0.0442,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 316.351,
+          "ServerGenerationMs": 913.201,
+          "PromptTokens": 1183,
+          "CachedTokens": 1155,
+          "EvaluatedPromptTokens": 28,
+          "GeneratedTokens": 24
+        }
+      }
+    },
+    {
+      "Text": "Громкость 11 процентов",
+      "Phase": "warm",
+      "Round": 2,
+      "Measurement": {
+        "TotalMs": 0.0427,
+        "InterpretationMs": 0.0323,
+        "ExecutionMs": 0.0092,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.029900000000000003,
+          "PreprocessMs": 0.0218,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.0081,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Сделай потише",
+      "Phase": "warm",
+      "Round": 2,
+      "Measurement": {
+        "TotalMs": 0.0123,
+        "InterpretationMs": 0.010400000000000001,
+        "ExecutionMs": 0.0014,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.01,
+          "PreprocessMs": 0.0077,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.0022,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Не меняй громкость",
+      "Phase": "warm",
+      "Round": 2,
+      "Measurement": {
+        "TotalMs": 0.0043,
+        "InterpretationMs": 0.0038,
+        "ExecutionMs": 0,
+        "Outcome": 2,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.0034000000000000002,
+          "PreprocessMs": 0.0031000000000000003,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.0001,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Выставь общую громкость на 37 процентов",
+      "Phase": "warm",
+      "Round": 2,
+      "Measurement": {
+        "TotalMs": 1309.6979000000001,
+        "InterpretationMs": 1309.6887000000002,
+        "ExecutionMs": 0.0082,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1309.6808,
+          "PreprocessMs": 0.0129,
+          "QueueMs": 0.0006000000000000001,
+          "StartupMs": 0.0334,
+          "RequestBuildMs": 0.2581,
+          "HttpMs": 1309.2145,
+          "DecodeMs": 0.0918,
+          "GroundingMs": 0.0648,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 344.555,
+          "ServerGenerationMs": 936.566,
+          "PromptTokens": 1184,
+          "CachedTokens": 1155,
+          "EvaluatedPromptTokens": 29,
+          "GeneratedTokens": 25
+        }
+      }
+    },
+    {
+      "Text": "Для общего звука поставь уровень 28 процентов",
+      "Phase": "warm",
+      "Round": 2,
+      "Measurement": {
+        "TotalMs": 1214.7474,
+        "InterpretationMs": 1214.7379,
+        "ExecutionMs": 0.0077,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1214.7288,
+          "PreprocessMs": 0.0162,
+          "QueueMs": 0.0007,
+          "StartupMs": 0.029300000000000003,
+          "RequestBuildMs": 0.2637,
+          "HttpMs": 1214.2702000000002,
+          "DecodeMs": 0.08120000000000001,
+          "GroundingMs": 0.0636,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 241.417,
+          "ServerGenerationMs": 945.523,
+          "PromptTokens": 1184,
+          "CachedTokens": 1164,
+          "EvaluatedPromptTokens": 20,
+          "GeneratedTokens": 25
+        }
+      }
+    },
+    {
+      "Text": "Покажи настройки аудио",
+      "Phase": "warm",
+      "Round": 2,
+      "Measurement": {
+        "TotalMs": 1216.6424,
+        "InterpretationMs": 1216.6318,
+        "ExecutionMs": 0.0088,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1216.6205,
+          "PreprocessMs": 0.0082,
+          "QueueMs": 0.0007,
+          "StartupMs": 0.0292,
+          "RequestBuildMs": 0.23420000000000002,
+          "HttpMs": 1216.1976,
+          "DecodeMs": 0.10980000000000001,
+          "GroundingMs": 0.0368,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 188.415,
+          "ServerGenerationMs": 929.284,
+          "PromptTokens": 1180,
+          "CachedTokens": 1164,
+          "EvaluatedPromptTokens": 16,
+          "GeneratedTokens": 24
+        }
+      }
+    },
+    {
+      "Text": "Давай сыграем с ботом второй расы",
+      "Phase": "warm",
+      "Round": 2,
+      "Measurement": {
+        "TotalMs": 1313.438,
+        "InterpretationMs": 1313.428,
+        "ExecutionMs": 0.008,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1313.4172,
+          "PreprocessMs": 0.0143,
+          "QueueMs": 0.0006000000000000001,
+          "StartupMs": 0.0392,
+          "RequestBuildMs": 0.2701,
+          "HttpMs": 1312.9455,
+          "DecodeMs": 0.09720000000000001,
+          "GroundingMs": 0.0451,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 312.522,
+          "ServerGenerationMs": 921.035,
+          "PromptTokens": 1183,
+          "CachedTokens": 1155,
+          "EvaluatedPromptTokens": 28,
+          "GeneratedTokens": 24
+        }
+      }
+    },
+    {
+      "Text": "Громкость 11 процентов",
+      "Phase": "warm",
+      "Round": 3,
+      "Measurement": {
+        "TotalMs": 0.0419,
+        "InterpretationMs": 0.0324,
+        "ExecutionMs": 0.0082,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.0309,
+          "PreprocessMs": 0.023100000000000002,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.0076,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Сделай потише",
+      "Phase": "warm",
+      "Round": 3,
+      "Measurement": {
+        "TotalMs": 0.012,
+        "InterpretationMs": 0.0105,
+        "ExecutionMs": 0.001,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.010100000000000001,
+          "PreprocessMs": 0.0078000000000000005,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.0022,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Не меняй громкость",
+      "Phase": "warm",
+      "Round": 3,
+      "Measurement": {
+        "TotalMs": 0.005200000000000001,
+        "InterpretationMs": 0.0048000000000000004,
+        "ExecutionMs": 0,
+        "Outcome": 2,
+        "Intent": {
+          "Route": "direct",
+          "TotalMs": 0.004,
+          "PreprocessMs": 0.0037,
+          "QueueMs": 0,
+          "StartupMs": 0,
+          "RequestBuildMs": 0,
+          "HttpMs": 0,
+          "DecodeMs": 0,
+          "GroundingMs": 0.00030000000000000003,
+          "ProcessColdStart": false,
+          "ServerPromptMs": null,
+          "ServerGenerationMs": null,
+          "PromptTokens": null,
+          "CachedTokens": null,
+          "EvaluatedPromptTokens": null,
+          "GeneratedTokens": null
+        }
+      }
+    },
+    {
+      "Text": "Выставь общую громкость на 37 процентов",
+      "Phase": "warm",
+      "Round": 3,
+      "Measurement": {
+        "TotalMs": 1312.3756,
+        "InterpretationMs": 1312.3654000000001,
+        "ExecutionMs": 0.0089,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1312.3571000000002,
+          "PreprocessMs": 0.013300000000000001,
+          "QueueMs": 0.0005,
+          "StartupMs": 0.0303,
+          "RequestBuildMs": 0.2553,
+          "HttpMs": 1311.8502,
+          "DecodeMs": 0.132,
+          "GroundingMs": 0.07060000000000001,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 333.815,
+          "ServerGenerationMs": 944.929,
+          "PromptTokens": 1184,
+          "CachedTokens": 1155,
+          "EvaluatedPromptTokens": 29,
+          "GeneratedTokens": 25
+        }
+      }
+    },
+    {
+      "Text": "Для общего звука поставь уровень 28 процентов",
+      "Phase": "warm",
+      "Round": 3,
+      "Measurement": {
+        "TotalMs": 1216.1476,
+        "InterpretationMs": 1216.1376,
+        "ExecutionMs": 0.008,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1216.1288,
+          "PreprocessMs": 0.0193,
+          "QueueMs": 0.0008,
+          "StartupMs": 0.031400000000000004,
+          "RequestBuildMs": 0.26530000000000004,
+          "HttpMs": 1215.6006,
+          "DecodeMs": 0.1302,
+          "GroundingMs": 0.07730000000000001,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 241.573,
+          "ServerGenerationMs": 934.295,
+          "PromptTokens": 1184,
+          "CachedTokens": 1164,
+          "EvaluatedPromptTokens": 20,
+          "GeneratedTokens": 25
+        }
+      }
+    },
+    {
+      "Text": "Покажи настройки аудио",
+      "Phase": "warm",
+      "Round": 3,
+      "Measurement": {
+        "TotalMs": 1211.9585,
+        "InterpretationMs": 1211.9488000000001,
+        "ExecutionMs": 0.0079,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1211.9398,
+          "PreprocessMs": 0.013000000000000001,
+          "QueueMs": 0.0006000000000000001,
+          "StartupMs": 0.031200000000000002,
+          "RequestBuildMs": 0.2914,
+          "HttpMs": 1211.4506000000001,
+          "DecodeMs": 0.114,
+          "GroundingMs": 0.0347,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 189.103,
+          "ServerGenerationMs": 936.743,
+          "PromptTokens": 1180,
+          "CachedTokens": 1164,
+          "EvaluatedPromptTokens": 16,
+          "GeneratedTokens": 24
+        }
+      }
+    },
+    {
+      "Text": "Давай сыграем с ботом второй расы",
+      "Phase": "warm",
+      "Round": 3,
+      "Measurement": {
+        "TotalMs": 1311.1322,
+        "InterpretationMs": 1311.1192,
+        "ExecutionMs": 0.0105,
+        "Outcome": 0,
+        "Intent": {
+          "Route": "model",
+          "TotalMs": 1311.1064000000001,
+          "PreprocessMs": 0.0126,
+          "QueueMs": 0.0006000000000000001,
+          "StartupMs": 0.0291,
+          "RequestBuildMs": 0.262,
+          "HttpMs": 1310.6288,
+          "DecodeMs": 0.1159,
+          "GroundingMs": 0.053000000000000005,
+          "ProcessColdStart": false,
+          "ServerPromptMs": 317.736,
+          "ServerGenerationMs": 914.939,
+          "PromptTokens": 1183,
+          "CachedTokens": 1155,
+          "EvaluatedPromptTokens": 28,
+          "GeneratedTokens": 24
+        }
+      }
+    }
+  ]
+}

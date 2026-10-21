@@ -6,11 +6,14 @@
     "Order.Application",
     "Order.Content",
     "Order.Voice",
+    "Order.Voice.Local",
     "Order.Input",
     "Order.Simulation",
     "Unity.Entities",
     "Unity.Collections"
   ],
+  "overrideReferences": true,
+  "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],
   "autoReferenced": false,
   "noEngineReferences": false,
   "includePlatforms": [

@@ -6,6 +6,7 @@
     "Order.Application",
     "Order.Input",
     "Order.Voice",
+    "Order.Voice.Local",
     "Order.Presentation"
   ],
   "autoReferenced": false,
