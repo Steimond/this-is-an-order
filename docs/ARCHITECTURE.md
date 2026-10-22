@@ -74,6 +74,8 @@ Entities 6.6.0 установлен через Package Manager для текущ
 
 Личный словарь: `Phrasebook` и `PhrasebookInterpreter` (Voice, без UnityEngine) стоят перед командами меню; хранилище `IPhrasebookStore` реализует Bootstrap файлом профиля. Тестовая сборка ссылается на Bootstrap ради проверки файлового хранилища.
 
+HUD матча: `Presentation/Match` (`MatchHud`, `MinimapPanel`) работает с видом матча через интерфейс `IMatchHost`; `TemplePrototypeView` реализует его и владеет миром, режимами приказов и метками. Bootstrap передаёт полигону `MatchServices` (контроллер, ввод команд, словарь); без них отдельная сцена полигона работает только с приказами полигона. Координатная сетка `MapGrid` лежит в Content.
+
 Interpretation содержит необязательную диагностику IntentTiming для конкретного вызова. Input сохраняет общий замер CommandMeasurement с исходом выполнения; Presentation явно ссылается на Voice для показа этих данных только в Editor/Development Build. Диагностические значения не участвуют в принятии игровых решений. Этапы и методика — в PERFORMANCE.md.
 
 ## Будущие память, знания и справочник

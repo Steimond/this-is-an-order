@@ -21,6 +21,9 @@
     --hud-text: #CDE7E4;
     --hud-muted: #6A9396;
     --hud-faint: #2A4A4D;
+    --hud-health: #6FDB8C;
+    --hud-shield: #5EC2FF;
+    --hud-energy: #C38BFF;
 }
 
 .hud-theme-expedition,
@@ -31,17 +34,20 @@
     --hud-line: #2E363D;
     --hud-line-bright: #66737E;
     --hud-accent: #F0B43C;
-    --hud-accent-soft: rgba(240, 180, 60, 0.12);
+    --hud-accent-soft: rgba(240, 180, 60, 0.09);
     --hud-accent-dim: rgba(240, 180, 60, 0.42);
     --hud-accent-faint: rgba(240, 180, 60, 0.045);
     --hud-control: rgba(9, 11, 13, 0.75);
     --hud-hot: #FFF1CC;
     --hud-warn: #FF6B3D;
-    --hud-warn-soft: rgba(255, 107, 61, 0.14);
+    --hud-warn-soft: rgba(255, 107, 61, 0.06);
     --hud-danger: #FF4A3D;
     --hud-text: #E6EBEF;
     --hud-muted: #8A949C;
     --hud-faint: #30373D;
+    --hud-health: #7FDB8F;
+    --hud-shield: #6CC6F2;
+    --hud-energy: #C79BFF;
 }
 
 .hud-theme-resonance,
@@ -52,17 +58,20 @@
     --hud-line: #4A3A3C;
     --hud-line-bright: #8A5A57;
     --hud-accent: #FF5E4F;
-    --hud-accent-soft: rgba(255, 94, 79, 0.12);
+    --hud-accent-soft: rgba(255, 94, 79, 0.09);
     --hud-accent-dim: rgba(255, 94, 79, 0.42);
     --hud-accent-faint: rgba(255, 94, 79, 0.045);
     --hud-control: rgba(20, 21, 25, 0.78);
     --hud-hot: #FFD9CF;
     --hud-warn: #F4D06F;
-    --hud-warn-soft: rgba(244, 208, 111, 0.14);
+    --hud-warn-soft: rgba(244, 208, 111, 0.06);
     --hud-danger: #FF3B30;
     --hud-text: #ECE5D5;
     --hud-muted: #9C948A;
     --hud-faint: #3A3436;
+    --hud-health: #8FD98A;
+    --hud-shield: #7CC8E8;
+    --hud-energy: #D59BFF;
 }
 
 .hud-root {
@@ -807,3 +816,105 @@
 .hud-scroll .unity-base-slider__dragger-border { display: none; }
 
 .hud-row.is-changed { background-color: var(--hud-accent-soft); }
+
+/* Value bars (health, shields, energy, progress) */
+.hud-bar {
+    flex-direction: row;
+    align-items: center;
+    height: 18px;
+    margin-top: 5px;
+}
+
+.hud-bar__caption {
+    width: 104px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    -unity-font-style: bold;
+    color: var(--hud-muted);
+}
+
+.hud-bar__track {
+    flex-grow: 1;
+    height: 10px;
+    border-width: 1px;
+    border-color: var(--hud-line-bright);
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.hud-bar__fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background-color: var(--hud-health);
+    transition: width 0.2s;
+}
+
+.hud-bar__ticks { color: rgba(0, 0, 0, 0.55); }
+
+.hud-bar__value {
+    width: 128px;
+    font-size: 12px;
+    -unity-text-align: middle-right;
+    color: var(--hud-hot);
+}
+
+.hud-bar--shield .hud-bar__fill { background-color: var(--hud-shield); }
+.hud-bar--energy .hud-bar__fill { background-color: var(--hud-energy); }
+.hud-bar--progress .hud-bar__fill { background-color: var(--hud-accent); }
+
+/* Command card buttons */
+.hud-command {
+    width: 50px;
+    height: 48px;
+    min-height: 48px;
+    margin: 0 4px 4px 0;
+    padding: 0;
+    justify-content: center;
+    align-items: center;
+}
+
+.hud-command > .hud-frame {
+    color: var(--hud-line-bright);
+    -unity-background-image-tint-color: var(--hud-control);
+}
+
+.hud-command__icon {
+    width: 26px;
+    height: 26px;
+    color: var(--hud-text);
+}
+
+.hud-command__key {
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    font-size: 9px;
+    -unity-font-style: bold;
+    color: var(--hud-accent);
+}
+
+.hud-command__lock {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    width: 11px;
+    height: 11px;
+    display: none;
+    color: var(--hud-warn);
+}
+
+.hud-command:hover .hud-command__icon { color: var(--hud-hot); }
+.hud-command.is-locked .hud-command__lock { display: flex; }
+.hud-command.is-locked .hud-command__icon { color: var(--hud-muted); }
+.hud-command.is-short .hud-command__icon { color: var(--hud-warn); }
+
+.hud-command.is-active > .hud-frame {
+    color: var(--hud-accent);
+    -unity-background-image-tint-color: var(--hud-accent-soft);
+}
+
+.hud-command.is-active .hud-command__icon { color: var(--hud-hot); }
+.hud-command.is-empty { opacity: 0.35; }
+.hud-command.is-empty .hud-command__icon,
+.hud-command.is-empty .hud-command__key { display: none; }

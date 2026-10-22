@@ -38,7 +38,7 @@ namespace Order.Bootstrap
             var root = GetComponent<UIDocument>().rootVisualElement;
             if (MenuStyle != null) root.styleSheets.Add(MenuStyle);
             view = new AppMenuView(root, app, input, warmup, phrasebook);
-            app.Changed += ApplyAudio;
+            app.Changed += OnAppChanged;
             app.Requested += OnRequested;
             ApplyAudio();
         }
@@ -56,6 +56,12 @@ namespace Order.Bootstrap
             else if (request == AppRequest.Quit) Quit();
         }
         private void ApplyAudio() => AudioListener.volume = app.Settings.MasterVolume;
+        // Leaving the test map is a screen change (e.g. "в штаб"), so menu, HUD and assistant commands agree.
+        private void OnAppChanged()
+        {
+            ApplyAudio();
+            if (testMap != null && testMap.enabled && app.Screen != AppScreen.TestMap && !app.Screen.IsSettings()) ReturnToMenu();
+        }
         private void LaunchTestMap()
         {
             if (testMap != null && testMap.enabled) return;
@@ -64,11 +70,13 @@ namespace Order.Bootstrap
             if (menuCamera == null) menuCamera = FindFirstObjectByType<Camera>();
             if (menuCamera != null) menuCamera.gameObject.SetActive(false);
             if (testMap == null) testMap = gameObject.AddComponent<TemplePrototypeView>();
-            testMap.Initialize(GetComponent<UIDocument>().rootVisualElement, ReturnToMenu);
+            testMap.Initialize(GetComponent<UIDocument>().rootVisualElement, ReturnToMenu, new MatchServices { App = app, Input = input, Phrasebook = phrasebook });
         }
         private void ReturnToMenu()
         {
-            if (testMap != null) testMap.Shutdown();
+            if (testMap == null || !testMap.enabled) return;
+            if (app.Screen == AppScreen.TestMap) { input.SubmitManual(AppCommand.Navigate(AppScreen.MainMenu)); return; }
+            testMap.Shutdown();
             if (menuCamera != null) menuCamera.gameObject.SetActive(true);
             var root = GetComponent<UIDocument>().rootVisualElement;
             if (MenuStyle != null) root.styleSheets.Add(MenuStyle);
@@ -81,7 +89,7 @@ namespace Order.Bootstrap
             if (testMap != null) { testMap.Shutdown(); Destroy(testMap); }
             testMap = null;
             if (menuCamera != null) menuCamera.gameObject.SetActive(true);
-            if (app != null) { app.Changed -= ApplyAudio; app.Requested -= OnRequested; }
+            if (app != null) { app.Changed -= OnAppChanged; app.Requested -= OnRequested; }
             view?.Dispose();
             interpreter?.Dispose();
             view = null;

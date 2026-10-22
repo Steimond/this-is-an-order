@@ -62,6 +62,7 @@ namespace Order.Application
             {
                 case AppCommandKind.Navigate:
                     if (!Enum.IsDefined(typeof(AppScreen), command.Screen)) return Reject("Такого экрана нет.");
+                    if (command.Screen == AppScreen.TestMap) return Execute(AppCommand.LaunchTestMap(), context);
                     Show(command.Screen);
                     message = "Открываю: " + MenuCatalog.ScreenTitle(command.Screen) + ".";
                     break;
@@ -75,6 +76,7 @@ namespace Order.Application
                     if (command.Kind == AppCommandKind.CancelExit) return Reject("Выход не запрашивался.");
                     if (Screen.IsSettings()) Show(ReturnScreen);
                     else if (Screen == AppScreen.MatchSetup) Show(AppScreen.MainMenu);
+                    else if (Screen == AppScreen.TestMap) return Reject("Вы на полигоне. Вернуться — «в штаб».");
                     else return Reject("Вы уже в штабе.");
                     message = "Возвращаюсь: " + MenuCatalog.ScreenTitle(Screen) + ".";
                     break;
@@ -145,6 +147,8 @@ namespace Order.Application
                 case AppCommandKind.StartMatch:
                     return new CommandResult(CommandOutcome.Unavailable, "Боевой прототип — следующий этап. Пока доступен полигон: «открой полигон».");
                 case AppCommandKind.LaunchTestMap:
+                    if (Screen == AppScreen.TestMap) return Reject("Вы уже на полигоне.");
+                    Show(AppScreen.TestMap);
                     request = AppRequest.LaunchTestMap;
                     message = "Открываю полигон Temple Basin.";
                     break;

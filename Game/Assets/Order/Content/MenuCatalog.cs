@@ -60,7 +60,7 @@ namespace Order.Content
         public static readonly IReadOnlyList<MenuTab> Tabs = new[]
         {
             new MenuTab(AppScreen.GameSettings, "ИГРА", "Параметры вкладки — заглушки: соответствующие системы ещё в разработке. Значения сохраняются.", @"игр\w*|общ\w*"),
-            new MenuTab(AppScreen.ControlsSettings, "УПРАВЛЕНИЕ", "Назначения клавиш и камера пока не применяются: схема управления матча ещё формируется.", @"управлени\w*|клавиш\w*|камер\w*|мыш\w*"),
+            new MenuTab(AppScreen.ControlsSettings, "УПРАВЛЕНИЕ", "Действуют параметры с отметкой «ДЕЙСТВУЕТ». Назначения клавиш пока не применяются: схема управления матча ещё формируется.", @"управлени\w*|клавиш\w*|камер\w*|мыш\w*"),
             new MenuTab(AppScreen.GraphicsSettings, "ГРАФИКА", "Графические параметры пока не применяются: значения сохраняются до появления систем.", @"график\w*|видео|изображени\w*"),
             new MenuTab(AppScreen.AudioSettings, "ЗВУК", "Действуют параметры с отметкой «ДЕЙСТВУЕТ». Остальные каналы появятся вместе со звуком игры.", @"звук\w*|аудио"),
             new MenuTab(AppScreen.VoiceSettings, "ГОЛОС И АССИСТЕНТ", "Действуют параметры с отметкой «ДЕЙСТВУЕТ». Микрофон и озвучка подключаются следующим этапом.", @"голос\w*|ассистент\w*|микрофон\w*|словар\w*"),
@@ -85,22 +85,22 @@ namespace Order.Content
                 OptionKind.Toggle, @"(?:запис\w* |сохран\w* )?повтор\w*", defaultValue: 1),
 
             new MenuOption("controls.cameraSpeed", AppScreen.ControlsSettings, "КАМЕРА И МЫШЬ", "Скорость камеры", "Скорость перемещения камеры клавишами и у края экрана.",
-                OptionKind.Range, @"скорост\w* камер\w*", defaultValue: 50),
+                OptionKind.Range, @"скорост\w* камер\w*", defaultValue: 50, live: true),
             new MenuOption("controls.edgeScroll", AppScreen.ControlsSettings, "КАМЕРА И МЫШЬ", "Прокрутка у края экрана", "Камера сдвигается, когда курсор упирается в край экрана.",
-                OptionKind.Toggle, @"прокрутк\w*(?: у кра\w*(?: экрана)?)?|кра\w* экрана", defaultValue: 1),
+                OptionKind.Toggle, @"прокрутк\w*(?: у кра\w*(?: экрана)?)?|кра\w* экрана", defaultValue: 1, live: true),
             new MenuOption("controls.invertZoom", AppScreen.ControlsSettings, "КАМЕРА И МЫШЬ", "Инвертировать масштаб колесом", "Меняет направление приближения колесом мыши.",
                 OptionKind.Toggle, @"инвер\w*(?: масштаб\w*)?(?: колес\w*)?"),
             new MenuOption("controls.mouse", AppScreen.ControlsSettings, "КАМЕРА И МЫШЬ", "Чувствительность мыши", "Скорость курсора в матче.",
                 OptionKind.Range, @"чувствительност\w* мыш\w*", defaultValue: 50),
             new MenuOption("key.talk", AppScreen.ControlsSettings, "КЛАВИШИ", "Говорить с ассистентом", "Удерживайте, чтобы отдать голосовой приказ.",
                 OptionKind.Key, @"кнопк\w* разговор\w*|клавиш\w* разговор\w*|разговор\w*|говорить с ассистентом", defaultKey: "V", alsoOn: AppScreen.VoiceSettings),
-            new MenuOption("key.cameraUp", AppScreen.ControlsSettings, "КЛАВИШИ", "Камера вперёд", "Перемещение камеры.", OptionKind.Key, @"камер\w* вперед", defaultKey: "W"),
-            new MenuOption("key.cameraDown", AppScreen.ControlsSettings, "КЛАВИШИ", "Камера назад", "Перемещение камеры.", OptionKind.Key, @"камер\w* назад", defaultKey: "S"),
-            new MenuOption("key.cameraLeft", AppScreen.ControlsSettings, "КЛАВИШИ", "Камера влево", "Перемещение камеры.", OptionKind.Key, @"камер\w* влево", defaultKey: "A"),
-            new MenuOption("key.cameraRight", AppScreen.ControlsSettings, "КЛАВИШИ", "Камера вправо", "Перемещение камеры.", OptionKind.Key, @"камер\w* вправо", defaultKey: "D"),
+            new MenuOption("key.cameraUp", AppScreen.ControlsSettings, "КЛАВИШИ", "Камера вперёд", "Перемещение камеры.", OptionKind.Key, @"камер\w* вперед", defaultKey: "СТРЕЛКА ВВЕРХ"),
+            new MenuOption("key.cameraDown", AppScreen.ControlsSettings, "КЛАВИШИ", "Камера назад", "Перемещение камеры.", OptionKind.Key, @"камер\w* назад", defaultKey: "СТРЕЛКА ВНИЗ"),
+            new MenuOption("key.cameraLeft", AppScreen.ControlsSettings, "КЛАВИШИ", "Камера влево", "Перемещение камеры.", OptionKind.Key, @"камер\w* влево", defaultKey: "СТРЕЛКА ВЛЕВО"),
+            new MenuOption("key.cameraRight", AppScreen.ControlsSettings, "КЛАВИШИ", "Камера вправо", "Перемещение камеры.", OptionKind.Key, @"камер\w* вправо", defaultKey: "СТРЕЛКА ВПРАВО"),
             new MenuOption("key.focusWorker", AppScreen.ControlsSettings, "КЛАВИШИ", "Камера к рабочему", "Центрировать камеру на выбранном рабочем.",
                 OptionKind.Key, @"камер\w* к рабоч\w*|к рабоч\w*", defaultKey: "ПРОБЕЛ"),
-            new MenuOption("key.build", AppScreen.ControlsSettings, "КЛАВИШИ", "Строительство", "Открыть размещение здания.", OptionKind.Key, @"строительств\w*|стройк\w*", defaultKey: "B"),
+            new MenuOption("key.build", AppScreen.ControlsSettings, "КЛАВИШИ", "Строительство", "Открыть список построек на карте команд.", OptionKind.Key, @"строительств\w*|стройк\w*", defaultKey: "B"),
 
             new MenuOption("gfx.mode", AppScreen.GraphicsSettings, "ЭКРАН", "Режим экрана", "Способ вывода изображения.",
                 OptionKind.Choice, @"режим\w* экрана|полноэкранн\w*(?: режим\w*)?|оконн\w* режим\w*",
@@ -170,7 +170,7 @@ namespace Order.Content
                 OptionKind.Toggle, @"анимаци\w*(?: интерфейс\w*)?", defaultValue: 1),
             new MenuOption("ui.hudTheme", AppScreen.InterfaceSettings, "HUD МАТЧА", "Оформление HUD", "В матче интерфейс принимает стиль выбранной фракции.",
                 OptionKind.Choice, @"оформлени\w* (?:hud|худ)|тем\w* (?:hud|худ)|цвет\w* (?:hud|худ)", choices: new[] { "По фракции игрока", "Командное" },
-                choiceAliases: new[] { @"фракци\w*", @"командн\w*" }),
+                choiceAliases: new[] { @"фракци\w*", @"командн\w*" }, live: true),
             new MenuOption("ui.grid", AppScreen.InterfaceSettings, "HUD МАТЧА", "Координатная сетка", "Подписи квадратов на миникарте.",
                 OptionKind.Toggle, @"координатн\w* сетк\w*|сетк\w*", defaultValue: 1),
 
@@ -195,6 +195,7 @@ namespace Order.Content
         {
             if (screen == AppScreen.MainMenu) return "штаб";
             if (screen == AppScreen.MatchSetup) return "схватка с ИИ";
+            if (screen == AppScreen.TestMap) return "полигон Temple Basin";
             var tab = Tab(screen);
             return tab == null ? "меню" : "настройки — " + tab.Title.ToLowerInvariant();
         }

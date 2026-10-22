@@ -12,13 +12,22 @@ namespace Order.Presentation
 {
     // Disposable view of a small ECS-driven test match. No scene-authored gameplay state.
     [DisallowMultipleComponent]
-    public sealed class TemplePrototypeView : MonoBehaviour
+    public sealed class TemplePrototypeView : MonoBehaviour, IMatchHost
     {
         public PrototypeMatch Match { get; private set; }
         public Camera MapCamera { get; private set; }
+        public MatchMode Mode { get; private set; }
+        public int BuildKind => buildKind;
+        public int SelectedBuilding => selectedBuilding;
+        public ResourceDeposit SelectedDeposit => selectedDeposit;
+        public IReadOnlyList<Vector2> Pins => pins;
+        public Texture MinimapTexture => miniTexture;
+        public string ModeHint { get; private set; } = "";
         VisualElement ui;
-        Label resources, selection, status, placement;
-        Image minimap;
+        MatchHud hud;
+        MatchServices services;
+        readonly List<Vector2> pins = new List<Vector2>();
+        readonly List<GameObject> pinViews = new List<GameObject>();
         Texture2D miniTexture;
         GameObject worldRoot, scout, ghost, selectionRing, ghostModel;
         int ghostKind=-1;
@@ -44,10 +53,11 @@ namespace Order.Presentation
             if(Match==null)Initialize(GetComponent<UIDocument>().rootVisualElement,()=>UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu"));
         }
 
-        public void Initialize(VisualElement root, Action exit)
+        public void Initialize(VisualElement root, Action exit, MatchServices services=null)
         {
             if(Match!=null)return;
-            enabled=true;buildKind=-1;selectedBuilding=-1;selectedDeposit=null;focus=new Vector3(13,0,13);zoom=18;refresh=0;
+            this.services=services;
+            enabled=true;Mode=MatchMode.None;buildKind=-1;selectedBuilding=-1;selectedDeposit=null;focus=new Vector3(13,0,13);zoom=18;refresh=0;
             var catalog=Resources.Load<BalanceCatalog>("PrototypeBalanceCatalog");
             if(catalog==null)throw new InvalidOperationException("Create balance assets using Order/Create Missing Balance Assets.");
             Match=new PrototypeMatch(catalog.Snapshot());ui=root;onExit=exit;
@@ -147,20 +157,28 @@ namespace Order.Presentation
         {
             if(Match==null)return;
             var mouse=Mouse.current;var keys=Keyboard.current;
-            if(keys!=null)
+            hud?.HandleKeys(keys);
+            if(keys!=null&&(hud==null||!hud.KeyboardCaptured))
             {
-                float x=(keys.dKey.isPressed||keys.rightArrowKey.isPressed?1:0)-(keys.aKey.isPressed||keys.leftArrowKey.isPressed?1:0);
-                float z=(keys.wKey.isPressed||keys.upArrowKey.isPressed?1:0)-(keys.sKey.isPressed||keys.downArrowKey.isPressed?1:0);
-                focus+=new Vector3(x,0,z)*Time.deltaTime*zoom;
-                if(keys.spaceKey.wasPressedThisFrame)focus=new Vector3(Match.X,0,Match.Z);
-                if(keys.bKey.wasPressedThisFrame)buildKind=0;
-                if(keys.escapeKey.wasPressedThisFrame)buildKind=-1;
+                // Arrows only: letter keys belong to the command card.
+                float x=(keys.rightArrowKey.isPressed?1:0)-(keys.leftArrowKey.isPressed?1:0);
+                float z=(keys.upArrowKey.isPressed?1:0)-(keys.downArrowKey.isPressed?1:0);
+                focus+=new Vector3(x,0,z)*Time.deltaTime*zoom*CameraSpeed();
+            }
+            if(mouse!=null&&UnityEngine.Application.isFocused&&Option("controls.edgeScroll",1)>=.5f)
+            {
+                // Edge scrolling: only the outermost pixels of the window, while the pointer is inside it.
+                Vector2 p=mouse.position.ReadValue();float edge=Mathf.Max(2,Screen.height*.004f);
+                if(p.sqrMagnitude>0&&p.x>=0&&p.y>=0&&p.x<=Screen.width&&p.y<=Screen.height)
+                {
+                    float x=p.x<=edge?-1:p.x>=Screen.width-1-edge?1:0,z=p.y<=edge?-1:p.y>=Screen.height-1-edge?1:0;
+                    focus+=new Vector3(x,0,z)*Time.deltaTime*zoom*CameraSpeed();
+                }
             }
             if(mouse!=null)
             {
                 Vector2 p=mouse.position.ReadValue();
-                Vector2 panelPoint=RuntimePanelUtils.ScreenToPanel(ui.panel,new Vector2(p.x,Screen.height-p.y));
-                overUI=panelPoint.y<56||panelPoint.y>ui.resolvedStyle.height-184;
+                overUI=hud!=null&&hud.IsOverHud(p);
                 if(!overUI)zoom=Mathf.Clamp(zoom-mouse.scroll.ReadValue().y*.015f,10,38);
                 hasHover=!overUI&&Physics.Raycast(MapCamera.ScreenPointToRay(p),out var hit,180);
                 if(hasHover)
@@ -168,15 +186,19 @@ namespace Order.Presentation
                     // Repeat ray explicitly to keep the hit definitely assigned on all compiler versions.
                     Physics.Raycast(MapCamera.ScreenPointToRay(p),out hit,180);
                     hoverX=Mathf.FloorToInt(hit.point.x);hoverZ=Mathf.FloorToInt(hit.point.z);
-                    if(mouse.rightButton.wasPressedThisFrame){if(buildKind>=0)buildKind=-1;else if(Match.Selected)Match.Move(hit.point.x,hit.point.z);}
+                    var point=new Vector2(hit.point.x,hit.point.z);
+                    if(mouse.rightButton.wasPressedThisFrame){if(Mode!=MatchMode.None)SetMode(MatchMode.None);else if(Match.Selected)Match.Move(hit.point.x,hit.point.z);}
                     if(mouse.leftButton.wasPressedThisFrame)
                     {
-                        if(buildKind>=0){if(Match.Build(hoverX,hoverZ,buildKind))buildKind=-1;}
+                        if(keys!=null&&keys.altKey.isPressed)AddPin(point);
+                        else if(Mode==MatchMode.Build){if(Match.Build(hoverX,hoverZ,buildKind))SetMode(MatchMode.None);}
+                        else if(Mode!=MatchMode.None)OrderTo(point);
                         else
                         {
                             Match.Selected=Vector2.Distance(new Vector2(hit.point.x,hit.point.z),new Vector2(Match.X,Match.Z))<1.5f;
-                            selectedBuilding=Match.Buildings.FindIndex(b=>hoverX>=b.X&&hoverX<b.X+b.Width&&hoverZ>=b.Z&&hoverZ<b.Z+b.Width);
-                            selectedDeposit=Match.Map.Inside(hoverX,hoverZ)&&Match.Explored[hoverX,hoverZ]?Match.Map.ResourceAt(hoverX,hoverZ):null;
+                            selectedBuilding=Match.Selected?-1:Match.Buildings.FindIndex(b=>hoverX>=b.X&&hoverX<b.X+b.Width&&hoverZ>=b.Z&&hoverZ<b.Z+b.Width);
+                            selectedDeposit=Match.Selected||selectedBuilding>=0||!Match.Map.Inside(hoverX,hoverZ)||!Match.Explored[hoverX,hoverZ]?null:Match.Map.ResourceAt(hoverX,hoverZ);
+                            hud?.Refresh();
                         }
                     }
                 }
@@ -187,12 +209,13 @@ namespace Order.Presentation
             if(direction.sqrMagnitude>.0001f)scout.transform.rotation=Quaternion.Slerp(scout.transform.rotation,Quaternion.LookRotation(direction),Time.deltaTime*12);
             scout.transform.position=nextPosition;
             selectionRing.SetActive(Match.Selected);selectionRing.transform.position=scout.transform.position-new Vector3(0,.61f,0);
-            ghost.SetActive(buildKind>=0&&hasHover);
+            ghost.SetActive(Mode==MatchMode.Build&&hasHover);
             if(ghost.activeSelf)
             {
                 bool valid=Match.CanBuild(hoverX,hoverZ,buildKind,out var reason);int w=Match.Balance.Buildings[buildKind].Width;
                 ghost.transform.position=new Vector3(hoverX+w*.5f,Match.Map.Height(hoverX,hoverZ)+.025f,hoverZ+w*.5f);
-                ghost.transform.localScale=new Vector3(w,.025f,w);ghostMaterial.SetColor("_BaseColor",valid?new Color(.1f,.7f,.3f):new Color(.9f,.1f,.15f));placement.text=reason;
+                ghost.transform.localScale=new Vector3(w,.025f,w);ghostMaterial.SetColor("_BaseColor",valid?new Color(.1f,.7f,.3f):new Color(.9f,.1f,.15f));
+                ModeHint=Match.Balance.Buildings[buildKind].Name+": "+reason+" · ПКМ / Esc — отмена";
                 if(ghostKind!=buildKind)
                 {
                     if(ghostModel!=null)Destroy(ghostModel);ghostModel=BuildingModel(buildKind);ghostKind=buildKind;
@@ -200,10 +223,16 @@ namespace Order.Presentation
                 }
                 ghostModel.SetActive(true);ghostModel.transform.position=ghost.transform.position;
             }
-            else {if(ghostModel!=null)ghostModel.SetActive(false);placement.text=buildKind>=0?"Укажите место на карте. Esc / ПКМ — отмена":"ЛКМ — выбрать рабочего · ПКМ — приказ · B — строительство";}
+            else{if(ghostModel!=null)ghostModel.SetActive(false);ModeHint=Hint();}
+            for(int i=0;i<pinViews.Count;i++)pinViews[i].transform.localScale=new Vector3(1,1+.08f*Mathf.Sin(Time.time*4+i),1);
             AnimateBuildings();
             refresh+=Time.deltaTime;if(refresh>.15f){refresh=0;RefreshWorld();}
         }
+        float Option(string id,float fallback){var settings=services?.App?.Settings;return settings.HasValue?MenuCatalog.Value(settings.Value,MenuCatalog.Find(id)):fallback;}
+        // "Скорость камеры" 0–100 maps to 0.4–1.6 of the base speed; 50 keeps the original pace.
+        float CameraSpeed()=>.4f+Option("controls.cameraSpeed",50)/100f*1.2f;
+        string Hint()=>Mode==MatchMode.Build?"Укажите место на карте · ПКМ / Esc — отмена":Mode==MatchMode.Move?"Движение: ЛКМ — точка на карте или миникарте · ПКМ / Esc — отмена"
+            :Mode==MatchMode.Harvest?"Добыча: ЛКМ — разведанная залежь · ПКМ / Esc — отмена":Mode==MatchMode.Ping?"Метка: ЛКМ — место на карте или миникарте · Alt+ЛКМ — всегда":"";
         void UpdateCamera()
         {
             MapCamera.transform.rotation=Quaternion.Euler(53,0,0);
@@ -234,80 +263,95 @@ namespace Order.Presentation
             while(buildingViews.Count<Match.Buildings.Count)
                 buildingViews.Add(BuildingModel(Match.Buildings[buildingViews.Count].Kind));
             AnimateBuildings();
-            int supply=0;foreach(var b in Match.Buildings)if(b.Ready>=1)supply+=Match.Balance.Buildings[b.Kind].Supply;
-            resources.text=$"◆ {Match.Minerals}     ◉ {Match.Gas}      Рабочие 1 / {supply}     |     TEMPLE BASIN · ТЕСТ";
-            var worker=Match.Balance.Worker;
-            selection.text=Match.Selected?$"{worker.Name}\nЗдоровье {worker.Health} / {worker.Health} · Обзор {worker.Vision}\nСкорость {worker.Speed:0.#} · Добыча {worker.HarvestAmount} / {worker.HarvestInterval:0.#} с":"Нет выделения\nВыберите рабочего на карте";
-            if(!Match.Selected&&selectedBuilding>=0)
-            {
-                var b=Match.Buildings[selectedBuilding];var stats=Match.Balance.Buildings[b.Kind];selection.text=stats.Name+$"\nРазмер {b.Width} × {b.Width} · Прочность {stats.Health}\n"+(b.Ready<1?$"Строительство {b.Ready*100:0}% · осталось {(1-b.Ready)*stats.BuildSeconds:0.0} с":"Готово");
-            }
-            else if(!Match.Selected&&selectedDeposit!=null)selection.text=(selectedDeposit.Gas?"ГАЗ · ПЛЕЙСХОЛДЕР":"МИНЕРАЛЫ · ПЛЕЙСХОЛДЕР")+$"\nОсталось: {selectedDeposit.Remaining}";
-            status.text=Match.Message;RefreshMinimap();
+            RefreshMinimap();hud?.Refresh();
         }
+        // Terrain, fog, deposits and buildings; the camera frame, worker, route and pins are vector overlays in the HUD.
         void RefreshMinimap()
         {
-            var pixels=new Color[4096];
+            var pixels=new Color[4096];var own=hud?.OwnColor??Color.white;
             for(int z=0;z<64;z++)for(int x=0;x<64;x++)
             {
                 float lit=Match.Visible[x,z]?1:Match.Explored[x,z]?.28f:0;
                 pixels[z*64+x]=(Match.Map.Ramp(x,z)?new Color(.65f,.5f,.25f):Match.Map.Height(x,z)>0?new Color(.35f,.55f,.43f):new Color(.3f,.34f,.26f))*lit;
             }
-            foreach(var r in Match.Map.Resources)if(Match.Explored[r.X,r.Z]&&r.Remaining>0)pixels[r.Z*64+r.X]=(r.Gas?Color.green:Color.cyan)*(Match.Visible[r.X,r.Z]?1:.3f);
-            foreach(var b in Match.Buildings)for(int z=b.Z;z<b.Z+b.Width;z++)for(int x=b.X;x<b.X+b.Width;x++)pixels[z*64+x]=Color.white;
-            pixels[(int)Match.Z*64+(int)Match.X]=Color.yellow;
-            // Project the four viewport corners onto the ground plane for the minimap frame.
-            var points=new Vector3[4];Vector2[] corners={new Vector2(0,0),new Vector2(1,0),new Vector2(1,1),new Vector2(0,1)};
-            var plane=new Plane(Vector3.up,Vector3.zero);
-            for(int i=0;i<4;i++){var ray=MapCamera.ViewportPointToRay(corners[i]);if(plane.Raycast(ray,out float d))points[i]=ray.GetPoint(d);}
-            for(int i=0;i<4;i++)for(int j=0;j<=150;j++)
-            {var p=Vector3.Lerp(points[i],points[(i+1)%4],j/150f);int x=(int)p.x,z=(int)p.z;if(x>=0&&x<64&&z>=0&&z<64)pixels[z*64+x]=new Color(.95f,.85f,.5f);}
+            foreach(var r in Match.Map.Resources)if(Match.Explored[r.X,r.Z]&&r.Remaining>0)pixels[r.Z*64+r.X]=(r.Gas?new Color(.3f,.9f,.6f):new Color(.35f,.75f,1))*(Match.Visible[r.X,r.Z]?1:.35f);
+            foreach(var b in Match.Buildings)for(int z=b.Z;z<b.Z+b.Width;z++)for(int x=b.X;x<b.X+b.Width;x++)pixels[z*64+x]=own*(b.Ready>=1?1:.6f);
             miniTexture.SetPixels(pixels);miniTexture.Apply(false);
-        }
-        VisualElement Panel(VisualElement parent)
-        {
-            var panel=new VisualElement();panel.style.backgroundColor=new Color(.035f,.065f,.075f,.97f);panel.style.paddingLeft=14;panel.style.paddingRight=14;panel.style.paddingTop=10;panel.style.paddingBottom=10;
-            panel.style.borderTopWidth=1;panel.style.borderTopColor=new Color(.35f,.49f,.46f);parent.Add(panel);return panel;
-        }
-        Button Button(VisualElement parent,string text,Action action)
-        {
-            var button=new Button(action){text=text};button.style.height=30;button.style.marginTop=4;
-            button.style.backgroundColor=new Color(.12f,.22f,.23f);button.style.color=new Color(.88f,.94f,.9f);button.style.fontSize=12;
-            parent.Add(button);return button;
         }
         void BuildUI()
         {
-            ui.Clear();ui.styleSheets.Clear();ui.style.color=new Color(.85f,.91f,.87f);ui.style.fontSize=14;
-            var top=Panel(ui);top.style.position=Position.Absolute;top.style.top=0;top.style.left=0;top.style.right=0;top.style.height=56;top.style.flexDirection=FlexDirection.Row;top.style.justifyContent=Justify.SpaceBetween;
-            resources=new Label();top.Add(resources);Button(top,"В меню",()=>onExit?.Invoke());
-            var bottom=Panel(ui);bottom.style.position=Position.Absolute;bottom.style.bottom=0;bottom.style.left=0;bottom.style.right=0;bottom.style.height=184;bottom.style.flexDirection=FlexDirection.Row;
-            miniTexture=new Texture2D(64,64,TextureFormat.RGBA32,false){filterMode=FilterMode.Point};
-            minimap=new Image{image=miniTexture,scaleMode=ScaleMode.StretchToFill};minimap.style.width=160;minimap.style.height=160;minimap.style.flexShrink=0;bottom.Add(minimap);
-            minimap.RegisterCallback<PointerDownEvent>(evt=>
-            {
-                Vector2 p=evt.localPosition;float x=Mathf.Clamp(p.x/160*64,.5f,63.5f),z=Mathf.Clamp((1-p.y/160)*64,.5f,63.5f);
-                if(evt.button==1&&Match.Selected)Match.Move(x,z);else focus=new Vector3(x,0,z);evt.StopPropagation();
-            });
-            var info=Panel(bottom);info.style.flexGrow=1;selection=new Label();selection.style.whiteSpace=WhiteSpace.Normal;info.Add(selection);
-            status=new Label();status.style.marginTop=12;info.Add(status);
-            placement=new Label();placement.style.whiteSpace=WhiteSpace.Normal;placement.style.marginTop=10;info.Add(placement);
-            var commands=Panel(bottom);commands.style.width=275;
-            commands.style.paddingTop=0;commands.style.paddingBottom=0;
-            commands.Add(new Label("СТРОИТЕЛЬСТВО · сетка 1 × 1"));
-            for(int i=0;i<2;i++){int kind=i;var b=Match.Balance.Buildings[i];Button(commands,$"{(i==0?"[B] ":"")}{b.Name} {b.Width}×{b.Width} · {b.Minerals}◆ {b.Gas}◉ · {b.BuildSeconds:0.#}с",()=>buildKind=kind);}
-            Button(commands,"К рабочему [Space]",()=>focus=new Vector3(Match.X,0,Match.Z));
-            commands.Add(new Label("WASD / стрелки · колесо — масштаб"));
+            miniTexture=new Texture2D(64,64,TextureFormat.RGBA32,false){filterMode=FilterMode.Point,wrapMode=TextureWrapMode.Clamp};
+            hud=new MatchHud(ui,this,services);
         }
+        public void SetMode(MatchMode mode,int kind=-1)
+        {
+            if(mode==MatchMode.Build&&(kind<0||kind>1))mode=MatchMode.None;
+            if((mode==MatchMode.Move||mode==MatchMode.Harvest)&&!Match.Selected)SelectWorker();
+            Mode=mode;buildKind=mode==MatchMode.Build?kind:-1;ModeHint=Hint();hud?.Refresh();
+        }
+        public void SelectWorker(){Match.Selected=true;selectedBuilding=-1;selectedDeposit=null;hud?.Refresh();}
+        public void Focus(Vector2 point)=>focus=new Vector3(Mathf.Clamp(point.x,0,64),0,Mathf.Clamp(point.y,0,64));
+        public void FocusWorker()=>focus=new Vector3(Match.X,0,Match.Z);
+        public void FocusBase()
+        {
+            var hq=Match.Buildings.Find(b=>b.Kind==2);
+            if(hq!=null)focus=new Vector3(hq.X+hq.Width*.5f,0,hq.Z+hq.Width*.5f);
+        }
+        // Order from the map or minimap in the current mode; without a mode it is a move/harvest order.
+        public void OrderTo(Vector2 point)
+        {
+            if(Mode==MatchMode.Ping){AddPin(point);return;}
+            if(Mode==MatchMode.Build){if(Match.Build((int)point.x,(int)point.y,buildKind))SetMode(MatchMode.None);return;}
+            if(Mode==MatchMode.Harvest)
+            {
+                var deposit=Match.Map.Inside((int)point.x,(int)point.y)&&Match.Explored[(int)point.x,(int)point.y]?Match.Map.ResourceAt((int)point.x,(int)point.y):null;
+                if(deposit==null){Match.Message="Укажите разведанную залежь.";return;}
+            }
+            if(!Match.Selected)SelectWorker();
+            Match.Move(point.x,point.y);SetMode(MatchMode.None);
+        }
+        public void AddPin(Vector2 point)
+        {
+            if(pins.Count>=9){pins.RemoveAt(0);Destroy(pinViews[0]);pinViews.RemoveAt(0);}
+            pins.Add(point);
+            var beacon=new GameObject("Pin");beacon.transform.SetParent(worldRoot.transform);
+            var height=Match.HeightAt(Mathf.Clamp(point.x,0,63.9f),Mathf.Clamp(point.y,0,63.9f));
+            beacon.transform.position=new Vector3(point.x,height,point.y);
+            var color=new Color(1,.42f,.24f);
+            var pillar=Primitive(PrimitiveType.Cylinder,color,Vector3.zero,new Vector3(.12f,1.6f,.12f));pillar.transform.SetParent(beacon.transform,false);pillar.transform.localPosition=new Vector3(0,1.6f,0);
+            var ring=Primitive(PrimitiveType.Cylinder,color,Vector3.zero,new Vector3(1.4f,.02f,1.4f));ring.transform.SetParent(beacon.transform,false);ring.transform.localPosition=new Vector3(0,.04f,0);
+            pinViews.Add(beacon);
+            if(Mode==MatchMode.Ping)SetMode(MatchMode.None);
+            Match.Message=$"Метка {pins.Count}: {MapGrid.Name(point.x,point.y,TempleMap.Size)}.";
+            hud?.Refresh();
+        }
+        public void ClearPins()
+        {
+            foreach(var view in pinViews)if(view!=null)Destroy(view);
+            pinViews.Clear();pins.Clear();hud?.Refresh();
+        }
+        // Camera view projected onto the ground plane, as (x, z) points for the minimap frame.
+        public Vector2[] ViewportOnGround()
+        {
+            if(MapCamera==null)return null;
+            var result=new Vector2[4];Vector2[] corners={new Vector2(0,0),new Vector2(1,0),new Vector2(1,1),new Vector2(0,1)};
+            // Project onto the terrain level under the camera focus, not y=0, so the frame matches what is on screen.
+            var plane=new Plane(Vector3.up,new Vector3(0,Match.HeightAt(Mathf.Clamp(focus.x,0,63.9f),Mathf.Clamp(focus.z,0,63.9f)),0));
+            for(int i=0;i<4;i++){var ray=MapCamera.ViewportPointToRay(corners[i]);if(!plane.Raycast(ray,out float d))return null;var p=ray.GetPoint(d);result[i]=new Vector2(p.x,p.z);}
+            return result;
+        }
+        public void Exit()=>onExit?.Invoke();
         public void Shutdown()
         {
             enabled=false;
+            hud?.Dispose();hud=null;
             if(ecsWorld!=null&&ecsWorld.IsCreated&&ecsWorld.EntityManager.Exists(matchEntity))ecsWorld.EntityManager.DestroyEntity(matchEntity);
             if(worldRoot!=null){worldRoot.SetActive(false);Destroy(worldRoot);worldRoot=null;}
             if(ground!=null){Destroy(ground);ground=null;}if(miniTexture!=null){Destroy(miniTexture);miniTexture=null;}
             foreach(var material in materials)if(material!=null)Destroy(material);
             materials.Clear();
-            buildingViews.Clear();depositViews.Clear();tileColors.Clear();Match=null;
-            ghostModel=null;ghostKind=-1;
+            buildingViews.Clear();depositViews.Clear();tileColors.Clear();pinViews.Clear();pins.Clear();Match=null;
+            ghostModel=null;ghostKind=-1;Mode=MatchMode.None;
         }
         void OnDestroy()=>Shutdown();
     }

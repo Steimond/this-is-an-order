@@ -379,6 +379,7 @@ namespace Order.Presentation
         private void Refresh()
         {
             var place = app.Screen.IsSettings() ? app.ReturnScreen : app.Screen;
+            if (place == AppScreen.TestMap) place = AppScreen.MainMenu;
             if (contextScreen != place) BuildContext(place);
             navHome.EnableInClassList("is-active", place == AppScreen.MainMenu);
             navSkirmish.EnableInClassList("is-active", place == AppScreen.MatchSetup);

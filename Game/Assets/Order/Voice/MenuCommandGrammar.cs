@@ -96,7 +96,7 @@ namespace Order.Voice
             {
                 // Without a verb only a bare screen or tab name navigates ("штаб", "графика"), not "накинь звука".
                 var verb = Is(t, OpenVerb);
-                if (verb ? Is(t, MainScreen) : Is(t, "^" + MainScreen + "$")) return Done(AppCommand.Navigate(AppScreen.MainMenu), out result);
+                if (verb ? Is(t, MainScreen) : Is(t, "^(?:в |на )?" + MainScreen + "$")) return Done(AppCommand.Navigate(AppScreen.MainMenu), out result);
                 if (verb ? Is(t, Skirmish) : Is(t, "^" + Skirmish + "$")) return Done(AppCommand.Navigate(AppScreen.MatchSetup), out result);
                 var tab = FindTab(t, !verb);
                 if (tab.HasValue) return Done(AppCommand.Navigate(tab.Value), out result);

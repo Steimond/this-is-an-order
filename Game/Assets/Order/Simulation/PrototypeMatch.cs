@@ -18,6 +18,9 @@ namespace Order.Simulation
         public readonly struct Waypoint { public readonly float X,Z; public Waypoint(float x,float z){X=x;Z=z;} }
         readonly Queue<Waypoint> route = new Queue<Waypoint>();
         public int WaypointCount=>route.Count;
+        public IEnumerable<Waypoint> Route=>route;
+        public bool Moving=>route.Count>0;
+        public ResourceDeposit HarvestTarget=>harvesting;
         ResourceDeposit harvesting;
         float visionTimer, harvestTimer;
         public PrototypeMatch(MatchBalance balance=null)
@@ -92,6 +95,7 @@ namespace Order.Simulation
             }
             harvesting=deposit;Message=deposit==null?"Приказ: движение.":"Приказ: добыча ресурса.";return true;
         }
+        public void Stop(){route.Clear();harvesting=null;Message="Приказ: стоп.";}
         public bool CanBuild(int x,int z,int kind,out string reason)
         {
             if(kind<0||kind>1){reason="Неизвестный тип здания";return false;}

@@ -1,3 +1,4 @@
+using System;
 using Order.Contracts;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -49,7 +50,11 @@ namespace Order.Presentation
         }
     }
 
-    public enum HudIconKind { Gear, Power, Mic, ChevronLeft, ChevronRight, Close, Lock, Back, Check, Grid }
+    public enum HudIconKind
+    {
+        Gear, Power, Mic, ChevronLeft, ChevronRight, Close, Lock, Back, Check, Grid,
+        Worker, Headquarters, Supply, Factory, Mineral, Gas, Move, Stop, Harvest, Pin, Base, Target, Armor, Menu, ClearPins, Train, Build
+    }
 
     public sealed class HudIcon : HudVector
     {
@@ -102,8 +107,86 @@ namespace Order.Presentation
                 case HudIconKind.Grid:
                     for (var i = 0; i < 3; i++) { var t = .2f + i * .3f; p.MoveTo(P(t, .2f)); p.LineTo(P(t, .8f)); p.MoveTo(P(.2f, t)); p.LineTo(P(.8f, t)); }
                     break;
+                case HudIconKind.Worker: Worker(p, P, size, 1); break;
+                case HudIconKind.Train:
+                    Worker(p, P, size, .8f);
+                    p.MoveTo(P(.78f, .62f)); p.LineTo(P(.78f, .9f)); p.MoveTo(P(.64f, .76f)); p.LineTo(P(.92f, .76f));
+                    break;
+                case HudIconKind.Headquarters:
+                    Shape(p, P, .14f, .84f, .86f, .84f);
+                    Shape(p, P, .2f, .84f, .2f, .5f, .36f, .4f, .36f, .24f, .64f, .24f, .64f, .4f, .8f, .5f, .8f, .84f);
+                    Shape(p, P, .5f, .24f, .5f, .1f);
+                    Shape(p, P, .44f, .84f, .44f, .66f, .56f, .66f, .56f, .84f);
+                    break;
+                case HudIconKind.Supply:
+                    Shape(p, P, .22f, .3f, .78f, .3f, .78f, .84f, .22f, .84f, .22f, .3f);
+                    Shape(p, P, .4f, .3f, .4f, .2f, .6f, .2f, .6f, .3f);
+                    Shape(p, P, .34f, .5f, .66f, .5f); Shape(p, P, .34f, .66f, .66f, .66f);
+                    break;
+                case HudIconKind.Factory:
+                    Shape(p, P, .12f, .84f, .88f, .84f);
+                    Shape(p, P, .16f, .84f, .16f, .46f, .34f, .58f, .34f, .46f, .52f, .58f, .52f, .46f, .7f, .58f, .7f, .2f, .84f, .2f, .84f, .84f);
+                    break;
+                case HudIconKind.Mineral:
+                    Shape(p, P, .5f, .12f, .68f, .46f, .5f, .88f, .32f, .46f, .5f, .12f);
+                    Shape(p, P, .5f, .12f, .5f, .88f);
+                    Shape(p, P, .26f, .4f, .16f, .62f, .28f, .8f);
+                    Shape(p, P, .74f, .4f, .84f, .62f, .72f, .8f);
+                    break;
+                case HudIconKind.Gas:
+                    Shape(p, P, .3f, .38f, .3f, .84f, .7f, .84f, .7f, .38f, .3f, .38f);
+                    Shape(p, P, .3f, .56f, .7f, .56f);
+                    p.MoveTo(P(.36f, .26f)); p.BezierCurveTo(P(.42f, .12f), P(.52f, .3f), P(.6f, .14f));
+                    break;
+                case HudIconKind.Move: Shape(p, P, .18f, .5f, .8f, .5f); Shape(p, P, .58f, .28f, .8f, .5f, .58f, .72f); break;
+                case HudIconKind.Stop:
+                    Shape(p, P, .28f, .28f, .72f, .28f, .72f, .72f, .28f, .72f, .28f, .28f);
+                    p.fillColor = HudPaint.Alpha(Stroke, .25f); p.Fill();
+                    break;
+                case HudIconKind.Harvest:
+                    Shape(p, P, .5f, .1f, .64f, .3f, .5f, .5f, .36f, .3f, .5f, .1f);
+                    Shape(p, P, .5f, .5f, .5f, .7f); Shape(p, P, .4f, .62f, .5f, .72f, .6f, .62f);
+                    Shape(p, P, .18f, .66f, .18f, .86f, .82f, .86f, .82f, .66f);
+                    break;
+                case HudIconKind.Pin:
+                case HudIconKind.ClearPins:
+                    p.MoveTo(P(.5f, .88f)); p.LineTo(HudPaint.Polar(P(.5f, .38f), size * .24f, 150));
+                    p.Arc(P(.5f, .38f), size * .24f, Angle.Degrees(150), Angle.Degrees(390)); p.ClosePath();
+                    HudPaint.Circle(p, P(.5f, .38f), size * .07f);
+                    if (kind == HudIconKind.ClearPins) { p.MoveTo(P(.16f, .16f)); p.LineTo(P(.84f, .84f)); }
+                    break;
+                case HudIconKind.Base:
+                    Shape(p, P, .14f, .5f, .5f, .18f, .86f, .5f);
+                    Shape(p, P, .26f, .42f, .26f, .84f, .74f, .84f, .74f, .42f);
+                    Shape(p, P, .44f, .84f, .44f, .64f, .56f, .64f, .56f, .84f);
+                    break;
+                case HudIconKind.Target:
+                    HudPaint.Circle(p, center, size * .24f);
+                    Shape(p, P, .5f, .08f, .5f, .3f); Shape(p, P, .5f, .7f, .5f, .92f); Shape(p, P, .08f, .5f, .3f, .5f); Shape(p, P, .7f, .5f, .92f, .5f);
+                    break;
+                case HudIconKind.Armor: Shape(p, P, .5f, .12f, .82f, .26f, .78f, .6f, .5f, .88f, .22f, .6f, .18f, .26f, .5f, .12f); break;
+                case HudIconKind.Build:
+                    Shape(p, P, .42f, .38f, .62f, .16f, .86f, .38f, .66f, .6f, .42f, .38f);
+                    Shape(p, P, .54f, .49f, .16f, .86f);
+                    break;
+                case HudIconKind.Menu: Shape(p, P, .22f, .3f, .78f, .3f); Shape(p, P, .22f, .5f, .78f, .5f); Shape(p, P, .22f, .7f, .78f, .7f); break;
             }
             p.Stroke();
+        }
+
+        // Polyline through (x, y) pairs in unit space.
+        private static void Shape(Painter2D p, Func<float, float, Vector2> point, params float[] xy)
+        {
+            p.MoveTo(point(xy[0], xy[1]));
+            for (var i = 2; i + 1 < xy.Length; i += 2) p.LineTo(point(xy[i], xy[i + 1]));
+        }
+
+        private static void Worker(Painter2D p, Func<float, float, Vector2> point, float size, float scale)
+        {
+            Vector2 S(float x, float y) => point(.5f + (x - .5f) * scale, .5f + (y - .5f) * scale);
+            HudPaint.Circle(p, S(.5f, .3f), size * .15f * scale);
+            Shape(p, S, .28f, .86f, .34f, .56f, .66f, .56f, .72f, .86f);
+            Shape(p, S, .41f, .3f, .59f, .3f);
         }
     }
 

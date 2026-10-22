@@ -492,3 +492,52 @@ namespace Order.Presentation
         }
     }
 }
+
+namespace Order.Presentation
+{
+    // Labelled value bar (health, shields, energy, progress). Colour comes from the --hud-* token of its kind.
+    public sealed class HudBar : VisualElement
+    {
+        private readonly VisualElement fill;
+        private readonly Label value;
+
+        public HudBar(string caption, string kind, int segments = 10)
+        {
+            AddToClassList("hud-bar"); AddToClassList("hud-bar--" + kind);
+            pickingMode = PickingMode.Ignore;
+            Add(Hud.Text(caption, "hud-bar__caption"));
+            var track = Hud.Box("hud-bar__track"); track.pickingMode = PickingMode.Ignore;
+            fill = Hud.Box("hud-bar__fill"); fill.pickingMode = PickingMode.Ignore;
+            track.Add(fill);
+            var ticks = new HudTicks(segments); ticks.AddToClassList("hud-bar__ticks");
+            track.Add(ticks);
+            Add(track);
+            value = Hud.Text("", "hud-bar__value");
+            Add(value);
+        }
+
+        public void Set(float current, float maximum, string text = null)
+        {
+            var t = maximum > 0 ? Mathf.Clamp01(current / maximum) : 0;
+            fill.style.width = Length.Percent(t * 100);
+            value.text = text ?? $"{Mathf.CeilToInt(current)} / {Mathf.CeilToInt(maximum)}";
+        }
+    }
+
+    public static class HudCommandCard
+    {
+        // Square command button: icon, hotkey corner and lock overlay for unavailable actions.
+        public static Button Create(HudIconKind icon, string hotkey, Action action)
+        {
+            var button = Hud.Strip(new Button(action), "hud-button");
+            button.AddToClassList("hud-command");
+            Hud.Dress(button, 7);
+            var glyph = new HudIcon(icon); glyph.AddToClassList("hud-command__icon");
+            button.Add(glyph);
+            button.Add(Hud.Text(hotkey ?? "", "hud-command__key"));
+            var locked = new HudIcon(HudIconKind.Lock); locked.AddToClassList("hud-command__lock");
+            button.Add(locked);
+            return button;
+        }
+    }
+}

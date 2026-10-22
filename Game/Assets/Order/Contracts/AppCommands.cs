@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Order.Contracts
 {
     // Settings screens are tabs of one options window; new values are appended to keep stored ids stable.
-    public enum AppScreen { MainMenu, AudioSettings, MatchSetup, GameSettings, ControlsSettings, GraphicsSettings, VoiceSettings, InterfaceSettings }
+    public enum AppScreen { MainMenu, AudioSettings, MatchSetup, GameSettings, ControlsSettings, GraphicsSettings, VoiceSettings, InterfaceSettings, TestMap }
     public enum FactionId { Expedition, Resonance }
     public enum AppCommandKind
     {
@@ -18,7 +18,8 @@ namespace Order.Contracts
 
     public static class AppScreens
     {
-        public static bool IsSettings(this AppScreen screen) => screen == AppScreen.AudioSettings || screen >= AppScreen.GameSettings;
+        public static bool IsSettings(this AppScreen screen) =>
+            screen == AppScreen.AudioSettings || (screen >= AppScreen.GameSettings && screen <= AppScreen.InterfaceSettings);
     }
 
     public readonly struct CommandContext
