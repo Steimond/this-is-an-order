@@ -54,7 +54,7 @@ namespace Order.Presentation
     {
         Gear, Power, Mic, ChevronLeft, ChevronRight, Close, Lock, Back, Check, Grid,
         Worker, Headquarters, Supply, Factory, Mineral, Gas, Move, Stop, Harvest, Pin, Base, Target, Armor, Menu, ClearPins, Train, Build,
-        Assault, Rifleman, Gunship
+        Assault, Rifleman, Gunship, Hold
     }
 
     public sealed class HudIcon : HudVector
@@ -171,6 +171,11 @@ namespace Order.Presentation
                     Shape(p, P, .54f, .49f, .16f, .86f);
                     break;
                 case HudIconKind.Menu: Shape(p, P, .22f, .3f, .78f, .3f); Shape(p, P, .22f, .5f, .78f, .5f); Shape(p, P, .22f, .7f, .78f, .7f); break;
+                case HudIconKind.Hold:
+                    // Pinned to the ground: an arrow down onto a bar.
+                    Shape(p, P, .5f, .14f, .5f, .64f); Shape(p, P, .32f, .46f, .5f, .64f, .68f, .46f);
+                    Shape(p, P, .18f, .8f, .82f, .8f); Shape(p, P, .3f, .8f, .24f, .9f); Shape(p, P, .5f, .8f, .44f, .9f); Shape(p, P, .7f, .8f, .64f, .9f);
+                    break;
                 case HudIconKind.Assault:
                     // Shield and blade.
                     Shape(p, P, .16f, .26f, .46f, .18f, .46f, .6f, .31f, .82f, .16f, .6f, .16f, .26f);

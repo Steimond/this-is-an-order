@@ -19,3 +19,10 @@ MonoBehaviour:
   Vision: 9
   HarvestAmount: 8
   HarvestInterval: 1
+  Supply: 1
+  Flying: 0
+  Damage: 0
+  AttackRange: 0
+  AttackCooldown: 1
+  HitsGround: 1
+  HitsAir: 0

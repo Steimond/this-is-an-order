@@ -51,8 +51,14 @@ namespace Order.Presentation
         readonly Dictionary<UnitKind, UnitModel> unitModels = new Dictionary<UnitKind, UnitModel>();
         readonly Mesh[] buildingMeshes = new Mesh[3];
         Mesh ringMesh, beaconMesh, shadowMesh, selectionMesh, markerMesh;
-        Material buildingMaterial, ghostMaterial, footprintMaterial, selectedMaterial, neutralMaterial, constructionMaterial, beaconMaterial, unitMaterial, beamMaterial, shadowMaterial,
-            unitRingMaterial, hoverRingMaterial, markerMaterial;
+        Material buildingMaterial, ghostMaterial, footprintMaterial, selectedMaterial, neutralMaterial, constructionMaterial, beaconMaterial, unitMaterial, enemyMaterial, beamMaterial, shadowMaterial,
+            unitRingMaterial, hoverRingMaterial, enemyRingMaterial, enemyHoverMaterial, markerMaterial;
+        // Enemy team colour on models and the minimap.
+        public static readonly Color EnemyColor = new Color(.92f, .16f, .12f);
+        CombatEffects combat;
+        // Strikes and deaths reported by the simulation, shown on the next frame.
+        readonly List<(PrototypeUnit attacker, PrototypeUnit target)> strikes = new List<(PrototypeUnit, PrototypeUnit)>();
+        readonly List<PrototypeUnit> deaths = new List<PrototypeUnit>();
         Entity matchEntity;
         World ecsWorld;
         Vector3 focus = new Vector3(13,0,13);
@@ -93,6 +99,7 @@ namespace Order.Presentation
             buildingMaterial=scenery.Prop("Buildings",m=>{m.SetFloat("_Panels",1);m.SetFloat("_Gloss",.35f);});
             ghostMaterial=scenery.Prop("Placement ghost",m=>{m.SetFloat("_Opacity",.38f);m.SetFloat("_ZWrite",0);m.SetFloat("_Fog",0);m.renderQueue=3000;});
             unitMaterial=scenery.Prop("Units",m=>{m.SetFloat("_Fog",0);m.SetFloat("_Gloss",.45f);});
+            enemyMaterial=scenery.Prop("Enemy units",m=>{m.SetFloat("_Fog",0);m.SetFloat("_Gloss",.45f);m.SetColor("_TeamColor",EnemyColor);m.SetFloat("_TeamOverride",1);});
             var crystalMaterial=scenery.Prop("Crystals",m=>{m.SetFloat("_Rim",1.1f);m.SetFloat("_Gloss",.9f);m.SetFloat("_Emission",2.2f);});
             var ventMaterial=scenery.Prop("Gas vents");
             footprintMaterial=scenery.Glow("Placement footprint",Color.green,false,m=>m.SetFloat("_Grid",1));
@@ -117,11 +124,15 @@ namespace Order.Presentation
             // StarCraft-like green circles under selected units, a faint one under the hovered unit, and order markers.
             unitRingMaterial=scenery.Glow("Selected unit",new Color(.3f,1.5f,.45f,.95f),false);
             hoverRingMaterial=scenery.Glow("Hovered unit",new Color(.85f,1,.9f,.5f),false);
+            enemyRingMaterial=scenery.Glow("Selected enemy",new Color(1.6f,.3f,.24f,.95f),false);
+            enemyHoverMaterial=scenery.Glow("Hovered enemy",new Color(1,.55f,.5f,.55f),false);
             markerMaterial=scenery.Glow("Order marker",Color.white,false);
             selectionMesh=scenery.Own(MatchModels.SelectionRing());markerMesh=scenery.Own(MatchModels.MoveMarker());
             markerColor=new MaterialPropertyBlock();
             focusRing=scenery.Model("Selection",ringMesh,selectedMaterial,worldRoot.transform,false);
-            Match.AddTestSquad();SelectWorker();
+            combat=new CombatEffects(scenery,worldRoot.transform,MapCamera,shadowMesh,ringMesh);
+            Match.Attacked+=(attacker,target)=>strikes.Add((attacker,target));Match.Died+=deaths.Add;
+            Match.AddTestSquad();Match.AddEnemySquad();SelectWorker();
             var square=new MeshBuilder();square.Quad(new Vector3(-.5f,0,-.5f),new Vector3(-.5f,0,.5f),new Vector3(.5f,0,.5f),new Vector3(.5f,0,-.5f));
             footprint=scenery.Model("Placement footprint",scenery.Own(square.ToMesh("Footprint")),footprintMaterial,worldRoot.transform,false);footprint.SetActive(false);
             UpdateCamera();RefreshWorld();
@@ -163,11 +174,17 @@ namespace Order.Presentation
                 if(hasHover)
                 {
                     hoverX=Mathf.FloorToInt(point.x);hoverZ=Mathf.FloorToInt(point.y);
-                    if(mouse.rightButton.wasPressedThisFrame){if(Mode!=MatchMode.None)SetMode(MatchMode.None);else MoveSelection(point);}
+                    // Right click on a visible enemy attacks it, anywhere else moves; in a targeting mode it cancels the mode.
+                    if(mouse.rightButton.wasPressedThisFrame)
+                    {
+                        if(Mode!=MatchMode.None)SetMode(MatchMode.None);
+                        else{var enemy=EnemyAt(p);if(enemy!=null&&selection.Own)AttackSelection(enemy);else MoveSelection(point);}
+                    }
                     if(mouse.leftButton.wasPressedThisFrame)
                     {
                         if(keys!=null&&keys.altKey.isPressed)AddPin(point);
                         else if(Mode==MatchMode.Build){if(Match.Build(hoverX,hoverZ,buildKind))SetMode(MatchMode.None);}
+                        else if(Mode==MatchMode.Attack){var enemy=EnemyAt(p);if(enemy!=null){AttackSelection(enemy);SetMode(MatchMode.None);}else OrderTo(point);}
                         else if(Mode!=MatchMode.None)OrderTo(point);
                         else{pressing=true;dragStart=p;}
                     }
@@ -194,10 +211,12 @@ namespace Order.Presentation
             zoom=Mathf.Lerp(zoom,targetZoom,1-Mathf.Exp(-Time.deltaTime*12));
             focusHeight=Mathf.Lerp(focusHeight,Match.HeightAt(Mathf.Clamp(focus.x,0,63.9f),Mathf.Clamp(focus.z,0,63.9f)),1-Mathf.Exp(-Time.deltaTime*4));
             UpdateCamera();
+            ShowCombat();
             AnimateUnits();
             UpdateSelectionRings();
             UpdateFocusRing();
             AnimateMarkers();
+            combat.Tick(Time.deltaTime);
             footprint.SetActive(Mode==MatchMode.Build&&hasHover);
             if(footprint.activeSelf)
             {
@@ -225,7 +244,8 @@ namespace Order.Presentation
             public Transform[] Legs, Rotors;
             public UnitModel Model;
             public LineRenderer Beam;
-            public float Phase, Height;
+            // Kick runs from 1 to 0 after a strike: a melee lunge or a recoil.
+            public float Phase, Height, Kick;
         }
         UnitView CreateUnitView(PrototypeUnit unit)
         {
@@ -236,23 +256,28 @@ namespace Order.Presentation
             }
             var view=new UnitView{Model=model,Root=new GameObject(unit.Stats.Name+" #"+unit.Id),Height=Match.HeightAt(unit.X,unit.Z)};
             view.Root.transform.SetParent(worldRoot.transform);view.Root.transform.localScale=Vector3.one*model.Scale;
-            view.Root.transform.SetPositionAndRotation(new Vector3(unit.X,view.Height,unit.Z),Quaternion.Euler(0,180,0));
-            view.Body=scenery.Model("Body",model.Body,unitMaterial,view.Root.transform).transform;view.Body.localPosition=Vector3.up*model.Hover;
+            // Enemies start facing south-west, toward the player's base.
+            view.Root.transform.SetPositionAndRotation(new Vector3(unit.X,view.Height,unit.Z),Quaternion.Euler(0,unit.Owner==PrototypeMatch.Player?180:225,0));
+            var material=unit.Owner==PrototypeMatch.Player?unitMaterial:enemyMaterial;
+            view.Body=scenery.Model("Body",model.Body,material,view.Root.transform).transform;view.Body.localPosition=Vector3.up*model.Hover;
             view.Legs=new Transform[model.Hips.Length];
-            for(int i=0;i<view.Legs.Length;i++){view.Legs[i]=scenery.Model("Leg",model.Leg,unitMaterial,view.Body).transform;view.Legs[i].localPosition=model.Hips[i];}
+            for(int i=0;i<view.Legs.Length;i++){view.Legs[i]=scenery.Model("Leg",model.Leg,material,view.Body).transform;view.Legs[i].localPosition=model.Hips[i];}
             view.Rotors=new Transform[model.Rotors.Length];
-            for(int i=0;i<view.Rotors.Length;i++){view.Rotors[i]=scenery.Model("Rotor",model.Rotor,unitMaterial,view.Body).transform;view.Rotors[i].localPosition=model.Rotors[i];}
+            for(int i=0;i<view.Rotors.Length;i++){view.Rotors[i]=scenery.Model("Rotor",model.Rotor,material,view.Body).transform;view.Rotors[i].localPosition=model.Rotors[i];}
             if(unit.Stats.Flying){view.Shadow=scenery.Model("Shadow",shadowMesh,shadowMaterial,worldRoot.transform,false).transform;view.Shadow.localScale=Vector3.one*unit.Stats.Radius*3.2f;}
             return view;
         }
         // Walkers swing their legs with the distance covered, air units hover and bank with spinning rotors, the drone floats.
-        // Units turn toward their movement; a harvesting worker faces its deposit and draws a beam.
+        // Units turn toward their movement or their target; a harvesting worker faces its deposit and draws a beam.
+        // Enemies out of sight are hidden. Damaged, selected and hovered units show a health bar.
         void AnimateUnits()
         {
             float dt=Time.deltaTime,time=Time.time;
             foreach(var unit in Match.Units)
             {
                 if(!unitViews.TryGetValue(unit.Id,out var view))unitViews[unit.Id]=view=CreateUnitView(unit);
+                bool seen=Match.SeenBy(PrototypeMatch.Player,unit);
+                if(view.Root.activeSelf!=seen){view.Root.SetActive(seen);if(view.Shadow!=null)view.Shadow.gameObject.SetActive(seen);}
                 float ground=Match.HeightAt(unit.X,unit.Z);
                 if(unit.Stats.Flying)
                 {
@@ -271,6 +296,7 @@ namespace Order.Presentation
                 if(mining){direction=deposit-position;direction.y=0;}
                 // A moving unit faces its next waypoint, so shoves do not twist it; a shoved idle unit keeps its facing.
                 if(unit.Moving&&!mining)foreach(var next in unit.Route){direction=new Vector3(next.X-unit.X,0,next.Z-unit.Z);break;}
+                else if(unit.Target!=null)direction=new Vector3(unit.Target.X-unit.X,0,unit.Target.Z-unit.Z);
                 else if(!mining)direction=Vector3.zero;
                 if(direction.sqrMagnitude>.0001f)root.rotation=Quaternion.Slerp(root.rotation,Quaternion.LookRotation(direction),dt*10);
                 root.position=position;
@@ -292,6 +318,13 @@ namespace Order.Presentation
                     view.Body.localPosition=Vector3.up*(view.Model.Hover+bob);
                     view.Body.localRotation=Quaternion.Slerp(view.Body.localRotation,Quaternion.Euler(moving?(unit.Stats.Flying?9:12):0,0,0),dt*6);
                 }
+                if(view.Kick>0)
+                {
+                    // Melee lunges into the blow, ranged weapons recoil.
+                    float kick=unit.Stats.AttackRange<1?Mathf.Sin(view.Kick*Mathf.PI)*.24f:-view.Kick*.07f;
+                    view.Body.localPosition+=Vector3.forward*kick/view.Model.Scale;
+                    view.Kick=Mathf.Max(0,view.Kick-dt*(unit.Stats.AttackRange<1?5:9));
+                }
                 for(int i=0;i<view.Rotors.Length;i++)view.Rotors[i].localRotation=Quaternion.Euler(0,time*1300*(i%2==0?1:-1)+i*40,0);
                 if(view.Shadow!=null)view.Shadow.position=new Vector3(unit.X,ground+.06f,unit.Z);
                 if(mining&&view.Beam==null)
@@ -307,7 +340,10 @@ namespace Order.Presentation
                     view.Beam.SetPosition(1,deposit+Vector3.up*(target.Gas?.25f:.55f)+jitter);
                     view.Beam.widthMultiplier=.05f+.015f*Mathf.Sin(time*40);
                 }
+                if(seen&&(unit.Health<unit.Stats.Health||selection.Contains(unit)||hovered.Contains(unit)))
+                    combat.Bar(Top(unit,view)+Vector3.up*.22f,Mathf.Max(.62f,unit.Stats.Radius*2.3f),unit.Health/(float)unit.Stats.Health);
             }
+            combat.EndBars();
             if(unitViews.Count>Match.Units.Count)
             {
                 foreach(var id in new List<int>(unitViews.Keys))
@@ -347,15 +383,15 @@ namespace Order.Presentation
         void UpdateSelectionRings()
         {
             int shown=0,hints=0;
-            foreach(var unit in selection.Units)Ring(selectionRings,shown++,unit,unitRingMaterial,1);
-            foreach(var unit in hovered)if(!selection.Contains(unit))Ring(hoverRings,hints++,unit,hoverRingMaterial,1.06f);
+            foreach(var unit in selection.Units)Ring(selectionRings,shown++,unit,unit.Owner==PrototypeMatch.Player?unitRingMaterial:enemyRingMaterial,1);
+            foreach(var unit in hovered)if(!selection.Contains(unit))Ring(hoverRings,hints++,unit,unit.Owner==PrototypeMatch.Player?hoverRingMaterial:enemyHoverMaterial,1.06f);
             for(int i=shown;i<selectionRings.Count;i++)selectionRings[i].SetActive(false);
             for(int i=hints;i<hoverRings.Count;i++)hoverRings[i].SetActive(false);
         }
         void Ring(List<GameObject> pool,int index,PrototypeUnit unit,Material material,float scale)
         {
             while(pool.Count<=index)pool.Add(scenery.Model("Selection circle",selectionMesh,material,worldRoot.transform,false));
-            var ring=pool[index];ring.SetActive(true);
+            var ring=pool[index];ring.SetActive(true);ring.GetComponent<MeshRenderer>().sharedMaterial=material;
             float y;Quaternion tilt;
             if(unit.Stats.Flying&&unitViews.TryGetValue(unit.Id,out var view)){y=view.Body.position.y-.3f;tilt=Quaternion.identity;}
             else{y=Match.HeightAt(unit.X,unit.Z)+.03f;tilt=Quaternion.FromToRotation(Vector3.up,GroundNormal(unit.X,unit.Z));}
@@ -404,7 +440,8 @@ namespace Order.Presentation
         bool ScreenAxis(PrototypeUnit unit,out Vector2 a,out Vector2 b,out float reach)
         {
             a=b=default;reach=0;
-            if(!unitViews.TryGetValue(unit.Id,out var view))return false;
+            // Enemies hidden in the fog cannot be picked.
+            if(!unitViews.TryGetValue(unit.Id,out var view)||!view.Root.activeSelf)return false;
             var model=view.Model;var foot=view.Root.transform.position;
             var low=model.Hover>0?view.Body.position+Vector3.down*.25f:foot+Vector3.up*.1f*model.Scale;
             var high=model.Hover>0?view.Body.position+Vector3.up*.25f:foot+Vector3.up*model.Height*model.Scale;
@@ -423,6 +460,32 @@ namespace Order.Presentation
                 if(distance<reach&&distance<bestDistance){best=unit;bestDistance=distance;}
             }
             return best;
+        }
+        PrototypeUnit EnemyAt(Vector2 screen){var unit=UnitAt(screen);return unit!=null&&unit.Owner!=PrototypeMatch.Player?unit:null;}
+        // Points on a unit's model: the top (health bar), the middle (where hits land) and the muzzle of a ground unit.
+        static Vector3 Top(PrototypeUnit unit,UnitView view)=>unit.Stats.Flying?view.Body.position+Vector3.up*.35f:view.Root.transform.position+Vector3.up*view.Model.Height*view.Model.Scale;
+        static Vector3 Center(PrototypeUnit unit,UnitView view)=>unit.Stats.Flying?view.Body.position:view.Root.transform.position+Vector3.up*view.Model.Height*view.Model.Scale*.5f;
+        static Vector3 Muzzle(PrototypeUnit unit,UnitView view)=>view.Root.transform.position+Vector3.up*view.Model.Height*view.Model.Scale*.6f+view.Root.transform.forward*(unit.Stats.Radius+.12f);
+        // Strikes and deaths from the last simulation steps, shown where the player can see them: a rifleman fires a tracer,
+        // the gunship a pair from its wings, an assault unit slashes; a dead unit explodes and leaves a scorch mark.
+        void ShowCombat()
+        {
+            foreach(var (attacker,target) in strikes)
+            {
+                if(!unitViews.TryGetValue(attacker.Id,out var a)||!unitViews.TryGetValue(target.Id,out var t))continue;
+                if(!Match.SeenBy(PrototypeMatch.Player,attacker)&&!Match.SeenBy(PrototypeMatch.Player,target))continue;
+                a.Kick=1;
+                var hit=Center(target,t)+UnityEngine.Random.insideUnitSphere*target.Stats.Radius*.4f;
+                if(attacker.Stats.AttackRange<1)combat.Slash(hit,hit-Center(attacker,a),new Color(.75f,.9f,1));
+                else if(attacker.Stats.Flying)
+                    for(int side=-1;side<=1;side+=2)combat.Tracer(a.Body.TransformPoint(new Vector3(side*.34f,-.1f,.32f)),hit+a.Body.right*side*.12f,new Color(1,.6f,.28f),.06f);
+                else combat.Tracer(Muzzle(attacker,a),hit,new Color(1,.86f,.5f));
+            }
+            strikes.Clear();
+            foreach(var unit in deaths)
+                if(unitViews.TryGetValue(unit.Id,out var view)&&Match.SeenBy(PrototypeMatch.Player,unit))
+                    combat.Explosion(Center(unit,view),Match.HeightAt(unit.X,unit.Z),unit.Stats.Flying?1.3f:Mathf.Max(1,unit.Stats.Radius*2.6f));
+            deaths.Clear();
         }
         // A unit is inside the box when any of its feet, middle or top is.
         void UnitsIn(Rect box,List<PrototypeUnit> result)
@@ -462,34 +525,47 @@ namespace Order.Presentation
         public void SelectKind(UnitKind kind)=>SelectUnits(u=>u.Kind==kind);
         void SelectUnits(Predicate<PrototypeUnit> filter)
         {
-            var units=Match.Units.FindAll(filter);if(units.Count==0)return;
+            var units=Match.Units.FindAll(u=>u.Owner==PrototypeMatch.Player&&filter(u));if(units.Count==0)return;
             selection.Set(units);selectedBuilding=-1;selectedDeposit=null;hud?.Refresh();
         }
         // The next worker with no order after the one selected now; the camera follows it.
         void SelectIdleWorker()
         {
-            var idle=Match.Units.FindAll(u=>u.Kind==UnitKind.Worker&&!u.Moving&&u.HarvestTarget==null);
+            var idle=Match.Units.FindAll(u=>u.Owner==PrototypeMatch.Player&&u.Kind==UnitKind.Worker&&!u.Moving&&u.HarvestTarget==null);
             if(idle.Count==0){Match.Message="Нет свободных рабочих.";hud?.Refresh();return;}
             int current=selection.Count==1?idle.IndexOf(selection.Units[0]):-1;
             selection.Set(new[]{idle[(current+1)%idle.Count]});selectedBuilding=-1;selectedDeposit=null;
             FocusSelection();hud?.Refresh();
         }
-        // Order marker on the ground: arrows converge on the point and fade; red when no unit could take the order.
-        sealed class Marker{public GameObject View;public float Start;public Color Color;}
-        void Mark(Vector2 point,bool ok)
+        // Order marker on the ground: arrows converge on the point and fade; orange for an attack-move, red when no unit
+        // could take the order. An attacked unit flashes a red circle that closes in on it.
+        sealed class Marker{public GameObject View;public float Start;public Color Color;public PrototypeUnit Unit;}
+        static readonly Color MoveMark=new Color(.35f,1.6f,.5f,1),AttackMark=new Color(1.9f,.55f,.2f,1),FailMark=new Color(1.6f,.3f,.25f,1);
+        void Mark(Vector2 point,bool ok,bool attack=false)
         {
             var view=scenery.Model("Order marker",markerMesh,markerMaterial,worldRoot.transform,false);
             float x=Mathf.Clamp(point.x,0,63.99f),z=Mathf.Clamp(point.y,0,63.99f);
             view.transform.SetPositionAndRotation(new Vector3(point.x,Match.HeightAt(x,z)+.04f,point.y),Quaternion.FromToRotation(Vector3.up,GroundNormal(x,z)));
-            markers.Add(new Marker{View=view,Start=Time.time,Color=ok?new Color(.35f,1.6f,.5f,1):new Color(1.6f,.3f,.25f,1)});
+            markers.Add(new Marker{View=view,Start=Time.time,Color=!ok?FailMark:attack?AttackMark:MoveMark});
+        }
+        void MarkTarget(PrototypeUnit unit)
+        {
+            var view=scenery.Model("Target marker",selectionMesh,markerMaterial,worldRoot.transform,false);
+            markers.Add(new Marker{View=view,Start=Time.time,Color=FailMark,Unit=unit});
         }
         void AnimateMarkers()
         {
             for(int i=markers.Count-1;i>=0;i--)
             {
                 var marker=markers[i];float t=(Time.time-marker.Start)/.6f;
-                if(t>=1){Destroy(marker.View);markers.RemoveAt(i);continue;}
-                marker.View.transform.localScale=Vector3.one*Mathf.Lerp(1.3f,.55f,Mathf.Sqrt(t));
+                if(t>=1||(marker.Unit!=null&&!marker.Unit.Alive)){Destroy(marker.View);markers.RemoveAt(i);continue;}
+                if(marker.Unit!=null)
+                {
+                    var unit=marker.Unit;float y=unit.Stats.Flying&&unitViews.TryGetValue(unit.Id,out var view)?view.Body.position.y-.3f:Match.HeightAt(unit.X,unit.Z)+.05f;
+                    marker.View.transform.position=new Vector3(unit.X,y,unit.Z);
+                    marker.View.transform.localScale=Vector3.one*(unit.Stats.Radius+.16f)*Mathf.Lerp(1.9f,1.05f,Mathf.Sqrt(t));
+                }
+                else marker.View.transform.localScale=Vector3.one*Mathf.Lerp(1.3f,.55f,Mathf.Sqrt(t));
                 var color=marker.Color;color.a=1-Mathf.SmoothStep(.35f,1,t);
                 markerColor.SetColor("_Color",color);marker.View.GetComponent<MeshRenderer>().SetPropertyBlock(markerColor);
             }
@@ -524,7 +600,9 @@ namespace Order.Presentation
         // "Скорость камеры" 0–100 maps to 0.4–1.6 of the base speed; 50 keeps the original pace.
         float CameraSpeed()=>.4f+Option("controls.cameraSpeed",50)/100f*1.2f;
         string Hint()=>Mode==MatchMode.Build?"Укажите место на карте · ПКМ / Esc — отмена":Mode==MatchMode.Move?"Движение: ЛКМ — точка на карте или миникарте · ПКМ / Esc — отмена"
-            :Mode==MatchMode.Harvest?"Добыча: ЛКМ — разведанная залежь · ПКМ / Esc — отмена":Mode==MatchMode.Ping?"Метка: ЛКМ — место на карте или миникарте · Alt+ЛКМ — всегда":"";
+            :Mode==MatchMode.Harvest?"Добыча: ЛКМ — разведанная залежь · ПКМ / Esc — отмена"
+            :Mode==MatchMode.Attack?"Атака: ЛКМ — враг или точка (атака с движением) · ПКМ / Esc — отмена"
+            :Mode==MatchMode.Ping?"Метка: ЛКМ — место на карте или миникарте · Alt+ЛКМ — всегда":"";
         // Zooming in lowers the camera toward the horizon, as in StarCraft; it follows the terrain height smoothly.
         // The focus sits in the middle of the view left free by the HUD deck, not in the middle of the screen.
         void UpdateCamera()
@@ -590,18 +668,20 @@ namespace Order.Presentation
         public void SetMode(MatchMode mode,int kind=-1)
         {
             if(mode==MatchMode.Build&&(kind<0||kind>1))mode=MatchMode.None;
-            if((mode==MatchMode.Move&&selection.Count==0)||(mode==MatchMode.Harvest&&!HasHarvester()))SelectWorker();
+            if(mode==MatchMode.Attack&&!HasFighter()){Match.Message="Выбранные юниты не атакуют.";mode=MatchMode.None;}
+            if((mode==MatchMode.Move&&!selection.Own)||(mode==MatchMode.Harvest&&!HasHarvester()))SelectWorker();
             Mode=mode;buildKind=mode==MatchMode.Build?kind:-1;ModeHint=Hint();hud?.Refresh();
         }
-        bool HasHarvester(){foreach(var u in selection.Units)if(u.Stats.HarvestAmount>0)return true;return false;}
+        bool HasHarvester(){foreach(var u in selection.Orderable)if(u.Stats.HarvestAmount>0)return true;return false;}
+        bool HasFighter(){foreach(var u in selection.Orderable)if(u.Stats.Damage>0)return true;return false;}
         public void SelectWorker()
         {
-            var worker=Match.Units.Find(u=>u.Kind==UnitKind.Worker);
+            var worker=Match.Units.Find(u=>u.Owner==PrototypeMatch.Player&&u.Kind==UnitKind.Worker);
             if(worker!=null)selection.Set(new[]{worker});else selection.Clear();
             selectedBuilding=-1;selectedDeposit=null;hud?.Refresh();
         }
         public void Focus(Vector2 point)=>focus=new Vector3(Mathf.Clamp(point.x,0,64),0,Mathf.Clamp(point.y,0,64));
-        public void FocusWorker(){var worker=Match.Units.Find(u=>u.Kind==UnitKind.Worker);if(worker!=null)focus=new Vector3(worker.X,0,worker.Z);}
+        public void FocusWorker(){var worker=Match.Units.Find(u=>u.Owner==PrototypeMatch.Player&&u.Kind==UnitKind.Worker);if(worker!=null)focus=new Vector3(worker.X,0,worker.Z);}
         // Camera to the middle of the selected units; without a selection, to the worker.
         public void FocusSelection()
         {
@@ -613,14 +693,32 @@ namespace Order.Presentation
         // the rest walk up to it. The marker sits on the point, or on the deposit when the order targets one.
         public bool MoveSelection(Vector2 point)
         {
-            if(selection.Count==0)return false;
-            bool any=Match.MoveGroup(selection.Units,point.x,point.y);
+            var units=selection.Orderable;if(units.Count==0)return false;
+            bool any=Match.MoveGroup(units,point.x,point.y);
             int cx=(int)point.x,cz=(int)point.y;
             var deposit=Match.Map.Inside(cx,cz)&&Match.Explored[cx,cz]?Match.Map.ResourceAt(cx,cz):null;
             Mark(deposit!=null?new Vector2(deposit.X+.5f,deposit.Z+.5f):point,any);
             return any;
         }
-        public void Stop(){foreach(var unit in selection.Units)Match.Stop(unit);SetMode(MatchMode.None);}
+        // Attack-move (A + click): the group goes to the point in formation and fights everything on the way.
+        public bool AttackMoveSelection(Vector2 point)
+        {
+            var units=selection.Orderable;if(units.Count==0)return false;
+            bool any=Match.AttackMoveGroup(units,point.x,point.y);
+            Mark(point,any,true);
+            return any;
+        }
+        // Units that cannot hit the target (an assault unit against air) walk up to it instead.
+        public bool AttackSelection(PrototypeUnit target)
+        {
+            var units=selection.Orderable;if(units.Count==0)return false;
+            bool any=Match.AttackGroup(units,target);
+            if(any)MarkTarget(target);
+            hud?.Refresh();
+            return any;
+        }
+        public void HoldSelection(){foreach(var unit in selection.Orderable)Match.Hold(unit);SetMode(MatchMode.None);}
+        public void Stop(){foreach(var unit in selection.Orderable)Match.Stop(unit);SetMode(MatchMode.None);}
         public void FocusBase()
         {
             var hq=Match.Buildings.Find(b=>b.Kind==2);
@@ -631,6 +729,7 @@ namespace Order.Presentation
         {
             if(Mode==MatchMode.Ping){AddPin(point);return;}
             if(Mode==MatchMode.Build){if(Match.Build((int)point.x,(int)point.y,buildKind))SetMode(MatchMode.None);return;}
+            if(Mode==MatchMode.Attack){AttackMoveSelection(point);SetMode(MatchMode.None);return;}
             if(Mode==MatchMode.Harvest)
             {
                 var deposit=Match.Map.Inside((int)point.x,(int)point.y)&&Match.Explored[(int)point.x,(int)point.y]?Match.Map.ResourceAt((int)point.x,(int)point.y):null;
@@ -639,7 +738,7 @@ namespace Order.Presentation
                 // Only workers go: the rest of the selection stays where it is.
                 selection.Set(new List<PrototypeUnit>(selection.Units).FindAll(u=>u.Stats.HarvestAmount>0));
             }
-            if(selection.Count==0)SelectWorker();
+            if(!selection.Own)SelectWorker();
             MoveSelection(point);SetMode(MatchMode.None);
         }
         public void AddPin(Vector2 point)
@@ -679,6 +778,7 @@ namespace Order.Presentation
             scenery?.Dispose();scenery=null;
             if(miniTexture!=null){Destroy(miniTexture);miniTexture=null;}
             buildingViews.Clear();constructionRings.Clear();depositViews.Clear();pinViews.Clear();pins.Clear();Match=null;
+            combat?.Dispose();combat=null;strikes.Clear();deaths.Clear();
             unitViews.Clear();unitModels.Clear();selectionRings.Clear();hoverRings.Clear();hovered.Clear();markers.Clear();
             selection=new UnitSelection();lastClickUnit=null;lastGroup=-1;pressing=dragging=false;
             Array.Clear(buildingMeshes,0,buildingMeshes.Length);

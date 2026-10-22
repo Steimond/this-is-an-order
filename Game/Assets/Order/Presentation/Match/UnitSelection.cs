@@ -6,6 +6,7 @@ namespace Order.Presentation
 {
     // The player's selection and control groups, as in StarCraft. Local to the player, not part of the simulation:
     // orders carry the selected units. Units are kept in display order: melee, ranged, air, then workers.
+    // Only the player's units are selected together and take orders; an enemy is selected alone, just to look at it.
     public sealed class UnitSelection
     {
         public const int Groups = 10;
@@ -14,6 +15,9 @@ namespace Order.Presentation
         public IReadOnlyList<PrototypeUnit> Units => units;
         public int Count => units.Count;
         public bool Contains(PrototypeUnit unit) => units.Contains(unit);
+        public bool Own => units.Count > 0 && units[0].Owner == PrototypeMatch.Player;
+        public IReadOnlyList<PrototypeUnit> Orderable => Own ? units : (IReadOnlyList<PrototypeUnit>)None;
+        static readonly PrototypeUnit[] None = new PrototypeUnit[0];
 
         public UnitSelection() { for (int i = 0; i < Groups; i++) groups[i] = new List<int>(); }
 
@@ -30,24 +34,36 @@ namespace Order.Presentation
         // (the units on screen); with Shift they are added.
         public void Click(PrototypeUnit unit, bool shift, bool sameKind, IEnumerable<PrototypeUnit> visible)
         {
+            if (unit.Owner != PrototypeMatch.Player)
+            {
+                // Shift+click on an enemy keeps the player's own selection.
+                if (!(shift && Own)) Set(new[] { unit });
+                return;
+            }
+            if (!Own) units.Clear();
             if (sameKind)
             {
                 var same = new List<PrototypeUnit> { unit };
-                foreach (var other in visible) if (other.Kind == unit.Kind) same.Add(other);
+                foreach (var other in visible) if (other.Kind == unit.Kind && other.Owner == unit.Owner) same.Add(other);
                 if (shift) Add(same); else Set(same);
             }
             else if (shift) { if (units.Contains(unit)) units.Remove(unit); else Add(new[] { unit }); }
             else Set(new[] { unit });
         }
-        // Box: the units inside replace the selection; with Shift they are added. An empty box without Shift clears it.
+        // Box: the player's units inside replace the selection; with Shift they are added. An empty box without Shift clears
+        // it; a box holding only enemies picks one of them.
         public void Box(IEnumerable<PrototypeUnit> inside, bool shift)
         {
-            if (shift) Add(inside); else Set(inside);
+            var own = new List<PrototypeUnit>(); PrototypeUnit enemy = null;
+            foreach (var u in inside) if (u.Owner == PrototypeMatch.Player) own.Add(u); else enemy ??= u;
+            if (own.Count == 0) { if (!shift) Set(enemy != null ? new[] { enemy } : None); else if (!Own && enemy != null) Set(new[] { enemy }); return; }
+            if (!Own) units.Clear();
+            if (shift) Add(own); else Set(own);
         }
 
-        // Ctrl+number replaces a group, Shift+number adds to it, the number alone recalls it.
-        public void Assign(int group) { groups[group].Clear(); foreach (var u in units) groups[group].Add(u.Id); }
-        public void AddToGroup(int group) { foreach (var u in units) if (!groups[group].Contains(u.Id)) groups[group].Add(u.Id); }
+        // Ctrl+number replaces a group, Shift+number adds to it, the number alone recalls it. Groups hold only own units.
+        public void Assign(int group) { if (units.Count > 0 && !Own) return; groups[group].Clear(); foreach (var u in units) groups[group].Add(u.Id); }
+        public void AddToGroup(int group) { if (!Own) return; foreach (var u in units) if (!groups[group].Contains(u.Id)) groups[group].Add(u.Id); }
         public bool Recall(int group, IReadOnlyList<PrototypeUnit> alive)
         {
             var members = Members(group, alive);

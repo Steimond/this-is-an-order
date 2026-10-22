@@ -12,6 +12,8 @@ Shader "Order/Prop"
         _Sway("Wind sway", Float) = 0
         _Fog("Fog of war", Float) = 1
         _Opacity("Opacity", Range(0,1)) = 1
+        _TeamColor("Team colour override", Color) = (1,1,1,1)
+        _TeamOverride("Use team colour override", Float) = 0
         [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 2
         _ZWrite("Write depth", Float) = 1
     }
@@ -22,7 +24,8 @@ Shader "Order/Prop"
         #include "OrderCommon.hlsl"
         CBUFFER_START(UnityPerMaterial)
             half4 _BaseColor;
-            float _Emission, _Gloss, _Rim, _Panels, _Sway, _Fog, _Opacity, _Cull, _ZWrite;
+            half4 _TeamColor;
+            float _Emission, _Gloss, _Rim, _Panels, _Sway, _Fog, _Opacity, _Cull, _ZWrite, _TeamOverride;
         CBUFFER_END
         struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; half4 color:COLOR; float4 data:TEXCOORD0; };
         float3 PropWorld(Attributes input)
@@ -64,7 +67,9 @@ Shader "Order/Prop"
             half4 frag(Varyings input, bool front : SV_IsFrontFace) : SV_Target
             {
                 float3 n = normalize(input.normalWS) * (front ? 1 : -1);
-                half3 albedo = input.color.rgb * lerp(1, _OrderTeamColor.rgb, input.data.y) * _BaseColor.rgb;
+                // Team colour is the player's (global) unless the material carries another side's colour.
+                half3 team = lerp(_OrderTeamColor.rgb, _TeamColor.rgb, _TeamOverride);
+                half3 albedo = input.color.rgb * lerp(1, team, input.data.y) * _BaseColor.rgb;
                 if (_Panels > .5)
                 {
                     // Plating seams in object space, so they stay put while a building rises.

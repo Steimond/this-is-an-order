@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Order.Content;
+using Order.Simulation;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -114,7 +115,7 @@ namespace Order.Presentation
             if (evt.button == 1) { host.OrderTo(point); evt.StopPropagation(); return; }
             if (evt.button != 0) return;
             if (host.Mode == MatchMode.Ping || evt.altKey) host.AddPin(point);
-            else if (host.Mode == MatchMode.Move || host.Mode == MatchMode.Harvest) host.OrderTo(point);
+            else if (host.Mode == MatchMode.Move || host.Mode == MatchMode.Harvest || host.Mode == MatchMode.Attack) host.OrderTo(point);
             else { host.Focus(point); map.CapturePointer(evt.pointerId); }
             evt.StopPropagation();
         }
@@ -181,7 +182,7 @@ namespace Order.Presentation
                 }
 
                 var match = host.Match;
-                foreach (var unit in host.Selection.Units)
+                foreach (var unit in host.Selection.Orderable)
                 {
                     var route = unit.Route.ToList();
                     if (route.Count == 0) continue;
@@ -210,11 +211,13 @@ namespace Order.Presentation
                     p.BeginPath(); HudPaint.Polygon(p, pin, 5 * pulse, 4, 0); p.Fill(); p.Stroke();
                 }
 
-                // Ground units are dots, air units diamonds; selected ones get a ring.
+                // Ground units are dots, air units diamonds; selected ones get a ring. Enemies are red and only shown in sight.
                 foreach (var unit in match.Units)
                 {
+                    var own = unit.Owner == PrototypeMatch.Player;
+                    if (!own && !match.SeenBy(PrototypeMatch.Player, unit)) continue;
                     var at = M(unit.X, unit.Z);
-                    p.fillColor = Hot; p.BeginPath();
+                    p.fillColor = own ? Hot : TemplePrototypeView.EnemyColor * 1.15f; p.BeginPath();
                     if (unit.Stats.Flying) HudPaint.Polygon(p, at, 3.4f, 4, 0); else HudPaint.Circle(p, at, unit.Kind == UnitKind.Worker ? 2.2f : 2.6f);
                     p.Fill();
                 }

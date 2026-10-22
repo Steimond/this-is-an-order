@@ -74,13 +74,20 @@ namespace Order.Simulation
 
         // ---------- Orders ----------
         public bool Move(PrototypeUnit unit, int tx, int tz) => Move(unit, tx + .5f, tz + .5f);
-        // A worker sent to a deposit harvests it after arrival; other units only walk up to it.
+        // A worker sent to a deposit harvests it after arrival; other units only walk up to it. A moving unit ignores enemies.
         public bool Move(PrototypeUnit unit, float targetX, float targetZ)
         {
-            if (float.IsNaN(targetX) || float.IsNaN(targetZ) || targetX < 0 || targetZ < 0 || targetX >= 64 || targetZ >= 64) return false;
+            if (!InMap(targetX, targetZ)) return false;
+            GiveOrder(unit, UnitOrder.Move);
+            return PlanPath(unit, targetX, targetZ);
+        }
+        static bool InMap(float x, float z) => !float.IsNaN(x) && !float.IsNaN(z) && x >= 0 && z >= 0 && x < 64 && z < 64;
+        // Route to a point without touching the order: used by orders, chasing, re-planning and returning to place.
+        bool PlanPath(PrototypeUnit unit, float targetX, float targetZ)
+        {
+            if (!InMap(targetX, targetZ)) return false;
             int tx = (int)targetX, tz = (int)targetZ;
             unit.HarvestTarget = null; unit.arrived = false; unit.stuckTime = 0; unit.bestDistance = float.MaxValue; unit.replans = 0;
-            unit.returning = false; unit.returns = 0;
             var deposit = Explored[tx, tz] ? Map.ResourceAt(tx, tz) : null;
             float radius = unit.Stats.Radius;
             if (unit.Stats.Flying)
@@ -120,14 +127,19 @@ namespace Order.Simulation
             unit.goalX = end.X; unit.goalZ = end.Z; unit.hasGoal = unit.route.Count > 0;
             if (!unit.hasGoal) Arrive(unit);
         }
-        public void Stop(PrototypeUnit unit) { unit.route.Clear(); unit.HarvestTarget = null; unit.hasGoal = false; unit.arrived = false; Message = "Приказ: стоп."; }
+        public void Stop(PrototypeUnit unit)
+        {
+            GiveOrder(unit, UnitOrder.Idle);
+            unit.route.Clear(); unit.HarvestTarget = null; unit.hasGoal = false; unit.arrived = false; Message = "Приказ: стоп.";
+        }
 
         // Several units to one point. When a compact group is sent beyond its own bounds, every unit keeps its place
         // in the formation (if that spot is free and on the clicked level); a click inside the group gathers it on the point.
-        public bool MoveGroup(IReadOnlyList<PrototypeUnit> units, float x, float z)
+        public bool MoveGroup(IReadOnlyList<PrototypeUnit> units, float x, float z) => GroupOrder(units, x, z, false);
+        bool GroupOrder(IReadOnlyList<PrototypeUnit> units, float x, float z, bool attack)
         {
             if (units.Count == 0) return false;
-            if (units.Count == 1) return Move(units[0], x, z);
+            if (units.Count == 1) return attack ? AttackMove(units[0], x, z) : Move(units[0], x, z);
             int cx = (int)x, cz = (int)z;
             bool deposit = Map.Inside(cx, cz) && Explored[cx, cz] && Map.ResourceAt(cx, cz) != null;
             float mx = 0, mz = 0, minX = 64, minZ = 64, maxX = 0, maxZ = 0, spread = 0;
@@ -141,7 +153,7 @@ namespace Order.Simulation
             {
                 float gx = x + u.X - mx, gz = z + u.Z - mz;
                 bool keep = formation && FreeSpot(u, gx, gz, level);
-                any |= Move(u, keep ? gx : x, keep ? gz : z);
+                any |= attack ? AttackMove(u, keep ? gx : x, keep ? gz : z) : Move(u, keep ? gx : x, keep ? gz : z);
                 if (any) message = Message;
             }
             Message = message;
@@ -168,7 +180,7 @@ namespace Order.Simulation
         void Replan(PrototypeUnit u)
         {
             var message = Message; var deposit = u.HarvestTarget; int replans = u.replans;
-            if (deposit != null) Move(u, deposit.X, deposit.Z); else Move(u, u.goalX, u.goalZ);
+            if (deposit != null) PlanPath(u, deposit.X + .5f, deposit.Z + .5f); else PlanPath(u, u.goalX, u.goalZ);
             u.replans = replans; Message = message;
         }
 
@@ -231,6 +243,7 @@ namespace Order.Simulation
         void StepUnits(float dt)
         {
             foreach (var u in Units) { u.levelY = HeightAt(u.X, u.Z); u.touchedArrived = false; u.startX = u.X; u.startZ = u.Z; }
+            foreach (var u in Units) Fight(u, dt);
             FillBuckets();
             foreach (var u in Units) Follow(u, dt);
             for (int i = 0; i < 2; i++) { FillBuckets(); Separate(); }
@@ -240,6 +253,7 @@ namespace Order.Simulation
                 float r = u.Stats.Radius; u.X = Math.Max(r, Math.Min(64 - r, u.X)); u.Z = Math.Max(r, Math.Min(64 - r, u.Z));
             }
             foreach (var u in Units) { UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
+            RemoveDead();
         }
         // Exactly along the route: a lone unit ends precisely on its destination. In a crowd a unit pushed off its line does
         // not go back for every corner: once near one, with a clear straight line to the next, it cuts across.
@@ -321,6 +335,7 @@ namespace Order.Simulation
         }
         // Overlapping units push each other apart. A moving unit shoves an idle ally out of the way, unless that ally has
         // already arrived at the same point: then the mover stops beside it. Two moving units also side-step, so they pass.
+        // A standing unit that holds position, is shooting, or belongs to the other side is not pushed at all.
         void Separate()
         {
             foreach (var u in Units)
@@ -344,6 +359,8 @@ namespace Order.Simulation
             if (d > 1e-4f) { nx = dx / d; nz = dz / d; }
             else { float angle = (a.Id * 7 + b.Id * 3) * 2.39996f; nx = (float)Math.Cos(angle); nz = (float)Math.Sin(angle); }
             float overlap = reach - d + 1e-4f;
+            bool af = Firm(a, b), bf = Firm(b, a);
+            if (af != bf) { if (af) Slide(b, a, nx, nz, overlap); else Slide(a, b, -nx, -nz, overlap); return; }
             bool am = a.Moving, bm = b.Moving;
             if (am && !bm && !(b.arrived && SameGoal(a, b))) { Shove(a, b, nx, nz, overlap); return; }
             if (bm && !am && !(a.arrived && SameGoal(b, a))) { Shove(b, a, -nx, -nz, overlap); return; }
@@ -368,6 +385,22 @@ namespace Order.Simulation
             b.X += nx * overlap * wb; b.Z += nz * overlap * wb;
             // Two idle units easing apart settle where they end up instead of walking back into each other.
             if (!am && !bm) { a.restX = a.X; a.restZ = a.Z; b.restX = b.X; b.restZ = b.Z; }
+        }
+        static bool Firm(PrototypeUnit u, PrototypeUnit other) =>
+            !u.Moving && (u.Order == UnitOrder.Hold || u.Owner != other.Owner || (u.engaged && u.Target != null));
+        // Only the other unit gives way; a mover pressing into a firm unit also slips sideways, so it goes round it.
+        // (nx, nz) points from the firm unit to the one that gives way.
+        static void Slide(PrototypeUnit unit, PrototypeUnit firm, float nx, float nz, float overlap)
+        {
+            float dx = nx, dz = nz;
+            if (unit.Moving)
+            {
+                Heading(unit, -nx, -nz, out float hx, out float hz);
+                float along = nx * hx + nz * hz, sx = nx - hx * along, sz = nz - hz * along, sl = (float)Math.Sqrt(sx * sx + sz * sz);
+                if (sl < .2f) { float side = unit.Id % 2 == 0 ? 1 : -1; sx = -hz * side; sz = hx * side; } else { sx /= sl; sz /= sl; }
+                dx += sx; dz += sz;
+            }
+            unit.X += dx * overlap; unit.Z += dz * overlap;
         }
         // An idle unit in the way steps aside across the mover's heading rather than being bulldozed ahead of it.
         static void Shove(PrototypeUnit mover, PrototypeUnit idle, float nx, float nz, float overlap)
@@ -422,7 +455,7 @@ namespace Order.Simulation
             if (!u.hasGoal) { ReturnToRest(u, dt); return; }
             if (u.route.Count == 0) { Arrive(u); return; }
             float dx = u.goalX - u.X, dz = u.goalZ - u.Z, d = (float)Math.Sqrt(dx * dx + dz * dz);
-            if (u.touchedArrived && d < 4) { Stand(u); return; }
+            if (u.touchedArrived && d < 4 && !u.engaged) { Stand(u); return; }
             float left = RouteLength(u);
             if (left < u.bestDistance - .1f) { u.bestDistance = left; u.stuckTime = 0; return; }
             if ((u.stuckTime += dt) < 1.2f) return;
@@ -435,23 +468,25 @@ namespace Order.Simulation
             foreach (var p in u.route) { sum += (float)Math.Sqrt((p.X - x) * (p.X - x) + (p.Z - z) * (p.Z - z)); x = p.X; z = p.Z; }
             return sum;
         }
-        // A returning unit keeps the destination of its real order, so later arrivals still gather around it.
+        // A returning unit keeps the destination of its real order, so later arrivals still gather around it. The end of a
+        // move or attack-move leaves the unit idle; the end of a chase does not end the order.
         void Arrive(PrototypeUnit u)
         {
             u.route.Clear(); u.hasGoal = false; u.arrived = true; u.replans = 0;
             if (!u.returning) { u.arrivedX = u.goalX; u.arrivedZ = u.goalZ; }
             u.returning = false; u.restX = u.X; u.restZ = u.Z; u.calmTime = 0;
+            if (!u.engaged && (u.Order == UnitOrder.Move || u.Order == UnitOrder.AttackMove)) u.Order = UnitOrder.Idle;
         }
         // An arrived unit shoved off its place by units passing through walks back once the crowd has gone: at most twice
         // per order, so neighbours cannot keep trading places.
         void ReturnToRest(PrototypeUnit u, float dt)
         {
-            if (!u.arrived || u.returns >= 2 || Ghost(u)) return;
+            if (!u.arrived || u.returns >= 2 || Ghost(u) || u.engaged || u.Order != UnitOrder.Idle) return;
             float dx = u.restX - u.X, dz = u.restZ - u.Z;
             if (dx * dx + dz * dz < .25f) return;
             if ((u.calmTime += dt) < .6f) return;
             int returns = u.returns; float ax = u.arrivedX, az = u.arrivedZ, rx = u.restX, rz = u.restZ; var message = Message;
-            if (Move(u, rx, rz)) { u.returning = true; u.arrived = true; u.arrivedX = ax; u.arrivedZ = az; }
+            if (PlanPath(u, rx, rz)) { u.returning = true; u.arrived = true; u.arrivedX = ax; u.arrivedZ = az; }
             u.returns = returns + 1; Message = message;
         }
         // Stops short of the goal; a worker gives up harvesting unless it stands next to its deposit.

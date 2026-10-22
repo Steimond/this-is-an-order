@@ -52,5 +52,19 @@ namespace Order.Tests.EditMode
             Assert.That(selection.Count,Is.EqualTo(2));Assert.That(selection.GroupSize(9,match.Units),Is.Zero);
             selection.Clear();selection.Assign(0);Assert.That(selection.GroupSize(0,match.Units),Is.Zero);
         }
+        [Test] public void EnemiesAreSelectedAloneAndTakeNoOrders()
+        {
+            var match=Squad();match.AddEnemySquad();var selection=new UnitSelection();
+            var own=match.Units.FindAll(u=>u.Owner==PrototypeMatch.Player&&u.Kind!=UnitKind.Worker);
+            var enemies=match.Units.FindAll(u=>u.Owner==PrototypeMatch.Enemy);
+            // A box over both sides takes only the player's units; a box over enemies alone picks one of them.
+            selection.Box(own.Concat(enemies),false);Assert.That(selection.Units,Is.EquivalentTo(own));Assert.That(selection.Own,Is.True);
+            selection.Click(enemies[0],true,false,match.Units);Assert.That(selection.Units,Is.EquivalentTo(own),"Shift+click on an enemy keeps the own selection");
+            selection.Assign(0);
+            selection.Box(enemies,false);Assert.That(selection.Count,Is.EqualTo(1));Assert.That(selection.Own,Is.False);Assert.That(selection.Orderable,Is.Empty);
+            selection.Click(enemies[1],false,true,match.Units);Assert.That(selection.Units,Is.EqualTo(new[]{enemies[1]}));
+            selection.Assign(0);Assert.That(selection.GroupSize(0,match.Units),Is.EqualTo(own.Count),"An enemy never goes into a group");
+            selection.Click(own[0],true,false,match.Units);Assert.That(selection.Units,Is.EqualTo(new[]{own[0]}),"An own unit replaces a looked-at enemy");
+        }
     }
 }

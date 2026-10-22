@@ -26,7 +26,7 @@ namespace Order.Editor
             string path=$"Assets/Order/Balance/Faction1/Units/{name}.asset";
             bool exists=AssetDatabase.LoadAssetAtPath<UnitBalanceAsset>(path)!=null;
             var asset=Asset<UnitBalanceAsset>($"Faction1/Units/{name}");
-            if(!exists){asset.DisplayName=defaults.Name;asset.MoveSpeed=defaults.Speed;asset.CollisionRadius=defaults.Radius;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.HarvestAmount=defaults.HarvestAmount;asset.HarvestInterval=defaults.HarvestInterval;asset.Supply=defaults.Supply;asset.Flying=defaults.Flying;asset.Damage=defaults.Damage;asset.AttackRange=defaults.AttackRange;asset.AttackCooldown=defaults.AttackCooldown;EditorUtility.SetDirty(asset);}
+            if(!exists){asset.DisplayName=defaults.Name;asset.MoveSpeed=defaults.Speed;asset.CollisionRadius=defaults.Radius;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.HarvestAmount=defaults.HarvestAmount;asset.HarvestInterval=defaults.HarvestInterval;asset.Supply=defaults.Supply;asset.Flying=defaults.Flying;asset.Damage=defaults.Damage;asset.AttackRange=defaults.AttackRange;asset.AttackCooldown=defaults.AttackCooldown;asset.HitsGround=defaults.HitsGround;asset.HitsAir=defaults.HitsAir;EditorUtility.SetDirty(asset);}
             return asset;
         }
         static BuildingBalanceAsset Building(string name,BuildingStats defaults)

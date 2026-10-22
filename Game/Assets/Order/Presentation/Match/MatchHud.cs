@@ -15,7 +15,7 @@ using UnityEngine.UIElements;
 
 namespace Order.Presentation
 {
-    public enum MatchMode { None, Build, Move, Harvest, Ping }
+    public enum MatchMode { None, Build, Move, Harvest, Ping, Attack }
 
     // What the HUD needs from the running match view.
     public interface IMatchHost
@@ -35,6 +35,8 @@ namespace Order.Presentation
         void SelectKind(UnitKind kind);
         void RecallGroup(int index);
         bool MoveSelection(Vector2 point);
+        bool AttackMoveSelection(Vector2 point);
+        void HoldSelection();
         void Stop();
         void Focus(Vector2 point);
         void FocusWorker();
@@ -407,15 +409,15 @@ namespace Order.Presentation
             else if (unit != null)
             {
                 var stats = unit.Stats;
+                var enemy = unit.Owner != PrototypeMatch.Player;
                 selectionIcon.Kind = UnitIcon(unit.Kind);
                 selectionName.text = stats.Name.ToUpperInvariant();
-                var target = unit.HarvestTarget;
-                selectionStatus.text = unit.Moving ? (target != null ? "НАПРАВЛЯЕТСЯ К ЗАЛЕЖИ" : "ДВИЖЕНИЕ")
-                    : target != null && target.Remaining > 0 ? "ДОБЫЧА · " + (target.Gas ? "ГАЗ" : "МИНЕРАЛЫ") : "ОЖИДАЕТ ПРИКАЗА";
+                selectionStatus.text = (enemy ? "ПРОТИВНИК · " : "") + State(unit);
                 health.Set(unit.Health, stats.Health);
                 var place = MapGrid.Name(unit.X, unit.Z, TempleMap.Size);
+                var targets = stats.HitsGround && stats.HitsAir ? "наземные и воздушные" : stats.HitsAir ? "только воздушные" : "только наземные";
                 var role = stats.Damage <= 0 ? $"Добыча {stats.HarvestAmount} за {stats.HarvestInterval:0.#} с"
-                    : $"Урон {stats.Damage}  ·  {(stats.AttackRange < 1 ? "Ближний бой" : $"Дальность {stats.AttackRange:0.#}")}  ·  Перезарядка {stats.AttackCooldown:0.##} с";
+                    : $"Урон {stats.Damage}  ·  {(stats.AttackRange < 1 ? "Ближний бой" : $"Дальность {stats.AttackRange:0.#}")}  ·  Перезарядка {stats.AttackCooldown:0.##} с  ·  Цели: {targets}";
                 selectionStats.text = $"{role}  ·  Скорость {stats.Speed:0.#}  ·  Обзор {stats.Vision}{(stats.Flying ? "  ·  Воздушный" : "")}  ·  {place}";
                 Upgrade(HudIconKind.Armor, "БРОНЯ", 0);
                 Upgrade(HudIconKind.Target, "ОРУЖИЕ", stats.Damage > 0 ? 0 : -1);
@@ -461,6 +463,16 @@ namespace Order.Presentation
                 selectionStatus.text = "ЛКМ — выбрать  ·  ПКМ — приказ";
                 selectionEmpty.text = "Выберите юнит, здание или залежь. Пробел — камера к выделенным.";
             }
+        }
+
+        private static string State(PrototypeUnit unit)
+        {
+            var deposit = unit.HarvestTarget;
+            if (unit.Target != null) return unit.Moving ? "ПРЕСЛЕДУЕТ ЦЕЛЬ" : "АТАКУЕТ";
+            if (unit.Order == UnitOrder.Hold) return "ДЕРЖИТ ПОЗИЦИЮ";
+            if (unit.Order == UnitOrder.AttackMove) return "АТАКА С ДВИЖЕНИЕМ";
+            if (unit.Moving) return deposit != null ? "НАПРАВЛЯЕТСЯ К ЗАЛЕЖИ" : "ДВИЖЕНИЕ";
+            return deposit != null && deposit.Remaining > 0 ? "ДОБЫЧА · " + (deposit.Gas ? "ГАЗ" : "МИНЕРАЛЫ") : "ОЖИДАЕТ ПРИКАЗА";
         }
 
         // Tiles are reused; each keeps its unit in userData. Click: only this unit; Shift: drop it; Ctrl: keep only its kind.
@@ -548,6 +560,8 @@ namespace Order.Presentation
             var match = host.Match;
             var title = "КОМАНДЫ";
             var unit = host.Selection.Count > 0 ? host.Selection.Units[0] : null;
+            // An enemy can be looked at, not ordered.
+            if (unit != null && !host.Selection.Own) { title = "ПРОТИВНИК · " + unit.Stats.Name.ToUpperInvariant(); unit = null; }
             var worker = unit != null && unit.Stats.HarvestAmount > 0;
             if (worker)
             {
@@ -564,7 +578,7 @@ namespace Order.Presentation
                 actions[0] = new HudAction { Title = "Движение", Hotkey = "M", Key = Key.M, Icon = HudIconKind.Move, Active = host.Mode == MatchMode.Move,
                     Description = "Укажите точку на карте или миникарте. Также: ПКМ по карте.", Run = () => host.SetMode(MatchMode.Move) };
                 actions[1] = new HudAction { Title = "Стоп", Hotkey = "X", Key = Key.X, Icon = HudIconKind.Stop,
-                    Description = worker ? "Прервать движение и добычу." : "Прервать движение.", Run = host.Stop };
+                    Description = worker ? "Прервать движение и добычу." : "Прервать приказ. Остановившись, юниты сами отвечают врагам рядом.", Run = host.Stop };
                 if (worker)
                 {
                     actions[2] = new HudAction { Title = "Добыча", Hotkey = "G", Key = Key.G, Icon = HudIconKind.Harvest, Active = host.Mode == MatchMode.Harvest,
@@ -573,9 +587,13 @@ namespace Order.Presentation
                         Description = "Открыть список построек.", Run = () => buildPage = true };
                 }
                 else
-                    actions[2] = new HudAction { Title = "Атака", Hotkey = "A", Key = Key.A, Icon = HudIconKind.Target,
-                        Description = "Атаковать цель или двигаться с атакой.",
-                        Locked = "Атака появится вместе с боем.", Run = () => { } };
+                {
+                    actions[2] = new HudAction { Title = "Атака", Hotkey = "A", Key = Key.A, Icon = HudIconKind.Target, Active = host.Mode == MatchMode.Attack,
+                        Description = "ЛКМ по врагу — атаковать его, по земле — идти к точке и бить всех по пути. Также: ПКМ по врагу.",
+                        Run = () => host.SetMode(MatchMode.Attack) };
+                    actions[3] = new HudAction { Title = "Держать позицию", Hotkey = "H", Key = Key.H, Icon = HudIconKind.Hold,
+                        Description = "Стоять на месте и стрелять только по целям в радиусе атаки. Свои юниты их не сдвигают.", Run = host.HoldSelection };
+                }
             }
             else if (worker)
             {
@@ -784,7 +802,7 @@ namespace Order.Presentation
             bool Is(string pattern) => Regex.IsMatch(t, pattern, RegexOptions.CultureInvariant);
             if (Is(@"^(?:помощь|справка|команды|что ты умеешь)$"))
             {
-                reply = "Приказы полигона: «выбери армию», «выбери стрелков», «группа 1», «иди в D-2-9», «к метке 2», «стоп», «добывай газ», «построй узел снабжения в C-7», «метка в E-4», «камера на H-8», «сетка», «к базе». " +
+                reply = "Приказы полигона: «выбери армию», «выбери стрелков», «группа 1», «иди в D-2-9», «атакуй в F-6», «держи позицию», «к метке 2», «стоп», «добывай газ», «построй узел снабжения в C-7», «метка в E-4», «камера на H-8», «сетка», «к базе». " +
                     (services == null ? "" : "Меню: «открой графику», «громкость 40», «в штаб».");
                 return true;
             }
@@ -799,7 +817,7 @@ namespace Order.Presentation
             var point = new Vector2(x, z);
             if (Is(@"^(?:стоп|стой|остановись|отставить|прекрати)$"))
             {
-                ok = host.Selection.Count > 0; host.Stop();
+                ok = host.Selection.Own; host.Stop();
                 reply = ok ? Who() + ": стоп." : "Нет выделенных юнитов.";
                 return true;
             }
@@ -851,7 +869,7 @@ namespace Order.Presentation
             if (Is(@"^(?:добывай|добыча|собирай|копай|на добычу|иди добывать)\b"))
             {
                 var wantGas = Is(@"\bгаз\w*");
-                var harvester = host.Selection.Units.FirstOrDefault(u => u.Stats.HarvestAmount > 0);
+                var harvester = host.Selection.Orderable.FirstOrDefault(u => u.Stats.HarvestAmount > 0);
                 if (harvester == null) { host.SelectWorker(); harvester = host.Selection.Units.FirstOrDefault(); }
                 if (harvester == null) { ok = false; reply = "Нет рабочих."; return true; }
                 var deposit = hasPoint ? match.Map.ResourceAt((int)x, (int)z) : match.Map.Resources
@@ -860,6 +878,22 @@ namespace Order.Presentation
                 if (deposit == null) { ok = false; reply = wantGas ? "Нет разведанного газа." : "Нет разведанных минералов."; return true; }
                 ok = match.Move(harvester, deposit.X + .5f, deposit.Z + .5f);
                 reply = ok ? $"{harvester.Stats.Name}: добыча {(deposit.Gas ? "газа" : "минералов")} в {MapGrid.Name(deposit.X + .5f, deposit.Z + .5f, TempleMap.Size)}." : match.Message;
+                return true;
+            }
+            if (Is(@"^(?:держи\w* позици\w*|держать позици\w*|стой на месте|стоять на месте)$"))
+            {
+                ok = host.Selection.Own && host.Selection.Units.Any(u => u.Stats.Damage > 0);
+                if (ok) host.HoldSelection();
+                reply = ok ? Who() + ": держим позицию." : "Нет выделенных боевых юнитов.";
+                return true;
+            }
+            if (Is(@"^(?:атакуй|атака|в атаку|атаковать)\b"))
+            {
+                ok = host.Selection.Own && host.Selection.Units.Any(u => u.Stats.Damage > 0);
+                if (!ok) { reply = "Нет выделенных боевых юнитов. «Выбери армию» — взять всех."; return true; }
+                if (!hasPoint) { host.SetMode(MatchMode.Attack); reply = "Укажите врага или точку: ЛКМ по карте или миникарте."; return true; }
+                ok = host.AttackMoveSelection(point);
+                reply = ok ? Who() + ": атака с движением к " + place + "." : match.Message;
                 return true;
             }
             if (Is(@"^(?:иди|идти|двигайся|движение|перемести\w*|отправь рабочего|рабочий|вперед)\b"))

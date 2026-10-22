@@ -13,12 +13,13 @@ namespace Order.Balance
         [Min(.1f)] public float HarvestInterval=1;
         [Min(0)] public int Supply=1;
         [Tooltip("Летает над скалами и зданиями.")] public bool Flying;
-        [Header("Атака (применится вместе с боем)")]
-        [Min(0)] public int Damage;
-        [Min(0)] public float AttackRange;
+        [Header("Атака")]
+        [Tooltip("0 — юнит не атакует.")] [Min(0)] public int Damage;
+        [Tooltip("Дальность от края юнита до края цели.")] [Min(0)] public float AttackRange;
         [Min(.1f)] public float AttackCooldown=1;
+        public bool HitsGround=true, HitsAir;
         public UnitStats Snapshot()=>new UnitStats{Name=DisplayName,Speed=Mathf.Max(.1f,MoveSpeed),Radius=Mathf.Clamp(CollisionRadius,.1f,.45f),Health=Mathf.Max(1,Health),
             Vision=Mathf.Clamp(Vision,1,64),HarvestAmount=Mathf.Max(0,HarvestAmount),HarvestInterval=Mathf.Max(.1f,HarvestInterval),Supply=Mathf.Max(0,Supply),Flying=Flying,
-            Damage=Mathf.Max(0,Damage),AttackRange=Mathf.Max(0,AttackRange),AttackCooldown=Mathf.Max(.1f,AttackCooldown)};
+            Damage=Mathf.Max(0,Damage),AttackRange=Mathf.Max(0,AttackRange),AttackCooldown=Mathf.Max(.1f,AttackCooldown),HitsGround=HitsGround,HitsAir=HitsAir};
     }
 }

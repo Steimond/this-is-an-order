@@ -24,3 +24,5 @@ MonoBehaviour:
   Damage: 9
   AttackRange: 4.5
   AttackCooldown: 1.2
+  HitsGround: 1
+  HitsAir: 0
