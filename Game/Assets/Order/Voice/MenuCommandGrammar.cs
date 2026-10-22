@@ -12,7 +12,7 @@ namespace Order.Voice
     public static class MenuCommandGrammar
     {
         public const string Help = "Управляю всем меню. Примеры: «открой графику», «тени высокие», «громкость 40», «назначь разговор на B», " +
-            "«противник вторая фракция», «полигон», «назад», «выход». Узнать значение: «какие тени?».";
+            "«полигон», «назад», «выход». Узнать значение: «какие тени?». Научить: «запомни „тише“ значит „убавь громкость на 5“».";
         private const RegexOptions Mode = RegexOptions.CultureInvariant;
         private const string Settings = @"\b(?:настройк\w*|параметр\w*|опци\w*|вкладк\w*)\b";
         private const string OpenVerb = @"\b(?:открой|открыть|перейди|перейти|покажи|показать|зайди|иди|вернись|вернуться|верни\w*|выйди|выйти|переключись|давай)\b";
@@ -92,15 +92,19 @@ namespace Order.Voice
                 var tab = FindTab(t);
                 return Done(tab.HasValue ? AppCommand.Navigate(tab.Value) : AppCommand.OpenSettings(), out result);
             }
-            if ((Is(t, OpenVerb) || Is(t, @"^\S+(?: \S+)?$")) && found.Count == 0)
+            if (found.Count == 0)
             {
-                if (Is(t, MainScreen)) return Done(AppCommand.Navigate(AppScreen.MainMenu), out result);
-                if (Is(t, Skirmish)) return Done(AppCommand.Navigate(AppScreen.MatchSetup), out result);
-                var tab = FindTab(t);
+                // Without a verb only a bare screen or tab name navigates ("штаб", "графика"), not "накинь звука".
+                var verb = Is(t, OpenVerb);
+                if (verb ? Is(t, MainScreen) : Is(t, "^" + MainScreen + "$")) return Done(AppCommand.Navigate(AppScreen.MainMenu), out result);
+                if (verb ? Is(t, Skirmish) : Is(t, "^" + Skirmish + "$")) return Done(AppCommand.Navigate(AppScreen.MatchSetup), out result);
+                var tab = FindTab(t, !verb);
                 if (tab.HasValue) return Done(AppCommand.Navigate(tab.Value), out result);
             }
 
             if (found.Count == 0) return false;
+            // "Open audio and set volume 26" is compound: the general interpreter handles open + change together.
+            if (Is(t, OpenVerb) && Is(t, @"\bи\b")) return false;
             foreach (var candidate in found)
             {
                 var resolved = Resolve(candidate.Option, candidate.Rest, state);
@@ -196,10 +200,10 @@ namespace Order.Voice
             return found;
         }
 
-        private static AppScreen? FindTab(string text)
+        private static AppScreen? FindTab(string text, bool whole = false)
         {
             foreach (var tab in MenuCatalog.Tabs)
-                if (Is(text, @"(?<![\w])(?:" + tab.Aliases + @")(?![\w])")) return tab.Screen;
+                if (Is(text, whole ? "^(?:" + tab.Aliases + ")$" : @"(?<![\w])(?:" + tab.Aliases + @")(?![\w])")) return tab.Screen;
             return null;
         }
 
@@ -237,7 +241,7 @@ namespace Order.Voice
         private static bool Clarify(string message, out Interpretation result) { result = new Interpretation(message); return true; }
         private static bool Is(string text, string pattern) => Regex.IsMatch(text, pattern, Mode);
 
-        private static string Normalize(string text)
+        internal static string Normalize(string text)
         {
             var normalized = (text ?? "").Trim().ToLowerInvariant().Replace('ё', 'е');
             normalized = Filler.Replace(normalized, " ");

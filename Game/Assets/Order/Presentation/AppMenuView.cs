@@ -6,6 +6,7 @@ using Order.Application;
 using Order.Content;
 using Order.Contracts;
 using Order.Input;
+using Order.Voice;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -36,6 +37,8 @@ namespace Order.Presentation
         private readonly OptionsWindow options;
         private readonly HudModal exitDialog = new HudModal("exit-dialog");
         private readonly HudScanline scanline;
+        private readonly Phrasebook phrasebook;
+        private readonly PhrasebookPanel phrasebookPanel;
         private readonly List<(Button card, FactionId faction)> assistantCards = new List<(Button, FactionId)>();
         private readonly List<(Button card, FactionId faction)> enemyCards = new List<(Button, FactionId)>();
         private Label matchSummary;
@@ -53,9 +56,9 @@ namespace Order.Presentation
         private readonly Label timingLabel;
 #endif
 
-        public AppMenuView(VisualElement root, AppController app, AppCommandInput input, Task<bool> assistantWarmup = null)
+        public AppMenuView(VisualElement root, AppController app, AppCommandInput input, Task<bool> assistantWarmup = null, Phrasebook phrasebook = null)
         {
-            this.root = root; this.app = app; this.input = input; warmup = assistantWarmup;
+            this.root = root; this.app = app; this.input = input; warmup = assistantWarmup; this.phrasebook = phrasebook;
             root.Clear();
             screen = Hud.Box("hud-root", "order-menu");
             screen.AddToClassList("hud-theme-command");
@@ -173,6 +176,12 @@ namespace Order.Presentation
 
             options = new OptionsWindow(command => Send(command));
             options.CloseRequested += () => Send(AppCommand.Back());
+            if (phrasebook != null)
+            {
+                phrasebookPanel = new PhrasebookPanel(phrasebook, () => app.State);
+                options.Extra = tab => tab == AppScreen.VoiceSettings ? phrasebookPanel.Build() : null;
+                phrasebook.Learned += OnLearned;
+            }
             screen.Add(options.Layer);
             BuildExitDialog();
             screen.Add(exitDialog.Layer);
@@ -261,7 +270,7 @@ namespace Order.Presentation
                     if (measured != null)
                     {
                         var intent = measured.Intent;
-                        var route = intent?.Route == "model" ? "модель" : intent?.Route == "direct" ? "быстрый путь" : intent?.Route == "command" ? "команда меню" : "без разбора";
+                        var route = intent?.Route == "model" ? "модель" : intent?.Route == "direct" ? "быстрый путь" : intent?.Route == "command" ? "команда меню" : intent?.Route == "phrasebook" ? "личный словарь" : "без разбора";
                         timingLabel.text = $"Время: {measured.TotalMs:0.0} мс · {route} · выполнение {measured.ExecutionMs:0.00} мс";
                         if (intent?.Route == "model") timingLabel.text += $" · ожидание {intent.QueueMs:0} · запуск {intent.StartupMs:0} · запрос {intent.HttpMs:0} мс";
                     }
@@ -307,6 +316,8 @@ namespace Order.Presentation
             while (log.childCount > 4) log.RemoveAt(0);
             for (var i = 0; i < log.childCount; i++) log[i].EnableInClassList("is-old", i < log.childCount - 2);
         }
+
+        private void OnLearned(PhraseEntry entry) => AddLog($"Выучил фразу «{entry.Phrase}» → «{entry.Command}».", false, false);
 
         private void SetMood(AssistantMood next)
         {
@@ -520,6 +531,8 @@ namespace Order.Presentation
         {
             lifetime.Cancel();
             app.Changed -= Refresh;
+            if (phrasebook != null) phrasebook.Learned -= OnLearned;
+            phrasebookPanel?.Dispose();
             cursor.Dispose();
             sound.Dispose();
             root.Clear();

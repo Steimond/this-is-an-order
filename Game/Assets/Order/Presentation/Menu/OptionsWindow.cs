@@ -25,6 +25,8 @@ namespace Order.Presentation
         public VisualElement Layer => modal.Layer;
         public bool IsOpen => modal.IsOpen;
         public event Action CloseRequested;
+        // Extra content appended to a tab after its parameters (the phrasebook editor on the voice tab).
+        public Func<AppScreen, VisualElement> Extra;
 
         public OptionsWindow(Action<AppCommand> send)
         {
@@ -113,6 +115,8 @@ namespace Order.Presentation
                 if (option.Section != section) { section = option.Section; scroll.Add(Hud.Text(section, "hud-section-title")); }
                 Row(option, Control(option, settings));
             }
+            var extra = Extra?.Invoke(tab);
+            if (extra != null) scroll.Add(extra);
             scroll.scrollOffset = Vector2.zero;
         }
 

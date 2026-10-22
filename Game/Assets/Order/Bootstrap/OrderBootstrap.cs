@@ -22,6 +22,7 @@ namespace Order.Bootstrap
         private TemplePrototypeView testMap;
         private Camera menuCamera;
         private Task<bool> warmup;
+        private Phrasebook phrasebook;
         private void OnEnable()
         {
             if (!UnityEngine.Application.isPlaying || view != null) return;
@@ -31,11 +32,12 @@ namespace Order.Bootstrap
                 : Path.Combine(Path.GetDirectoryName(UnityEngine.Application.dataPath), "LocalAI");
             interpreter = new LocalIntentInterpreter(directory, Resources.Load<TextAsset>("OrderIntentPrompt").text,
                 Resources.Load<TextAsset>("OrderIntentSchema").text, Resources.Load<TextAsset>("OrderIntentExamples").text);
-            input = new AppCommandInput(app, new MenuCommandInterpreter(interpreter));
+            phrasebook = new Phrasebook(new FilePhrasebookStore(UnityEngine.Application.persistentDataPath));
+            input = new AppCommandInput(app, new PhrasebookInterpreter(new MenuCommandInterpreter(interpreter), phrasebook));
             warmup = interpreter.WarmupAsync();
             var root = GetComponent<UIDocument>().rootVisualElement;
             if (MenuStyle != null) root.styleSheets.Add(MenuStyle);
-            view = new AppMenuView(root, app, input, warmup);
+            view = new AppMenuView(root, app, input, warmup, phrasebook);
             app.Changed += ApplyAudio;
             app.Requested += OnRequested;
             ApplyAudio();
@@ -70,7 +72,7 @@ namespace Order.Bootstrap
             if (menuCamera != null) menuCamera.gameObject.SetActive(true);
             var root = GetComponent<UIDocument>().rootVisualElement;
             if (MenuStyle != null) root.styleSheets.Add(MenuStyle);
-            view = new AppMenuView(root, app, input, warmup);
+            view = new AppMenuView(root, app, input, warmup, phrasebook);
         }
         private void OnDisable() => Cleanup();
         private void OnDestroy() => Cleanup();

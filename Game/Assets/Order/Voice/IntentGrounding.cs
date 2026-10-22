@@ -15,6 +15,7 @@ namespace Order.Voice
             ["тринадцать"]=13,["четырнадцать"]=14,["пятнадцать"]=15,["шестнадцать"]=16,["семнадцать"]=17,["восемнадцать"]=18,["девятнадцать"]=19,
             ["двадцать"]=20,["тридцать"]=30,["сорок"]=40,["пятьдесят"]=50,["пятидесяти"]=50,["шестьдесят"]=60,["семьдесят"]=70,["восемьдесят"]=80,["девяносто"]=90,["сто"]=100,["ста"]=100
         };
+        internal static bool IsNumberWord(string word) => Numbers.ContainsKey(word);
         private static string Normalize(string text) => (text ?? "").Trim().ToLowerInvariant().Replace('ё','е').TrimEnd('.', '!', '?');
         public static bool TryDirect(string text, out IntentDecision decision)
         {

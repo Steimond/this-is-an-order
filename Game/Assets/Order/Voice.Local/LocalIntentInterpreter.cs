@@ -124,9 +124,11 @@ namespace Order.Voice.Local
                         var decision = Decode(raw);
                         timing.DecodeMs = stage.Elapsed.TotalMilliseconds;
                         stage.Restart();
-                        var result = IntentDecisionValidator.Validate(IntentGrounding.Ground(decision, text), text, state);
+                        var grounded = IntentGrounding.Ground(decision, text);
+                        var result = IntentDecisionValidator.Validate(grounded, text, state);
                         timing.GroundingMs = stage.Elapsed.TotalMilliseconds;
-                        return Complete(result, timing, totalWatch);
+                        // The grounded decision lets the personal phrasebook learn the meaning, not the executed value.
+                        return Complete(result.WithDecision(grounded), timing, totalWatch);
                         }
                     }
                 }

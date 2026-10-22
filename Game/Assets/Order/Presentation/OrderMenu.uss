@@ -583,3 +583,91 @@
 }
 
 .console-dock__reply.is-alert { color: var(--hud-warn); }
+
+/* Personal phrasebook editor (voice settings tab) */
+.phrasebook {
+    margin-top: 4px;
+    padding-bottom: 12px;
+}
+
+.phrasebook__caption,
+.phrasebook__empty {
+    margin: 0 14px 8px 14px;
+    font-size: 12px;
+    white-space: normal;
+    color: var(--hud-muted);
+}
+
+.phrasebook__toolbar {
+    flex-direction: row;
+    align-items: center;
+    margin: 0 14px 2px 14px;
+}
+
+.phrasebook__toolbar > .hud-button { margin-right: 6px; }
+.phrasebook__spacer { flex-grow: 1; }
+
+.phrasebook__summary {
+    margin: 4px 14px 0 14px;
+    font-size: 11px;
+    white-space: normal;
+    color: var(--hud-muted);
+}
+
+.phrasebook__status {
+    margin: 2px 14px 6px 14px;
+    font-size: 12px;
+    white-space: normal;
+    color: var(--hud-accent);
+}
+
+.phrasebook__status.is-error { color: var(--hud-warn); }
+
+.phrasebook__row {
+    flex-direction: row;
+    align-items: center;
+    min-height: 40px;
+    padding: 4px 14px;
+    border-bottom-width: 1px;
+    border-color: var(--hud-line);
+}
+
+.phrasebook__row--new {
+    margin-bottom: 4px;
+    border-bottom-width: 0;
+}
+
+.phrasebook__field {
+    flex-grow: 1;
+    flex-basis: 0;
+    height: 30px;
+    border-width: 1px;
+    border-color: var(--hud-line);
+    background-color: rgba(0, 0, 0, 0.28);
+}
+
+.phrasebook__field > .unity-base-text-field__input,
+.phrasebook__field:hover > .unity-base-text-field__input,
+.phrasebook__field:focus > .unity-base-text-field__input {
+    padding: 0 8px;
+    font-size: 13px;
+}
+
+.phrasebook__arrow {
+    margin: 0 8px;
+    font-size: 16px;
+    color: var(--hud-accent);
+}
+
+.phrasebook__row > .hud-chip { margin-left: 10px; }
+.phrasebook__row > .hud-button { margin-left: 6px; }
+
+.phrasebook__row > .hud-button--icon {
+    width: 30px;
+    min-height: 30px;
+}
+
+.phrasebook__row > .hud-button--icon > .hud-icon {
+    width: 12px;
+    height: 12px;
+}

@@ -8,6 +8,7 @@
     "Order.Voice",
     "Order.Voice.Local",
     "Order.Input",
+    "Order.Bootstrap",
     "Order.Simulation",
     "Unity.Entities",
     "Unity.Collections"
