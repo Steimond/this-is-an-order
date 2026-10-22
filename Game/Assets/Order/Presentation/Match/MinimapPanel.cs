@@ -181,7 +181,7 @@ namespace Order.Presentation
                 }
 
                 var match = host.Match;
-                foreach (var unit in host.Selection)
+                foreach (var unit in host.Selection.Units)
                 {
                     var route = unit.Route.ToList();
                     if (route.Count == 0) continue;
@@ -219,7 +219,7 @@ namespace Order.Presentation
                     p.Fill();
                 }
                 p.strokeColor = Accent; p.lineWidth = 1.2f;
-                foreach (var unit in host.Selection) { p.BeginPath(); HudPaint.Circle(p, M(unit.X, unit.Z), 5); p.Stroke(); }
+                foreach (var unit in host.Selection.Units) { p.BeginPath(); HudPaint.Circle(p, M(unit.X, unit.Z), 5); p.Stroke(); }
             }
         }
     }

@@ -26,11 +26,14 @@ namespace Order.Presentation
         int SelectedBuilding { get; }
         ResourceDeposit SelectedDeposit { get; }
         IReadOnlyList<Vector2> Pins { get; }
-        IReadOnlyList<PrototypeUnit> Selection { get; }
+        UnitSelection Selection { get; }
         Texture MinimapTexture { get; }
         string ModeHint { get; }
         void SetMode(MatchMode mode, int buildKind = -1);
         void SelectWorker();
+        void SelectArmy();
+        void SelectKind(UnitKind kind);
+        void RecallGroup(int index);
         bool MoveSelection(Vector2 point);
         void Stop();
         void Focus(Vector2 point);
@@ -72,7 +75,8 @@ namespace Order.Presentation
         private readonly Label assistantName, subtitle;
         private readonly HudIcon selectionIcon;
         private readonly Label selectionName, selectionStatus, selectionStats, selectionEmpty;
-        private readonly VisualElement upgrades, selectionBody;
+        private readonly VisualElement upgrades, selectionBody, unitGrid, groupTabs, selectionBox;
+        private readonly List<VisualElement> unitTiles = new List<VisualElement>(), tabs = new List<VisualElement>();
         private readonly HudBar health, shields, progress;
         private readonly Label commandsTitle;
         private readonly Button[] buttons = new Button[Slots];
@@ -186,6 +190,21 @@ namespace Order.Presentation
             selection.Add(selectionBody);
             selectionEmpty = Hud.Text("", "match-selection__empty");
             selection.Add(selectionEmpty);
+            // Several units: one tile per unit with its health, as in StarCraft.
+            unitGrid = Hud.Box("match-unit-grid");
+            selection.Add(unitGrid);
+            // Control groups as tabs on the top edge of the panel.
+            groupTabs = Hud.Box("match-groups"); groupTabs.pickingMode = PickingMode.Ignore;
+            for (var i = 0; i < UnitSelection.Groups; i++)
+            {
+                var index = i;
+                var tab = Hud.Box("match-group");
+                tab.Add(Hud.Text(i == 9 ? "0" : (i + 1).ToString(), "match-group__key"));
+                tab.Add(Hud.Text("", "match-group__count"));
+                tab.RegisterCallback<PointerDownEvent>(evt => { if (evt.button == 0) { host.RecallGroup(index); evt.StopPropagation(); } });
+                groupTabs.Add(tab); tabs.Add(tab);
+            }
+            selection.Add(groupTabs);
             deck.Add(selection);
 
             var commands = Hud.Box("match-commands"); commands.AddToClassList("match-hit");
@@ -236,6 +255,9 @@ namespace Order.Presentation
             commandLine.Add(Hud.Button("ОТПРАВИТЬ", Submit));
             screen.Add(commandLine);
 
+            selectionBox = Hud.Box("match-selection-box"); selectionBox.pickingMode = PickingMode.Ignore;
+            screen.Add(selectionBox);
+
             if (services?.App != null)
             {
                 options = new OptionsWindow(command => Send(command));
@@ -280,6 +302,18 @@ namespace Order.Presentation
             return false;
         }
 
+        // Drag rectangle in screen pixels (origin bottom left); null hides it.
+        public void SetSelectionBox(Rect? box)
+        {
+            selectionBox.style.display = box.HasValue && screen.panel != null ? DisplayStyle.Flex : DisplayStyle.None;
+            if (!box.HasValue || screen.panel == null) return;
+            var r = box.Value;
+            var a = RuntimePanelUtils.ScreenToPanel(screen.panel, new Vector2(r.xMin, Screen.height - r.yMax));
+            var b = RuntimePanelUtils.ScreenToPanel(screen.panel, new Vector2(r.xMax, Screen.height - r.yMin));
+            selectionBox.style.left = a.x; selectionBox.style.top = a.y;
+            selectionBox.style.width = b.x - a.x; selectionBox.style.height = b.y - a.y;
+        }
+
         public void HandleKeys(Keyboard keys)
         {
             if (keys == null || disposed) return;
@@ -311,6 +345,7 @@ namespace Order.Presentation
             var hint = host.ModeHint;
             if (hint != lastHint) { lastHint = hint; if (!string.IsNullOrEmpty(hint)) ShowEvent(hint, true); }
             RefreshSelection();
+            RefreshGroups(match);
             RefreshCommands();
             minimap.Refresh();
             assistantName.text = "АССИСТЕНТ  ·  " + PrototypeCatalog.FactionLabel(services?.App?.Settings.AssistantFaction ?? FactionId.Expedition).ToUpperInvariant();
@@ -357,8 +392,19 @@ namespace Order.Presentation
             shields.style.display = DisplayStyle.None;
             progress.style.display = DisplayStyle.None;
             var any = true;
-            var unit = host.Selection.Count > 0 ? host.Selection[0] : null;
-            if (unit != null)
+            var selected = host.Selection.Units;
+            var unit = selected.Count > 0 ? selected[0] : null;
+            var many = selected.Count > 1;
+            if (many)
+            {
+                selectionIcon.Kind = UnitIcon(unit.Kind);
+                selectionName.text = "ОТРЯД · " + selected.Count;
+                var parts = new List<string>();
+                foreach (var group in selected.GroupBy(u => u.Kind)) parts.Add($"{group.First().Stats.Name} ×{group.Count()}".ToUpperInvariant());
+                selectionStatus.text = string.Join("  ·  ", parts);
+                RefreshTiles(selected);
+            }
+            else if (unit != null)
             {
                 var stats = unit.Stats;
                 selectionIcon.Kind = UnitIcon(unit.Kind);
@@ -404,8 +450,9 @@ namespace Order.Presentation
             }
             else any = false;
             health.Q<Label>(className: "hud-bar__caption").text = host.SelectedDeposit != null && unit == null && host.SelectedBuilding < 0 ? "ЗАПАС" : "ПРОЧНОСТЬ";
-            selectionBody.style.display = any ? DisplayStyle.Flex : DisplayStyle.None;
-            upgrades.style.display = any ? DisplayStyle.Flex : DisplayStyle.None;
+            selectionBody.style.display = any && !many ? DisplayStyle.Flex : DisplayStyle.None;
+            upgrades.style.display = any && !many ? DisplayStyle.Flex : DisplayStyle.None;
+            unitGrid.style.display = many ? DisplayStyle.Flex : DisplayStyle.None;
             selectionEmpty.style.display = any ? DisplayStyle.None : DisplayStyle.Flex;
             if (!any)
             {
@@ -413,6 +460,56 @@ namespace Order.Presentation
                 selectionName.text = "НЕТ ВЫДЕЛЕНИЯ";
                 selectionStatus.text = "ЛКМ — выбрать  ·  ПКМ — приказ";
                 selectionEmpty.text = "Выберите юнит, здание или залежь. Пробел — камера к выделенным.";
+            }
+        }
+
+        // Tiles are reused; each keeps its unit in userData. Click: only this unit; Shift: drop it; Ctrl: keep only its kind.
+        private void RefreshTiles(IReadOnlyList<PrototypeUnit> selected)
+        {
+            while (unitTiles.Count < selected.Count)
+            {
+                var tile = Hud.Box("match-unit-tile");
+                var icon = new HudIcon(HudIconKind.Worker); icon.AddToClassList("match-unit-tile__icon");
+                tile.Add(icon);
+                var bar = Hud.Box("match-unit-tile__health"); bar.Add(Hud.Box("match-unit-tile__fill"));
+                tile.Add(bar);
+                tile.RegisterCallback<PointerDownEvent>(OnTile);
+                unitGrid.Add(tile); unitTiles.Add(tile);
+            }
+            for (var i = 0; i < unitTiles.Count; i++)
+            {
+                var tile = unitTiles[i];
+                tile.style.display = i < selected.Count ? DisplayStyle.Flex : DisplayStyle.None;
+                if (i >= selected.Count) { tile.userData = null; continue; }
+                var unit = selected[i];
+                var share = Mathf.Clamp01(unit.Health / (float)unit.Stats.Health);
+                tile.userData = unit;
+                tile.tooltip = unit.Stats.Name;
+                tile.Q<HudIcon>().Kind = UnitIcon(unit.Kind);
+                tile.Q(className: "match-unit-tile__fill").style.width = Length.Percent(share * 100);
+                tile.EnableInClassList("is-hurt", share < .6f);
+                tile.EnableInClassList("is-critical", share < .3f);
+            }
+        }
+
+        private void OnTile(PointerDownEvent evt)
+        {
+            if (evt.button != 0 || !((evt.currentTarget as VisualElement)?.userData is PrototypeUnit unit)) return;
+            var selection = host.Selection;
+            if (evt.shiftKey) selection.Remove(unit);
+            else if (evt.ctrlKey) selection.Set(selection.Units.Where(u => u.Kind == unit.Kind).ToList());
+            else selection.Set(new[] { unit });
+            evt.StopPropagation();
+            Refresh();
+        }
+
+        private void RefreshGroups(PrototypeMatch match)
+        {
+            for (var i = 0; i < tabs.Count; i++)
+            {
+                var size = host.Selection.GroupSize(i, match.Units);
+                tabs[i].style.display = size > 0 ? DisplayStyle.Flex : DisplayStyle.None;
+                tabs[i].Q<Label>(className: "match-group__count").text = size.ToString();
             }
         }
 
@@ -450,7 +547,7 @@ namespace Order.Presentation
             Array.Clear(actions, 0, actions.Length);
             var match = host.Match;
             var title = "КОМАНДЫ";
-            var unit = host.Selection.Count > 0 ? host.Selection[0] : null;
+            var unit = host.Selection.Count > 0 ? host.Selection.Units[0] : null;
             var worker = unit != null && unit.Stats.HarvestAmount > 0;
             if (worker)
             {
@@ -458,12 +555,12 @@ namespace Order.Presentation
                 if (host.Mode == MatchMode.Build) buildPage = true;
                 if (builtCount >= 0 && match.Buildings.Count > builtCount) buildPage = false;
                 builtCount = match.Buildings.Count;
-                title = (buildPage ? "СТРОИТЕЛЬСТВО · " : "КОМАНДЫ · ") + unit.Stats.Name.ToUpperInvariant();
+                title = (buildPage ? "СТРОИТЕЛЬСТВО · " : "КОМАНДЫ · ") + Who().ToUpperInvariant();
             }
             else buildPage = false;
             if (unit != null && !buildPage)
             {
-                if (!worker) title = "КОМАНДЫ · " + unit.Stats.Name.ToUpperInvariant();
+                if (!worker) title = "КОМАНДЫ · " + Who().ToUpperInvariant();
                 actions[0] = new HudAction { Title = "Движение", Hotkey = "M", Key = Key.M, Icon = HudIconKind.Move, Active = host.Mode == MatchMode.Move,
                     Description = "Укажите точку на карте или миникарте. Также: ПКМ по карте.", Run = () => host.SetMode(MatchMode.Move) };
                 actions[1] = new HudAction { Title = "Стоп", Hotkey = "X", Key = Key.X, Icon = HudIconKind.Stop,
@@ -687,7 +784,7 @@ namespace Order.Presentation
             bool Is(string pattern) => Regex.IsMatch(t, pattern, RegexOptions.CultureInvariant);
             if (Is(@"^(?:помощь|справка|команды|что ты умеешь)$"))
             {
-                reply = "Приказы полигона: «иди в D-2-9», «к метке 2», «стоп», «добывай газ», «построй узел снабжения в C-7», «метка в E-4», «камера на H-8», «сетка», «к базе». " +
+                reply = "Приказы полигона: «выбери армию», «выбери стрелков», «группа 1», «иди в D-2-9», «к метке 2», «стоп», «добывай газ», «построй узел снабжения в C-7», «метка в E-4», «камера на H-8», «сетка», «к базе». " +
                     (services == null ? "" : "Меню: «открой графику», «громкость 40», «в штаб».");
                 return true;
             }
@@ -710,6 +807,27 @@ namespace Order.Presentation
             if (Is(@"^(?:к рабочему|покажи рабочего|камера к рабочему|где рабочий)$")) { host.FocusWorker(); reply = "Камера на рабочем."; return true; }
             if (Is(@"^(?:к базе|на базу|домой|покажи базу|камера к базе)$")) { host.FocusBase(); reply = "Камера на командном узле."; return true; }
             if (Is(@"^(?:выбери рабочего|рабочий)$")) { host.SelectWorker(); reply = "Рабочий выбран."; return true; }
+            if (Is(@"^(?:(?:выбери|выдели) )?(?:всю )?(?:армию|войска|все войска)$"))
+            {
+                host.SelectArmy(); ok = host.Selection.Count > 0;
+                reply = ok ? $"Армия выбрана: {host.Selection.Count}." : "Армии нет."; return true;
+            }
+            var kindMatch = Regex.Match(t, @"^(?:выбери|выдели) (?:всех )?(штурмовик\w*|стрел\w*|винтокрыл\w*)$", RegexOptions.CultureInvariant);
+            if (kindMatch.Success)
+            {
+                var word = kindMatch.Groups[1].Value;
+                var kind = word.StartsWith("штурм") ? UnitKind.Melee : word.StartsWith("стрел") ? UnitKind.Ranged : UnitKind.Air;
+                host.SelectKind(kind); ok = host.Selection.Count > 0 && host.Selection.Units[0].Kind == kind;
+                reply = ok ? $"{Who()}: выбрано {host.Selection.Count}." : "Таких юнитов нет."; return true;
+            }
+            var groupMatch = Regex.Match(t, @"^группа (\d)$", RegexOptions.CultureInvariant);
+            if (groupMatch.Success)
+            {
+                var digit = groupMatch.Groups[1].Value[0] - '0'; var index = digit == 0 ? 9 : digit - 1;
+                ok = host.Selection.GroupSize(index, match.Units) > 0;
+                if (ok) host.RecallGroup(index);
+                reply = ok ? $"Группа {digit}: {host.Selection.Count}." : $"Группа {digit} пуста. Назначить: Ctrl+{digit}."; return true;
+            }
             if (Is(@"^(?:строительство|постройки|меню построек|строить)$")) { host.SelectWorker(); buildPage = true; reply = "Выберите здание: S — узел снабжения, F — цех."; return true; }
             if (Is(@"^(?:очисти|убери|сними|удали) метки$")) { host.ClearPins(); reply = "Метки сняты."; return true; }
             if (Is(@"^(?:сетка|покажи сетку|скрой сетку|координаты|сетка координат)$")) { minimap.SetGrid(!minimap.GridVisible); reply = minimap.GridVisible ? "Сетка координат включена." : "Сетка координат скрыта."; return true; }
@@ -733,8 +851,8 @@ namespace Order.Presentation
             if (Is(@"^(?:добывай|добыча|собирай|копай|на добычу|иди добывать)\b"))
             {
                 var wantGas = Is(@"\bгаз\w*");
-                var harvester = host.Selection.FirstOrDefault(u => u.Stats.HarvestAmount > 0);
-                if (harvester == null) { host.SelectWorker(); harvester = host.Selection.FirstOrDefault(); }
+                var harvester = host.Selection.Units.FirstOrDefault(u => u.Stats.HarvestAmount > 0);
+                if (harvester == null) { host.SelectWorker(); harvester = host.Selection.Units.FirstOrDefault(); }
                 if (harvester == null) { ok = false; reply = "Нет рабочих."; return true; }
                 var deposit = hasPoint ? match.Map.ResourceAt((int)x, (int)z) : match.Map.Resources
                     .Where(r => r.Gas == wantGas && r.Remaining > 0 && match.Explored[r.X, r.Z])
@@ -755,7 +873,7 @@ namespace Order.Presentation
             return false;
         }
 
-        private string Who() => host.Selection.Count == 1 ? host.Selection[0].Stats.Name : "Отряд";
+        private string Who() => host.Selection.Count == 1 ? host.Selection.Units[0].Stats.Name : "Отряд";
 
         private void OnAppChanged()
         {

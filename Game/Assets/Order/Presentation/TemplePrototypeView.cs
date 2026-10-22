@@ -24,7 +24,7 @@ namespace Order.Presentation
         public IReadOnlyList<Vector2> Pins => pins;
         public Texture MinimapTexture => miniTexture;
         public string ModeHint { get; private set; } = "";
-        public IReadOnlyList<PrototypeUnit> Selection => selection;
+        public UnitSelection Selection => selection;
         VisualElement ui;
         MatchHud hud;
         MatchServices services;
@@ -35,14 +35,24 @@ namespace Order.Presentation
         Color[] miniBase;
         GameObject worldRoot, footprint, focusRing, ghostModel;
         int ghostKind=-1;
-        readonly List<GameObject> buildingViews = new List<GameObject>(), constructionRings = new List<GameObject>(), selectionRings = new List<GameObject>();
+        readonly List<GameObject> buildingViews = new List<GameObject>(), constructionRings = new List<GameObject>(), selectionRings = new List<GameObject>(), hoverRings = new List<GameObject>();
         readonly List<GameObject> depositViews = new List<GameObject>();
-        readonly List<PrototypeUnit> selection = new List<PrototypeUnit>();
+        UnitSelection selection = new UnitSelection();
+        readonly List<PrototypeUnit> hovered = new List<PrototypeUnit>();
+        readonly List<Marker> markers = new List<Marker>();
+        static readonly Key[] Digits = { Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.Digit5, Key.Digit6, Key.Digit7, Key.Digit8, Key.Digit9, Key.Digit0 };
+        Vector2 dragStart, lastClickAt;
+        bool pressing, dragging;
+        PrototypeUnit lastClickUnit;
+        float lastClickTime, lastGroupTime;
+        int lastGroup=-1;
+        MaterialPropertyBlock markerColor;
         readonly Dictionary<int, UnitView> unitViews = new Dictionary<int, UnitView>();
         readonly Dictionary<UnitKind, UnitModel> unitModels = new Dictionary<UnitKind, UnitModel>();
         readonly Mesh[] buildingMeshes = new Mesh[3];
-        Mesh ringMesh, beaconMesh, shadowMesh;
-        Material buildingMaterial, ghostMaterial, footprintMaterial, selectedMaterial, neutralMaterial, constructionMaterial, beaconMaterial, unitMaterial, beamMaterial, shadowMaterial;
+        Mesh ringMesh, beaconMesh, shadowMesh, selectionMesh, markerMesh;
+        Material buildingMaterial, ghostMaterial, footprintMaterial, selectedMaterial, neutralMaterial, constructionMaterial, beaconMaterial, unitMaterial, beamMaterial, shadowMaterial,
+            unitRingMaterial, hoverRingMaterial, markerMaterial;
         Entity matchEntity;
         World ecsWorld;
         Vector3 focus = new Vector3(13,0,13);
@@ -104,6 +114,12 @@ namespace Order.Presentation
             beamMaterial=scenery.Glow("Mining beam",new Color(.45f,.9f,1)*3);
             shadowMaterial=scenery.Glow("Air unit shadow",new Color(0,0,0,.6f),false,m=>m.SetFloat("_Soft",1));
             shadowMesh=scenery.Own(SoftQuad());
+            // StarCraft-like green circles under selected units, a faint one under the hovered unit, and order markers.
+            unitRingMaterial=scenery.Glow("Selected unit",new Color(.3f,1.5f,.45f,.95f),false);
+            hoverRingMaterial=scenery.Glow("Hovered unit",new Color(.85f,1,.9f,.5f),false);
+            markerMaterial=scenery.Glow("Order marker",Color.white,false);
+            selectionMesh=scenery.Own(MatchModels.SelectionRing());markerMesh=scenery.Own(MatchModels.MoveMarker());
+            markerColor=new MaterialPropertyBlock();
             focusRing=scenery.Model("Selection",ringMesh,selectedMaterial,worldRoot.transform,false);
             Match.AddTestSquad();SelectWorker();
             var square=new MeshBuilder();square.Quad(new Vector3(-.5f,0,-.5f),new Vector3(-.5f,0,.5f),new Vector3(.5f,0,.5f),new Vector3(.5f,0,-.5f));
@@ -126,6 +142,7 @@ namespace Order.Presentation
                 float x=(keys.rightArrowKey.isPressed?1:0)-(keys.leftArrowKey.isPressed?1:0);
                 float z=(keys.upArrowKey.isPressed?1:0)-(keys.downArrowKey.isPressed?1:0);
                 focus+=new Vector3(x,0,z)*Time.deltaTime*zoom*CameraSpeed();
+                SelectionKeys(keys);
             }
             if(mouse!=null&&UnityEngine.Application.isFocused&&Option("controls.edgeScroll",1)>=.5f)
             {
@@ -155,11 +172,26 @@ namespace Order.Presentation
                         if(keys!=null&&keys.altKey.isPressed)AddPin(point);
                         else if(Mode==MatchMode.Build){if(Match.Build(hoverX,hoverZ,buildKind))SetMode(MatchMode.None);}
                         else if(Mode!=MatchMode.None)OrderTo(point);
-                        else Pick(p,true);
+                        else{pressing=true;dragStart=p;}
                     }
                 }
-                // Air units hang above the ground, so a click may hit no terrain and still select one.
-                else if(!overUI&&Mode==MatchMode.None&&mouse.leftButton.wasPressedThisFrame)Pick(p,false);
+                // Air units hang above the ground, so a selection may start where no terrain is hit.
+                else if(!overUI&&Mode==MatchMode.None&&mouse.leftButton.wasPressedThisFrame){pressing=true;dragStart=p;}
+                // Selection happens on release: a click picks, a drag boxes; units under the box light up while dragging.
+                hovered.Clear();
+                if(pressing)
+                {
+                    if(!dragging&&(p-dragStart).magnitude>6)dragging=true;
+                    var box=new Rect(Mathf.Min(dragStart.x,p.x),Mathf.Min(dragStart.y,p.y),Mathf.Abs(p.x-dragStart.x),Mathf.Abs(p.y-dragStart.y));
+                    if(dragging){UnitsIn(box,hovered);hud?.SetSelectionBox(box);}
+                    if(!mouse.leftButton.isPressed)
+                    {
+                        bool shift=keys!=null&&keys.shiftKey.isPressed,ctrl=keys!=null&&keys.ctrlKey.isPressed;
+                        if(dragging)BoxSelect(hovered,shift);else Click(p,shift,ctrl,hasHover);
+                        pressing=dragging=false;hovered.Clear();hud?.SetSelectionBox(null);
+                    }
+                }
+                else if(!overUI&&Mode==MatchMode.None){var unit=UnitAt(p);if(unit!=null)hovered.Add(unit);}
             }
             focus.x=Mathf.Clamp(focus.x,0,64);focus.z=Mathf.Clamp(focus.z,0,64);
             zoom=Mathf.Lerp(zoom,targetZoom,1-Mathf.Exp(-Time.deltaTime*12));
@@ -168,6 +200,7 @@ namespace Order.Presentation
             AnimateUnits();
             UpdateSelectionRings();
             UpdateFocusRing();
+            AnimateMarkers();
             footprint.SetActive(Mode==MatchMode.Build&&hasHover);
             if(footprint.activeSelf)
             {
@@ -268,54 +301,160 @@ namespace Order.Presentation
                 }
             }
             if(unitViews.Count>Match.Units.Count)
+            {
                 foreach(var id in new List<int>(unitViews.Keys))
                     if(!Match.Units.Exists(u=>u.Id==id)){var view=unitViews[id];if(view.Shadow!=null)Destroy(view.Shadow.gameObject);Destroy(view.Root);unitViews.Remove(id);}
-            selection.RemoveAll(u=>!Match.Units.Contains(u));
+                selection.Prune(Match.Units);
+            }
         }
+        // Selected units get a green circle, the hovered unit (or units under the selection box) a faint one.
+        // Circles follow the slope of a ramp; an air unit's circle hangs just under its body, so it stays next to it on screen.
         void UpdateSelectionRings()
         {
-            while(selectionRings.Count<selection.Count)selectionRings.Add(scenery.Model("Selection",ringMesh,selectedMaterial,worldRoot.transform,false));
-            for(int i=0;i<selectionRings.Count;i++)
-            {
-                bool active=i<selection.Count;selectionRings[i].SetActive(active);
-                if(!active)continue;
-                var unit=selection[i];
-                // An air unit's ring hangs just under its body; on the ground it would sit far below on screen.
-                float y=unit.Stats.Flying&&unitViews.TryGetValue(unit.Id,out var view)?view.Body.position.y-.3f:Match.HeightAt(unit.X,unit.Z)+.02f;
-                selectionRings[i].transform.position=new Vector3(unit.X,y,unit.Z);
-                selectionRings[i].transform.localScale=Vector3.one*(unit.Stats.Radius+.14f);
-            }
+            int shown=0,hints=0;
+            foreach(var unit in selection.Units)Ring(selectionRings,shown++,unit,unitRingMaterial,1);
+            foreach(var unit in hovered)if(!selection.Contains(unit))Ring(hoverRings,hints++,unit,hoverRingMaterial,1.06f);
+            for(int i=shown;i<selectionRings.Count;i++)selectionRings[i].SetActive(false);
+            for(int i=hints;i<hoverRings.Count;i++)hoverRings[i].SetActive(false);
         }
-        // Units are picked on screen by their visible body; otherwise the ground cell picks a building or an explored deposit.
-        void Pick(Vector2 screen,bool ground)
+        void Ring(List<GameObject> pool,int index,PrototypeUnit unit,Material material,float scale)
+        {
+            while(pool.Count<=index)pool.Add(scenery.Model("Selection circle",selectionMesh,material,worldRoot.transform,false));
+            var ring=pool[index];ring.SetActive(true);
+            float y;Quaternion tilt;
+            if(unit.Stats.Flying&&unitViews.TryGetValue(unit.Id,out var view)){y=view.Body.position.y-.3f;tilt=Quaternion.identity;}
+            else{y=Match.HeightAt(unit.X,unit.Z)+.03f;tilt=Quaternion.FromToRotation(Vector3.up,GroundNormal(unit.X,unit.Z));}
+            ring.transform.SetPositionAndRotation(new Vector3(unit.X,y,unit.Z),tilt);
+            ring.transform.localScale=Vector3.one*(unit.Stats.Radius+.16f)*scale;
+        }
+        Vector3 GroundNormal(float x,float z)
+        {
+            const float e=.3f;
+            float H(float px,float pz)=>Match.HeightAt(Mathf.Clamp(px,0,63.99f),Mathf.Clamp(pz,0,63.99f));
+            return new Vector3(H(x-e,z)-H(x+e,z),2*e,H(x,z-e)-H(x,z+e)).normalized;
+        }
+        // Click: a unit (Shift toggles, Ctrl or a double click takes all of its kind on screen); otherwise the ground cell
+        // picks a building or an explored deposit, and an empty click clears the selection.
+        void Click(Vector2 screen,bool shift,bool ctrl,bool ground)
         {
             var unit=UnitAt(screen);
-            selection.Clear();selectedBuilding=-1;selectedDeposit=null;
-            if(unit!=null)selection.Add(unit);
-            else if(ground)
+            if(unit!=null)
             {
-                selectedBuilding=Match.Buildings.FindIndex(b=>hoverX>=b.X&&hoverX<b.X+b.Width&&hoverZ>=b.Z&&hoverZ<b.Z+b.Width);
-                selectedDeposit=selectedBuilding>=0||!Match.Map.Inside(hoverX,hoverZ)||!Match.Explored[hoverX,hoverZ]?null:Match.Map.ResourceAt(hoverX,hoverZ);
+                bool twice=lastClickUnit!=null&&lastClickUnit.Kind==unit.Kind&&Time.unscaledTime-lastClickTime<.35f&&(screen-lastClickAt).magnitude<14;
+                selection.Click(unit,shift,ctrl||twice,UnitsOnScreen());
+                lastClickUnit=twice?null:unit;lastClickTime=Time.unscaledTime;lastClickAt=screen;
+                selectedBuilding=-1;selectedDeposit=null;
+            }
+            else if(!shift)
+            {
+                selection.Clear();lastClickUnit=null;selectedBuilding=-1;selectedDeposit=null;
+                if(ground)
+                {
+                    selectedBuilding=Match.Buildings.FindIndex(b=>hoverX>=b.X&&hoverX<b.X+b.Width&&hoverZ>=b.Z&&hoverZ<b.Z+b.Width);
+                    selectedDeposit=selectedBuilding>=0||!Match.Map.Inside(hoverX,hoverZ)||!Match.Explored[hoverX,hoverZ]?null:Match.Map.ResourceAt(hoverX,hoverZ);
+                }
             }
             hud?.Refresh();
+        }
+        void BoxSelect(List<PrototypeUnit> inside,bool shift)
+        {
+            selection.Box(inside,shift);
+            if(selection.Count>0||!shift){selectedBuilding=-1;selectedDeposit=null;}
+            hud?.Refresh();
+        }
+        // On screen a unit is a segment along its body: from the feet (or below a hovering body) to the top of the model.
+        bool ScreenAxis(PrototypeUnit unit,out Vector2 a,out Vector2 b,out float reach)
+        {
+            a=b=default;reach=0;
+            if(!unitViews.TryGetValue(unit.Id,out var view))return false;
+            var model=view.Model;var foot=view.Root.transform.position;
+            var low=model.Hover>0?view.Body.position+Vector3.down*.25f:foot+Vector3.up*.1f*model.Scale;
+            var high=model.Hover>0?view.Body.position+Vector3.up*.25f:foot+Vector3.up*model.Height*model.Scale;
+            Vector3 sa=MapCamera.WorldToScreenPoint(low),sb=MapCamera.WorldToScreenPoint(high);if(sa.z<=0||sb.z<=0)return false;
+            a=sa;b=sb;reach=Vector2.Distance(a,MapCamera.WorldToScreenPoint(low+MapCamera.transform.right*(unit.Stats.Radius*1.2f+.12f)));
+            return true;
         }
         PrototypeUnit UnitAt(Vector2 screen)
         {
             PrototypeUnit best=null;float bestDistance=float.MaxValue;
             foreach(var unit in Match.Units)
             {
-                if(!unitViews.TryGetValue(unit.Id,out var view))continue;
-                // Distance on screen to the unit's vertical axis, from its feet (or the bottom of a hovering body) to the top.
-                var model=view.Model;var foot=view.Root.transform.position;
-                var low=model.Hover>0?view.Body.position+Vector3.down*.25f:foot+Vector3.up*.1f*model.Scale;
-                var high=model.Hover>0?view.Body.position+Vector3.up*.25f:foot+Vector3.up*model.Height*model.Scale;
-                Vector3 a=MapCamera.WorldToScreenPoint(low),b=MapCamera.WorldToScreenPoint(high);if(a.z<=0||b.z<=0)continue;
-                float reach=Vector2.Distance(a,MapCamera.WorldToScreenPoint(low+MapCamera.transform.right*(unit.Stats.Radius*1.2f+.12f)));
-                Vector2 ab=(Vector2)b-(Vector2)a;float t=ab.sqrMagnitude>0?Mathf.Clamp01(Vector2.Dot(screen-(Vector2)a,ab)/ab.sqrMagnitude):0;
-                float distance=Vector2.Distance(screen,(Vector2)a+ab*t);
+                if(!ScreenAxis(unit,out var a,out var b,out float reach))continue;
+                Vector2 ab=b-a;float t=ab.sqrMagnitude>0?Mathf.Clamp01(Vector2.Dot(screen-a,ab)/ab.sqrMagnitude):0;
+                float distance=Vector2.Distance(screen,a+ab*t);
                 if(distance<reach&&distance<bestDistance){best=unit;bestDistance=distance;}
             }
             return best;
+        }
+        // A unit is inside the box when any of its feet, middle or top is.
+        void UnitsIn(Rect box,List<PrototypeUnit> result)
+        {
+            foreach(var unit in Match.Units)
+                if(ScreenAxis(unit,out var a,out var b,out _)&&(box.Contains(a)||box.Contains(b)||box.Contains((a+b)*.5f)))result.Add(unit);
+        }
+        List<PrototypeUnit> UnitsOnScreen()
+        {
+            var result=new List<PrototypeUnit>();UnitsIn(new Rect(0,0,Screen.width,Screen.height),result);return result;
+        }
+        // 1–0 recall groups (twice in a row: camera to the group), Ctrl+digit assigns, Shift+digit adds;
+        // F1 picks the next idle worker, F2 the whole army, as in StarCraft.
+        void SelectionKeys(Keyboard keys)
+        {
+            bool ctrl=keys.ctrlKey.isPressed,shift=keys.shiftKey.isPressed;
+            for(int i=0;i<Digits.Length;i++)
+            {
+                if(!keys[Digits[i]].wasPressedThisFrame)continue;
+                string label=i==9?"0":(i+1).ToString();
+                if(ctrl){selection.Assign(i);Match.Message=selection.Count>0?$"Группа {label}: {selection.Count}.":$"Группа {label} очищена.";hud?.Refresh();}
+                else if(shift){selection.AddToGroup(i);Match.Message=$"Группа {label}: {selection.GroupSize(i,Match.Units)}.";hud?.Refresh();}
+                else RecallGroup(i);
+            }
+            if(keys.f1Key.wasPressedThisFrame)SelectIdleWorker();
+            if(keys.f2Key.wasPressedThisFrame)SelectArmy();
+        }
+        public void RecallGroup(int index)
+        {
+            if(!selection.Recall(index,Match.Units))return;
+            selectedBuilding=-1;selectedDeposit=null;
+            if(lastGroup==index&&Time.unscaledTime-lastGroupTime<.4f)FocusSelection();
+            lastGroup=index;lastGroupTime=Time.unscaledTime;
+            hud?.Refresh();
+        }
+        public void SelectArmy()=>SelectUnits(u=>u.Kind!=UnitKind.Worker);
+        public void SelectKind(UnitKind kind)=>SelectUnits(u=>u.Kind==kind);
+        void SelectUnits(Predicate<PrototypeUnit> filter)
+        {
+            var units=Match.Units.FindAll(filter);if(units.Count==0)return;
+            selection.Set(units);selectedBuilding=-1;selectedDeposit=null;hud?.Refresh();
+        }
+        // The next worker with no order after the one selected now; the camera follows it.
+        void SelectIdleWorker()
+        {
+            var idle=Match.Units.FindAll(u=>u.Kind==UnitKind.Worker&&!u.Moving&&u.HarvestTarget==null);
+            if(idle.Count==0){Match.Message="Нет свободных рабочих.";hud?.Refresh();return;}
+            int current=selection.Count==1?idle.IndexOf(selection.Units[0]):-1;
+            selection.Set(new[]{idle[(current+1)%idle.Count]});selectedBuilding=-1;selectedDeposit=null;
+            FocusSelection();hud?.Refresh();
+        }
+        // Order marker on the ground: arrows converge on the point and fade; red when no unit could take the order.
+        sealed class Marker{public GameObject View;public float Start;public Color Color;}
+        void Mark(Vector2 point,bool ok)
+        {
+            var view=scenery.Model("Order marker",markerMesh,markerMaterial,worldRoot.transform,false);
+            float x=Mathf.Clamp(point.x,0,63.99f),z=Mathf.Clamp(point.y,0,63.99f);
+            view.transform.SetPositionAndRotation(new Vector3(point.x,Match.HeightAt(x,z)+.04f,point.y),Quaternion.FromToRotation(Vector3.up,GroundNormal(x,z)));
+            markers.Add(new Marker{View=view,Start=Time.time,Color=ok?new Color(.35f,1.6f,.5f,1):new Color(1.6f,.3f,.25f,1)});
+        }
+        void AnimateMarkers()
+        {
+            for(int i=markers.Count-1;i>=0;i--)
+            {
+                var marker=markers[i];float t=(Time.time-marker.Start)/.6f;
+                if(t>=1){Destroy(marker.View);markers.RemoveAt(i);continue;}
+                marker.View.transform.localScale=Vector3.one*Mathf.Lerp(1.3f,.55f,Mathf.Sqrt(t));
+                var color=marker.Color;color.a=1-Mathf.SmoothStep(.35f,1,t);
+                markerColor.SetColor("_Color",color);marker.View.GetComponent<MeshRenderer>().SetPropertyBlock(markerColor);
+            }
         }
         // Soft dark disc (uv 0–1) under air units.
         static Mesh SoftQuad()
@@ -413,12 +552,14 @@ namespace Order.Presentation
         public void SetMode(MatchMode mode,int kind=-1)
         {
             if(mode==MatchMode.Build&&(kind<0||kind>1))mode=MatchMode.None;
-            if((mode==MatchMode.Move&&selection.Count==0)||(mode==MatchMode.Harvest&&!selection.Exists(u=>u.Stats.HarvestAmount>0)))SelectWorker();
+            if((mode==MatchMode.Move&&selection.Count==0)||(mode==MatchMode.Harvest&&!HasHarvester()))SelectWorker();
             Mode=mode;buildKind=mode==MatchMode.Build?kind:-1;ModeHint=Hint();hud?.Refresh();
         }
+        bool HasHarvester(){foreach(var u in selection.Units)if(u.Stats.HarvestAmount>0)return true;return false;}
         public void SelectWorker()
         {
-            selection.Clear();var worker=Match.Units.Find(u=>u.Kind==UnitKind.Worker);if(worker!=null)selection.Add(worker);
+            var worker=Match.Units.Find(u=>u.Kind==UnitKind.Worker);
+            if(worker!=null)selection.Set(new[]{worker});else selection.Clear();
             selectedBuilding=-1;selectedDeposit=null;hud?.Refresh();
         }
         public void Focus(Vector2 point)=>focus=new Vector3(Mathf.Clamp(point.x,0,64),0,Mathf.Clamp(point.y,0,64));
@@ -427,17 +568,22 @@ namespace Order.Presentation
         public void FocusSelection()
         {
             if(selection.Count==0){FocusWorker();return;}
-            float x=0,z=0;foreach(var u in selection){x+=u.X;z+=u.Z;}
+            float x=0,z=0;foreach(var u in selection.Units){x+=u.X;z+=u.Z;}
             focus=new Vector3(x/selection.Count,0,z/selection.Count);
         }
         // Every selected unit goes to the point; workers harvest a deposit there, the rest walk up to it.
+        // The marker sits on the point, or on the deposit when the order targets one.
         public bool MoveSelection(Vector2 point)
         {
+            if(selection.Count==0)return false;
             bool any=false;
-            foreach(var unit in selection)any|=Match.Move(unit,point.x,point.y);
+            foreach(var unit in selection.Units)any|=Match.Move(unit,point.x,point.y);
+            int cx=(int)point.x,cz=(int)point.y;
+            var deposit=Match.Map.Inside(cx,cz)&&Match.Explored[cx,cz]?Match.Map.ResourceAt(cx,cz):null;
+            Mark(deposit!=null?new Vector2(deposit.X+.5f,deposit.Z+.5f):point,any);
             return any;
         }
-        public void Stop(){foreach(var unit in selection)Match.Stop(unit);SetMode(MatchMode.None);}
+        public void Stop(){foreach(var unit in selection.Units)Match.Stop(unit);SetMode(MatchMode.None);}
         public void FocusBase()
         {
             var hq=Match.Buildings.Find(b=>b.Kind==2);
@@ -452,8 +598,9 @@ namespace Order.Presentation
             {
                 var deposit=Match.Map.Inside((int)point.x,(int)point.y)&&Match.Explored[(int)point.x,(int)point.y]?Match.Map.ResourceAt((int)point.x,(int)point.y):null;
                 if(deposit==null){Match.Message="Укажите разведанную залежь.";return;}
-                if(!selection.Exists(u=>u.Stats.HarvestAmount>0))SelectWorker();
-                selection.RemoveAll(u=>u.Stats.HarvestAmount<=0);
+                if(!HasHarvester())SelectWorker();
+                // Only workers go: the rest of the selection stays where it is.
+                selection.Set(new List<PrototypeUnit>(selection.Units).FindAll(u=>u.Stats.HarvestAmount>0));
             }
             if(selection.Count==0)SelectWorker();
             MoveSelection(point);SetMode(MatchMode.None);
@@ -495,7 +642,8 @@ namespace Order.Presentation
             scenery?.Dispose();scenery=null;
             if(miniTexture!=null){Destroy(miniTexture);miniTexture=null;}
             buildingViews.Clear();constructionRings.Clear();depositViews.Clear();pinViews.Clear();pins.Clear();Match=null;
-            unitViews.Clear();unitModels.Clear();selection.Clear();selectionRings.Clear();
+            unitViews.Clear();unitModels.Clear();selectionRings.Clear();hoverRings.Clear();hovered.Clear();markers.Clear();
+            selection=new UnitSelection();lastClickUnit=null;lastGroup=-1;pressing=dragging=false;
             Array.Clear(buildingMeshes,0,buildingMeshes.Length);
             ghostModel=null;ghostKind=-1;Mode=MatchMode.None;
         }

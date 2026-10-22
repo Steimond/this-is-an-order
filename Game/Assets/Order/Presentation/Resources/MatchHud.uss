@@ -314,7 +314,7 @@
     left: 4px;
     right: 0;
     bottom: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 22px;
     font-size: 15px;
     white-space: normal;
     color: var(--hud-hot);
@@ -418,6 +418,89 @@
     font-size: 12px;
     white-space: normal;
     color: var(--hud-muted);
+}
+
+/* Several selected units: one tile each, health strip under the icon */
+.match-unit-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.match-unit-tile {
+    width: 42px;
+    height: 46px;
+    margin: 0 4px 4px 0;
+    padding: 4px 4px 3px 4px;
+    border-width: 1px;
+    border-color: var(--hud-line-bright);
+    background-color: var(--hud-control);
+}
+
+.match-unit-tile:hover {
+    border-color: var(--hud-accent);
+    background-color: var(--hud-accent-soft);
+}
+
+.match-unit-tile__icon {
+    flex-grow: 1;
+    color: var(--hud-hot);
+}
+
+.match-unit-tile__health {
+    height: 4px;
+    margin-top: 3px;
+    background-color: rgba(0, 0, 0, 0.55);
+}
+
+.match-unit-tile__fill {
+    height: 100%;
+    background-color: #5CE07A;
+}
+
+.match-unit-tile.is-hurt .match-unit-tile__fill { background-color: #F2C744; }
+.match-unit-tile.is-critical .match-unit-tile__fill { background-color: #F0583A; }
+
+/* Control groups: tabs on the top edge of the selection panel */
+.match-groups {
+    position: absolute;
+    left: 14px;
+    top: -13px;
+    flex-direction: row;
+}
+
+.match-group {
+    flex-direction: row;
+    align-items: center;
+    height: 20px;
+    padding: 0 7px;
+    margin-right: 4px;
+    border-width: 1px;
+    border-color: var(--hud-line-bright);
+    background-color: var(--hud-panel-strong);
+}
+
+.match-group:hover { border-color: var(--hud-accent); }
+
+.match-group__key {
+    margin-right: 5px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: var(--hud-accent);
+}
+
+.match-group__count {
+    font-size: 11px;
+    color: var(--hud-text);
+}
+
+/* Drag selection rectangle */
+.match-selection-box {
+    position: absolute;
+    display: none;
+    border-width: 1px;
+    border-color: rgba(110, 255, 140, 0.9);
+    background-color: rgba(110, 255, 140, 0.08);
 }
 
 .match-selection__empty {

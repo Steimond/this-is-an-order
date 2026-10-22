@@ -253,6 +253,29 @@ namespace Order.Presentation
             return b.ToMesh("Gas vent");
         }
 
+        // Selection circle of unit radius: a bright rim over a faint fill; the material colour tints both.
+        public static Mesh SelectionRing()
+        {
+            var b = new MeshBuilder();
+            b.Paint = new Color(1, 1, 1, .13f); b.Disc(.86f, 48, 0);
+            b.Paint = Color.white; b.Ring(.86f, 1, 48, .002f);
+            return b.ToMesh("Selection circle");
+        }
+
+        // Move order marker: a small ring and four arrowheads pointing at it; the view shrinks and fades it.
+        public static Mesh MoveMarker()
+        {
+            var b = new MeshBuilder();
+            b.Paint = Color.white; b.Ring(.4f, .48f, 32, 0);
+            for (int k = 0; k < 4; k++)
+            {
+                float a = (k * 90 + 45) * Mathf.Deg2Rad;
+                Vector3 direction = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a)), side = new Vector3(-direction.z, 0, direction.x);
+                b.Triangle(direction * .6f, direction * .95f - side * .17f, direction * .95f + side * .17f);
+            }
+            return b.ToMesh("Move marker");
+        }
+
         // Flat ring of unit radius for selection and construction markers.
         public static Mesh Ring(float inner)
         {

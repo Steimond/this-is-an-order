@@ -10,6 +10,7 @@
     "Order.Input",
     "Order.Bootstrap",
     "Order.Simulation",
+    "Order.Presentation",
     "Unity.Entities",
     "Unity.Collections"
   ],
