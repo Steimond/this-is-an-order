@@ -53,7 +53,8 @@ namespace Order.Presentation
     public enum HudIconKind
     {
         Gear, Power, Mic, ChevronLeft, ChevronRight, Close, Lock, Back, Check, Grid,
-        Worker, Headquarters, Supply, Factory, Mineral, Gas, Move, Stop, Harvest, Pin, Base, Target, Armor, Menu, ClearPins, Train, Build
+        Worker, Headquarters, Supply, Factory, Mineral, Gas, Move, Stop, Harvest, Pin, Base, Target, Armor, Menu, ClearPins, Train, Build,
+        Assault, Rifleman, Gunship
     }
 
     public sealed class HudIcon : HudVector
@@ -170,6 +171,27 @@ namespace Order.Presentation
                     Shape(p, P, .54f, .49f, .16f, .86f);
                     break;
                 case HudIconKind.Menu: Shape(p, P, .22f, .3f, .78f, .3f); Shape(p, P, .22f, .5f, .78f, .5f); Shape(p, P, .22f, .7f, .78f, .7f); break;
+                case HudIconKind.Assault:
+                    // Shield and blade.
+                    Shape(p, P, .16f, .26f, .46f, .18f, .46f, .6f, .31f, .82f, .16f, .6f, .16f, .26f);
+                    Shape(p, P, .58f, .84f, .86f, .16f);
+                    Shape(p, P, .55f, .62f, .78f, .72f);
+                    break;
+                case HudIconKind.Rifleman:
+                    // Rifle with stock and scope.
+                    Shape(p, P, .12f, .66f, .2f, .56f, .88f, .3f);
+                    Shape(p, P, .12f, .66f, .18f, .8f, .32f, .74f, .3f, .6f);
+                    Shape(p, P, .44f, .44f, .5f, .58f);
+                    Shape(p, P, .48f, .36f, .66f, .29f);
+                    break;
+                case HudIconKind.Gunship:
+                    // Top-down silhouette with two rotors.
+                    Shape(p, P, .5f, .14f, .5f, .86f);
+                    Shape(p, P, .2f, .44f, .8f, .44f);
+                    Shape(p, P, .38f, .82f, .62f, .82f);
+                    HudPaint.Circle(p, P(.2f, .44f), size * .12f);
+                    HudPaint.Circle(p, P(.8f, .44f), size * .12f);
+                    break;
             }
             p.Stroke();
         }

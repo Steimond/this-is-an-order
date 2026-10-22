@@ -60,7 +60,7 @@ namespace Order.Presentation
             pinTool = Tool(rail, HudIconKind.Pin, () => host.SetMode(host.Mode == MatchMode.Ping ? MatchMode.None : MatchMode.Ping));
             gridTool = Tool(rail, HudIconKind.Grid, () => SetGrid(!GridVisible));
             Tool(rail, HudIconKind.Base, host.FocusBase);
-            Tool(rail, HudIconKind.Target, host.FocusWorker);
+            Tool(rail, HudIconKind.Target, host.FocusSelection);
             Tool(rail, HudIconKind.ClearPins, host.ClearPins);
             Root.Add(rail);
             SetGrid(true);
@@ -181,11 +181,12 @@ namespace Order.Presentation
                 }
 
                 var match = host.Match;
-                var route = match.Route.ToList();
-                if (route.Count > 0)
+                foreach (var unit in host.Selection)
                 {
+                    var route = unit.Route.ToList();
+                    if (route.Count == 0) continue;
                     p.lineWidth = 1.5f; p.strokeColor = HudPaint.Alpha(Hot, .85f); p.BeginPath();
-                    p.MoveTo(M(match.X, match.Z));
+                    p.MoveTo(M(unit.X, unit.Z));
                     foreach (var point in route) p.LineTo(M(point.X, point.Z));
                     p.Stroke();
                     var end = M(route[route.Count - 1].X, route[route.Count - 1].Z);
@@ -209,9 +210,16 @@ namespace Order.Presentation
                     p.BeginPath(); HudPaint.Polygon(p, pin, 5 * pulse, 4, 0); p.Fill(); p.Stroke();
                 }
 
-                var worker = M(match.X, match.Z);
-                p.fillColor = Hot; p.BeginPath(); HudPaint.Circle(p, worker, 2.6f); p.Fill();
-                if (match.Selected) { p.strokeColor = Accent; p.lineWidth = 1.2f; p.BeginPath(); HudPaint.Circle(p, worker, 5); p.Stroke(); }
+                // Ground units are dots, air units diamonds; selected ones get a ring.
+                foreach (var unit in match.Units)
+                {
+                    var at = M(unit.X, unit.Z);
+                    p.fillColor = Hot; p.BeginPath();
+                    if (unit.Stats.Flying) HudPaint.Polygon(p, at, 3.4f, 4, 0); else HudPaint.Circle(p, at, unit.Kind == UnitKind.Worker ? 2.2f : 2.6f);
+                    p.Fill();
+                }
+                p.strokeColor = Accent; p.lineWidth = 1.2f;
+                foreach (var unit in host.Selection) { p.BeginPath(); HudPaint.Circle(p, M(unit.X, unit.Z), 5); p.Stroke(); }
             }
         }
     }

@@ -13,6 +13,9 @@ MonoBehaviour:
   m_Name: PrototypeBalanceCatalog
   m_EditorClassIdentifier: Order.Balance::Order.Balance.BalanceCatalog
   Worker: {fileID: 11400000, guid: db3d6dd4c07d6504b9921c0f0f02605e, type: 2}
+  Melee: {fileID: 11400000, guid: 4ee428848480e7b47b9ae39697ab4d0b, type: 2}
+  Ranged: {fileID: 11400000, guid: e63c78fbb3b57404aa621d3d6dd8c82b, type: 2}
+  Air: {fileID: 11400000, guid: c89cf2d5e623db24aa64aedee6d3ee3d, type: 2}
   Supply: {fileID: 11400000, guid: de12dedff54d1024f8387dbc99d37c19, type: 2}
   Factory: {fileID: 11400000, guid: 56c846026e24ee34e8d601a7f0d15708, type: 2}
   Headquarters: {fileID: 11400000, guid: 720d5115959f754438e353af438d1006, type: 2}

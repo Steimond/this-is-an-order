@@ -11,12 +11,23 @@ namespace Order.Editor
         {
             var defaults=new MatchBalance();
             var catalog=Asset<BalanceCatalog>("Resources/PrototypeBalanceCatalog");
-            catalog.Worker=Asset<UnitBalanceAsset>("Faction1/Units/Worker");
+            catalog.Worker=Unit("Worker",defaults.Units[(int)UnitKind.Worker]);
+            catalog.Melee=Unit("Assault",defaults.Units[(int)UnitKind.Melee]);
+            catalog.Ranged=Unit("Rifleman",defaults.Units[(int)UnitKind.Ranged]);
+            catalog.Air=Unit("Gunship",defaults.Units[(int)UnitKind.Air]);
             catalog.Economy=Asset<EconomyBalanceAsset>("Shared/Economy");
             catalog.Supply=Building("Supply",defaults.Buildings[0]);
             catalog.Factory=Building("Factory",defaults.Buildings[1]);
             catalog.Headquarters=Building("Headquarters",defaults.Buildings[2]);
             EditorUtility.SetDirty(catalog);AssetDatabase.SaveAssets();
+        }
+        static UnitBalanceAsset Unit(string name,UnitStats defaults)
+        {
+            string path=$"Assets/Order/Balance/Faction1/Units/{name}.asset";
+            bool exists=AssetDatabase.LoadAssetAtPath<UnitBalanceAsset>(path)!=null;
+            var asset=Asset<UnitBalanceAsset>($"Faction1/Units/{name}");
+            if(!exists){asset.DisplayName=defaults.Name;asset.MoveSpeed=defaults.Speed;asset.CollisionRadius=defaults.Radius;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.HarvestAmount=defaults.HarvestAmount;asset.HarvestInterval=defaults.HarvestInterval;asset.Supply=defaults.Supply;asset.Flying=defaults.Flying;asset.Damage=defaults.Damage;asset.AttackRange=defaults.AttackRange;asset.AttackCooldown=defaults.AttackCooldown;EditorUtility.SetDirty(asset);}
+            return asset;
         }
         static BuildingBalanceAsset Building(string name,BuildingStats defaults)
         {
