@@ -1,0 +1,497 @@
+using System;
+using System.Collections.Generic;
+using Order.Content;
+
+namespace Order.Simulation
+{
+    // Unit movement in the spirit of StarCraft:
+    // - A* over map cells (8 directions) for the unit's radius, smoothed into straight segments; an unreachable point
+    //   sends the unit as close as it can get;
+    // - a group order keeps the formation when the point lies outside a compact group, otherwise everyone converges;
+    // - the first unit stops on the point, the rest stop on touching an ally that already arrived at the same point;
+    // - moving units push idle allies aside, units passing each other side-step, nobody walks into a wall or off a cliff;
+    //   air units only keep apart from each other.
+    public sealed partial class PrototypeMatch
+    {
+        const float Step = .05f;
+        static readonly int[] Dx = { 1, -1, 0, 0, 1, 1, -1, -1 }, Dz = { 0, 0, 1, -1, 1, -1, 1, -1 };
+        // Bumps when buildings or deposits change what blocks movement; caches below depend on it.
+        int navigationVersion;
+        readonly bool[] blocked = new bool[4096];
+        int blockedVersion = -1, blockedBuildings = -1;
+        readonly Dictionary<int, sbyte[]> edges = new Dictionary<int, sbyte[]>();
+        int edgesVersion = -1, edgesBuildings = -1;
+        readonly float[] pathCost = new float[4096];
+        readonly int[] cameFrom = new int[4096], seen = new int[4096], done = new int[4096];
+        int searchStamp;
+        readonly CellHeap open = new CellHeap();
+        readonly List<PrototypeUnit>[] buckets = new List<PrototypeUnit>[4096];
+        readonly List<int> usedBuckets = new List<int>();
+
+        public bool Occupied(int x, int z)
+        {
+            if (blockedVersion != navigationVersion || blockedBuildings != Buildings.Count)
+            {
+                Array.Clear(blocked, 0, blocked.Length);
+                foreach (var r in Map.Resources) if (r.Remaining > 0) blocked[r.Z * 64 + r.X] = true;
+                foreach (var b in Buildings) for (int zz = b.Z; zz < b.Z + b.Width; zz++) for (int xx = b.X; xx < b.X + b.Width; xx++) if (Map.Inside(xx, zz)) blocked[zz * 64 + xx] = true;
+                blockedVersion = navigationVersion; blockedBuildings = Buildings.Count;
+            }
+            return blocked[z * 64 + x];
+        }
+        public bool CanStep(int x, int z, int nx, int nz) => Map.Inside(nx, nz) && !Occupied(nx, nz) && !RampSide(x, z, nx, nz) && Math.Abs(Map.Height(x, z) - Map.Height(nx, nz)) <= .51f;
+        // Ramps are entered and left only at their ends: their sides are walls along the whole length, even where the drop is
+        // shallow, so a crowd cannot spill over the edge near the bottom. A plain cell is beside a ramp cell (not at its end)
+        // when its row is outside the ramp at that ramp cell's column.
+        bool RampSide(int ax, int az, int bx, int bz)
+        {
+            if (az == bz || !Map.Inside(ax, az) || !Map.Inside(bx, bz)) return false;
+            bool a = Map.Ramp(ax, az), b = Map.Ramp(bx, bz);
+            if (a == b) return false;
+            return a ? !Map.Ramp(ax, bz) : !Map.Ramp(bx, az);
+        }
+        // Continuous straight segment for a ground unit of the given radius: inside the map, clear of blocked cells and cliffs.
+        public bool CanTravel(float ax, float az, float bx, float bz, float radius)
+        {
+            float dx = bx - ax, dz = bz - az; int count = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(dx * dx + dz * dz) / .1));
+            float previous = HeightAt(ax, az);
+            for (int i = 0; i <= count; i++)
+            {
+                float x = ax + dx * i / count, z = az + dz * i / count;
+                if (x < radius || z < radius || x >= 64 - radius || z >= 64 - radius) return false;
+                float h = HeightAt(x, z); if (Math.Abs(h - previous) > .51f) return false; previous = h;
+                int cx = (int)x, cz = (int)z;
+                if (i > 0 && RampSide((int)(ax + dx * (i - 1) / count), (int)(az + dz * (i - 1) / count), cx, cz)) return false;
+                for (int zz = (int)(z - radius); zz <= (int)(z + radius); zz++) for (int xx = (int)(x - radius); xx <= (int)(x + radius); xx++)
+                {
+                    float nearX = Math.Max(xx, Math.Min(x, xx + 1)), nearZ = Math.Max(zz, Math.Min(z, zz + 1));
+                    if ((x - nearX) * (x - nearX) + (z - nearZ) * (z - nearZ) >= radius * radius) continue;
+                    if (Occupied(xx, zz) || RampSide(cx, cz, xx, zz) || Math.Abs(Map.Height(xx, zz, Math.Max(0, Math.Min(1, x - xx))) - h) > .51f) return false;
+                }
+            }
+            return true;
+        }
+
+        // ---------- Orders ----------
+        public bool Move(PrototypeUnit unit, int tx, int tz) => Move(unit, tx + .5f, tz + .5f);
+        // A worker sent to a deposit harvests it after arrival; other units only walk up to it.
+        public bool Move(PrototypeUnit unit, float targetX, float targetZ)
+        {
+            if (float.IsNaN(targetX) || float.IsNaN(targetZ) || targetX < 0 || targetZ < 0 || targetX >= 64 || targetZ >= 64) return false;
+            int tx = (int)targetX, tz = (int)targetZ;
+            unit.HarvestTarget = null; unit.arrived = false; unit.stuckTime = 0; unit.bestDistance = float.MaxValue; unit.replans = 0;
+            unit.returning = false; unit.returns = 0;
+            var deposit = Explored[tx, tz] ? Map.ResourceAt(tx, tz) : null;
+            float radius = unit.Stats.Radius;
+            if (unit.Stats.Flying)
+            {
+                // Air units fly straight over cliffs, buildings and deposits.
+                SetRoute(unit, new List<Waypoint> { new Waypoint(Math.Max(radius, Math.Min(64 - radius, targetX)), Math.Max(radius, Math.Min(64 - radius, targetZ))) });
+                Message = "Приказ: движение."; return true;
+            }
+            if (deposit == null && CanTravel(unit.X, unit.Z, targetX, targetZ, radius))
+            {
+                SetRoute(unit, new List<Waypoint> { new Waypoint(targetX, targetZ) });
+                Message = "Приказ: движение."; return true;
+            }
+            var cells = FindPath(Cell(unit.X, unit.Z), tz * 64 + tx, deposit, targetX, targetZ, radius, out bool reached);
+            var points = new List<Waypoint> { new Waypoint(unit.X, unit.Z) };
+            foreach (var c in cells) points.Add(new Waypoint(c % 64 + .5f, c / 64 + .5f));
+            if (deposit == null && reached && CanTravel(points[points.Count - 1].X, points[points.Count - 1].Z, targetX, targetZ, radius)) points.Add(new Waypoint(targetX, targetZ));
+            // Pull the string: from each point jump to the farthest point still reachable in a straight line.
+            var route = new List<Waypoint>(); int anchor = 0;
+            while (anchor < points.Count - 1)
+            {
+                int next = points.Count - 1;
+                while (next > anchor + 1 && !CanTravel(points[anchor].X, points[anchor].Z, points[next].X, points[next].Z, radius)) next--;
+                route.Add(points[next]); anchor = next;
+            }
+            SetRoute(unit, route);
+            bool harvest = deposit != null && reached && unit.Stats.HarvestAmount > 0;
+            unit.HarvestTarget = harvest ? deposit : null;
+            Message = harvest ? "Приказ: добыча ресурса." : reached ? "Приказ: движение." : "Точка недоступна: двигаюсь как можно ближе.";
+            return true;
+        }
+        void SetRoute(PrototypeUnit unit, List<Waypoint> route)
+        {
+            unit.route.Clear();
+            foreach (var p in route) if (p.X != unit.X || p.Z != unit.Z || route.Count == 1) unit.route.Enqueue(p);
+            var end = unit.route.Count > 0 ? route[route.Count - 1] : new Waypoint(unit.X, unit.Z);
+            unit.goalX = end.X; unit.goalZ = end.Z; unit.hasGoal = unit.route.Count > 0;
+            if (!unit.hasGoal) Arrive(unit);
+        }
+        public void Stop(PrototypeUnit unit) { unit.route.Clear(); unit.HarvestTarget = null; unit.hasGoal = false; unit.arrived = false; Message = "Приказ: стоп."; }
+
+        // Several units to one point. When a compact group is sent beyond its own bounds, every unit keeps its place
+        // in the formation (if that spot is free and on the clicked level); a click inside the group gathers it on the point.
+        public bool MoveGroup(IReadOnlyList<PrototypeUnit> units, float x, float z)
+        {
+            if (units.Count == 0) return false;
+            if (units.Count == 1) return Move(units[0], x, z);
+            int cx = (int)x, cz = (int)z;
+            bool deposit = Map.Inside(cx, cz) && Explored[cx, cz] && Map.ResourceAt(cx, cz) != null;
+            float mx = 0, mz = 0, minX = 64, minZ = 64, maxX = 0, maxZ = 0, spread = 0;
+            foreach (var u in units) { mx += u.X; mz += u.Z; minX = Math.Min(minX, u.X); maxX = Math.Max(maxX, u.X); minZ = Math.Min(minZ, u.Z); maxZ = Math.Max(maxZ, u.Z); }
+            mx /= units.Count; mz /= units.Count;
+            foreach (var u in units) spread = Math.Max(spread, (float)Math.Sqrt((u.X - mx) * (u.X - mx) + (u.Z - mz) * (u.Z - mz)));
+            bool formation = !deposit && spread <= 5 && (x < minX - .5f || x > maxX + .5f || z < minZ - .5f || z > maxZ + .5f);
+            float level = Map.Inside(cx, cz) ? HeightAt(x, z) : 0;
+            bool any = false; var message = Message;
+            foreach (var u in units)
+            {
+                float gx = x + u.X - mx, gz = z + u.Z - mz;
+                bool keep = formation && FreeSpot(u, gx, gz, level);
+                any |= Move(u, keep ? gx : x, keep ? gz : z);
+                if (any) message = Message;
+            }
+            Message = message;
+            return any;
+        }
+        bool FreeSpot(PrototypeUnit unit, float x, float z, float level)
+        {
+            float r = unit.Stats.Radius;
+            if (x < r || z < r || x >= 64 - r || z >= 64 - r) return false;
+            if (unit.Stats.Flying) return true;
+            return Math.Abs(HeightAt(x, z) - level) < .51f && CanTravel(x, z, x, z, r);
+        }
+        // Ground units whose remaining route now crosses a building plan it again to the same destination.
+        void RouteAroundNewBuildings()
+        {
+            foreach (var u in Units)
+            {
+                if (u.Stats.Flying || !u.Moving) continue;
+                float x = u.X, z = u.Z; bool crossed = false;
+                foreach (var p in u.route) { if (!CanTravel(x, z, p.X, p.Z, u.Stats.Radius)) crossed = true; x = p.X; z = p.Z; }
+                if (crossed) Replan(u);
+            }
+        }
+        void Replan(PrototypeUnit u)
+        {
+            var message = Message; var deposit = u.HarvestTarget; int replans = u.replans;
+            if (deposit != null) Move(u, deposit.X, deposit.Z); else Move(u, u.goalX, u.goalZ);
+            u.replans = replans; Message = message;
+        }
+
+        // ---------- Path search ----------
+        static int Cell(float x, float z) => Math.Max(0, Math.Min(63, (int)z)) * 64 + Math.Max(0, Math.Min(63, (int)x));
+        // Cells from the start (excluded) to the goal cell, or to a cell next to the deposit. When the goal cannot be
+        // reached, the path leads to the reachable cell closest to the target.
+        List<int> FindPath(int start, int goal, ResourceDeposit deposit, float targetX, float targetZ, float radius, out bool reached)
+        {
+            searchStamp++; open.Clear();
+            int best = start; float bestDistance = float.MaxValue;
+            seen[start] = searchStamp; pathCost[start] = 0; cameFrom[start] = start;
+            open.Push(start, Heuristic(start, goal));
+            reached = false; int end = -1;
+            while (open.Count > 0)
+            {
+                int p = open.Pop();
+                if (done[p] == searchStamp) continue;
+                done[p] = searchStamp;
+                int x = p % 64, z = p / 64;
+                if (deposit != null ? Math.Abs(x - deposit.X) + Math.Abs(z - deposit.Z) == 1 : p == goal) { reached = true; end = p; break; }
+                float distance = (x + .5f - targetX) * (x + .5f - targetX) + (z + .5f - targetZ) * (z + .5f - targetZ);
+                if (distance < bestDistance) { bestDistance = distance; best = p; }
+                for (int dir = 0; dir < 8; dir++)
+                {
+                    if (!Passable(p, dir, radius)) continue;
+                    int n = (z + Dz[dir]) * 64 + x + Dx[dir];
+                    float cost = pathCost[p] + (dir < 4 ? 1 : 1.41421f);
+                    if (done[n] == searchStamp || (seen[n] == searchStamp && cost >= pathCost[n])) continue;
+                    seen[n] = searchStamp; pathCost[n] = cost; cameFrom[n] = p;
+                    open.Push(n, cost + Heuristic(n, goal));
+                }
+            }
+            if (end < 0) end = best;
+            var cells = new List<int>();
+            for (int p = end; p != start; p = cameFrom[p]) cells.Add(p);
+            cells.Reverse();
+            return cells;
+        }
+        static float Heuristic(int cell, int goal)
+        {
+            int dx = Math.Abs(cell % 64 - goal % 64), dz = Math.Abs(cell / 64 - goal / 64);
+            return dx + dz - .58579f * Math.Min(dx, dz);
+        }
+        // Edge between neighbouring cell centres for a radius, cached until buildings or deposits change.
+        bool Passable(int cell, int dir, float radius)
+        {
+            if (edgesVersion != navigationVersion || edgesBuildings != Buildings.Count) { edges.Clear(); edgesVersion = navigationVersion; edgesBuildings = Buildings.Count; }
+            int key = (int)Math.Round(radius * 1000);
+            if (!edges.TryGetValue(key, out var table)) edges[key] = table = new sbyte[4096 * 8];
+            int index = cell * 8 + dir;
+            if (table[index] != 0) return table[index] > 0;
+            int x = cell % 64, z = cell / 64, nx = x + Dx[dir], nz = z + Dz[dir];
+            bool ok = CanStep(x, z, nx, nz) && (dir < 4 || (CanStep(x, z, nx, z) && CanStep(x, z, x, nz))) && CanTravel(x + .5f, z + .5f, nx + .5f, nz + .5f, radius);
+            table[index] = (sbyte)(ok ? 1 : -1);
+            return ok;
+        }
+
+        // ---------- Steps ----------
+        void StepUnits(float dt)
+        {
+            foreach (var u in Units) { u.levelY = HeightAt(u.X, u.Z); u.touchedArrived = false; u.startX = u.X; u.startZ = u.Z; }
+            FillBuckets();
+            foreach (var u in Units) Follow(u, dt);
+            for (int i = 0; i < 2; i++) { FillBuckets(); Separate(); }
+            foreach (var u in Units)
+            {
+                if (!u.Stats.Flying) { KeepOutOfObstacles(u); continue; }
+                float r = u.Stats.Radius; u.X = Math.Max(r, Math.Min(64 - r, u.X)); u.Z = Math.Max(r, Math.Min(64 - r, u.Z));
+            }
+            foreach (var u in Units) { UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
+        }
+        // Exactly along the route: a lone unit ends precisely on its destination. In a crowd a unit pushed off its line does
+        // not go back for every corner: once near one, with a clear straight line to the next, it cuts across.
+        void Follow(PrototypeUnit u, float dt)
+        {
+            if (u.route.Count > 1)
+            {
+                var corner = u.route.Peek();
+                float cx = corner.X - u.X, cz = corner.Z - u.Z, reach = u.Stats.Radius + .4f;
+                if (cx * cx + cz * cz < reach * reach)
+                {
+                    var next = Second(u.route);
+                    if (CanTravel(u.X, u.Z, next.X, next.Z, u.Stats.Radius)) u.route.Dequeue();
+                }
+            }
+            float travel = Math.Min(dt * u.Stats.Speed, FreeTravel(u, dt));
+            while (u.route.Count > 0 && travel > 0)
+            {
+                var p = u.route.Peek(); float dx = p.X - u.X, dz = p.Z - u.Z, d = (float)Math.Sqrt(dx * dx + dz * dz);
+                if (d <= travel) { u.X = p.X; u.Z = p.Z; travel -= d; u.route.Dequeue(); }
+                else { u.X += dx / d * travel; u.Z += dz / d * travel; travel = 0; }
+            }
+        }
+        static Waypoint Second(Queue<Waypoint> route) { int i = 0; foreach (var p in route) if (i++ == 1) return p; return route.Peek(); }
+        // Unit vector toward the next waypoint; `fallback` when there is none or it is reached.
+        static void Heading(PrototypeUnit u, float fallbackX, float fallbackZ, out float hx, out float hz)
+        {
+            hx = fallbackX; hz = fallbackZ;
+            if (u.route.Count == 0) return;
+            var next = u.route.Peek(); float dx = next.X - u.X, dz = next.Z - u.Z, l = (float)Math.Sqrt(dx * dx + dz * dz);
+            if (l > 1e-4f) { hx = dx / l; hz = dz / l; }
+        }
+        // A harvesting worker passes through others, as in StarCraft.
+        static bool Ghost(PrototypeUnit u) => u.route.Count == 0 && u.HarvestTarget != null;
+        // Units by map cell; contacts are always within the 3×3 cells around a unit.
+        void FillBuckets()
+        {
+            foreach (var index in usedBuckets) buckets[index].Clear();
+            usedBuckets.Clear();
+            foreach (var u in Units)
+            {
+                if (Ghost(u)) continue;
+                int index = Cell(u.X, u.Z);
+                if (buckets[index] == null) buckets[index] = new List<PrototypeUnit>();
+                if (buckets[index].Count == 0) usedBuckets.Add(index);
+                buckets[index].Add(u);
+            }
+        }
+        // How far a unit may advance this step: behind an ally in its lane that goes the same way it queues at that
+        // ally's pace instead of stepping into it and being pushed back every step.
+        float FreeTravel(PrototypeUnit u, float dt)
+        {
+            float free = dt * u.Stats.Speed;
+            if (u.route.Count == 0 || Ghost(u)) return free;
+            Heading(u, 0, 0, out float hx, out float hz);
+            if (hx == 0 && hz == 0) return free;
+            int cx = Math.Max(0, Math.Min(63, (int)u.X)), cz = Math.Max(0, Math.Min(63, (int)u.Z));
+            for (int z = Math.Max(0, cz - 1); z <= Math.Min(63, cz + 1); z++)
+            for (int x = Math.Max(0, cx - 1); x <= Math.Min(63, cx + 1); x++)
+            {
+                var bucket = buckets[z * 64 + x];
+                if (bucket == null) continue;
+                foreach (var v in bucket)
+                {
+                    if (v == u || !v.Moving || v.Stats.Flying != u.Stats.Flying) continue;
+                    float dx = v.X - u.X, dz = v.Z - u.Z, ahead = dx * hx + dz * hz;
+                    if (ahead <= 0) continue;
+                    float reach = u.Stats.Radius + v.Stats.Radius, lateral = Math.Abs(dx * hz - dz * hx);
+                    if (lateral >= reach * .9f) continue;
+                    Heading(v, 0, 0, out float vx, out float vz);
+                    float together = hx * vx + hz * vz;
+                    if (together < .3f) continue;
+                    // The ally ahead moves on by about what it covered last step along our heading.
+                    float gap = ahead - (float)Math.Sqrt(reach * reach - lateral * lateral), pace = Math.Max(0, v.lastDx * hx + v.lastDz * hz);
+                    free = Math.Min(free, Math.Max(0, gap) + pace);
+                }
+            }
+            return free;
+        }
+        // Overlapping units push each other apart. A moving unit shoves an idle ally out of the way, unless that ally has
+        // already arrived at the same point: then the mover stops beside it. Two moving units also side-step, so they pass.
+        void Separate()
+        {
+            foreach (var u in Units)
+            {
+                if (Ghost(u)) continue;
+                int cx = Math.Max(0, Math.Min(63, (int)u.X)), cz = Math.Max(0, Math.Min(63, (int)u.Z));
+                for (int z = Math.Max(0, cz - 1); z <= Math.Min(63, cz + 1); z++)
+                for (int x = Math.Max(0, cx - 1); x <= Math.Min(63, cx + 1); x++)
+                {
+                    var bucket = buckets[z * 64 + x];
+                    if (bucket == null) continue;
+                    foreach (var v in bucket) if (v.Id > u.Id && v.Stats.Flying == u.Stats.Flying) Push(u, v);
+                }
+            }
+        }
+        void Push(PrototypeUnit a, PrototypeUnit b)
+        {
+            float dx = b.X - a.X, dz = b.Z - a.Z, reach = a.Stats.Radius + b.Stats.Radius, d2 = dx * dx + dz * dz;
+            if (d2 >= reach * reach) return;
+            float d = (float)Math.Sqrt(d2), nx, nz;
+            if (d > 1e-4f) { nx = dx / d; nz = dz / d; }
+            else { float angle = (a.Id * 7 + b.Id * 3) * 2.39996f; nx = (float)Math.Cos(angle); nz = (float)Math.Sin(angle); }
+            float overlap = reach - d + 1e-4f;
+            bool am = a.Moving, bm = b.Moving;
+            if (am && !bm && !(b.arrived && SameGoal(a, b))) { Shove(a, b, nx, nz, overlap); return; }
+            if (bm && !am && !(a.arrived && SameGoal(b, a))) { Shove(b, a, -nx, -nz, overlap); return; }
+            float wa = .5f, wb = .5f;
+            if (am && bm)
+            {
+                Heading(a, nx, nz, out float ax, out float az); Heading(b, -nx, -nz, out float bx, out float bz);
+                if (ax * bx + az * bz < -.3f)
+                {
+                    // Head-on: each also steps to its own right, so they pass instead of pressing into each other.
+                    a.X += (-nx * .5f + az * .4f) * overlap; a.Z += (-nz * .5f - ax * .4f) * overlap;
+                    b.X += (nx * .5f + bz * .4f) * overlap; b.Z += (nz * .5f - bx * .4f) * overlap;
+                    return;
+                }
+                // Same way: the one behind gives way and queues up; the one in front keeps its line.
+                bool bAhead = nx * (ax + bx) + nz * (az + bz) > 0;
+                wa = bAhead ? .85f : .15f; wb = 1 - wa;
+            }
+            else if (am) a.touchedArrived = true;
+            else if (bm) b.touchedArrived = true;
+            a.X -= nx * overlap * wa; a.Z -= nz * overlap * wa;
+            b.X += nx * overlap * wb; b.Z += nz * overlap * wb;
+            // Two idle units easing apart settle where they end up instead of walking back into each other.
+            if (!am && !bm) { a.restX = a.X; a.restZ = a.Z; b.restX = b.X; b.restZ = b.Z; }
+        }
+        // An idle unit in the way steps aside across the mover's heading rather than being bulldozed ahead of it.
+        static void Shove(PrototypeUnit mover, PrototypeUnit idle, float nx, float nz, float overlap)
+        {
+            var next = mover.route.Peek();
+            float hx = next.X - mover.X, hz = next.Z - mover.Z, hl = (float)Math.Sqrt(hx * hx + hz * hz);
+            if (hl < 1e-4f) { hx = nx; hz = nz; } else { hx /= hl; hz /= hl; }
+            float along = nx * hx + nz * hz, sx = nx - hx * along, sz = nz - hz * along, sl = (float)Math.Sqrt(sx * sx + sz * sz);
+            if (sl < .2f) { float side = idle.Id % 2 == 0 ? 1 : -1; sx = -hz * side; sz = hx * side; }
+            else { sx /= sl; sz /= sl; }
+            float dx = sx + hx * Math.Max(0, along) * .3f, dz = sz + hz * Math.Max(0, along) * .3f, dl = (float)Math.Sqrt(dx * dx + dz * dz);
+            idle.X += dx / dl * overlap * .9f; idle.Z += dz / dl * overlap * .9f;
+            idle.calmTime = 0;
+            mover.X -= nx * overlap * .1f; mover.Z -= nz * overlap * .1f;
+        }
+        static bool SameGoal(PrototypeUnit mover, PrototypeUnit arrived) =>
+            (mover.goalX - arrived.arrivedX) * (mover.goalX - arrived.arrivedX) + (mover.goalZ - arrived.arrivedZ) * (mover.goalZ - arrived.arrivedZ) < .09f;
+        // Slides a ground unit back out of blocked cells, cliff edges, ramp sides and the map border. Cells are judged from the
+        // height and cell the unit stood on before this step, so a push never drops it off a cliff, lifts it onto a plateau
+        // or carries it over a ramp side.
+        void KeepOutOfObstacles(PrototypeUnit u)
+        {
+            float r = u.Stats.Radius;
+            int sx = Math.Max(0, Math.Min(63, (int)u.startX)), sz = Math.Max(0, Math.Min(63, (int)u.startZ));
+            for (int iteration = 0; iteration < 2; iteration++)
+            {
+                u.X = Math.Max(r + 1e-4f, Math.Min(64 - r - 1e-4f, u.X)); u.Z = Math.Max(r + 1e-4f, Math.Min(64 - r - 1e-4f, u.Z));
+                for (int zz = (int)(u.Z - r); zz <= (int)(u.Z + r); zz++)
+                for (int xx = (int)(u.X - r); xx <= (int)(u.X + r); xx++)
+                {
+                    if (Map.Inside(xx, zz) && !Occupied(xx, zz) && !RampSide(sx, sz, xx, zz) && Math.Abs(Map.Height(xx, zz, Math.Max(0, Math.Min(1, u.X - xx))) - u.levelY) <= .51f) continue;
+                    float nearX = Math.Max(xx, Math.Min(u.X, xx + 1)), nearZ = Math.Max(zz, Math.Min(u.Z, zz + 1));
+                    float dx = u.X - nearX, dz = u.Z - nearZ, d2 = dx * dx + dz * dz;
+                    if (d2 >= r * r) continue;
+                    if (d2 < 1e-8f)
+                    {
+                        // The centre went inside the cell: leave through the nearest side.
+                        float left = u.X - xx, right = xx + 1 - u.X, back = u.Z - zz, front = zz + 1 - u.Z, least = Math.Min(Math.Min(left, right), Math.Min(back, front));
+                        if (least == left) u.X = xx - r - 1e-4f; else if (least == right) u.X = xx + 1 + r + 1e-4f;
+                        else if (least == back) u.Z = zz - r - 1e-4f; else u.Z = zz + 1 + r + 1e-4f;
+                        continue;
+                    }
+                    float d = (float)Math.Sqrt(d2), push = r - d + 1e-4f;
+                    u.X += dx / d * push; u.Z += dz / d * push;
+                }
+            }
+        }
+        // Done when the route ends, on touching an ally that already arrived at the same point nearby, or when the unit has
+        // made no progress along its route for a while: close to the goal it stops, farther away it plans again and keeps going.
+        void UpdateArrival(PrototypeUnit u, float dt)
+        {
+            if (!u.hasGoal) { ReturnToRest(u, dt); return; }
+            if (u.route.Count == 0) { Arrive(u); return; }
+            float dx = u.goalX - u.X, dz = u.goalZ - u.Z, d = (float)Math.Sqrt(dx * dx + dz * dz);
+            if (u.touchedArrived && d < 4) { Stand(u); return; }
+            float left = RouteLength(u);
+            if (left < u.bestDistance - .1f) { u.bestDistance = left; u.stuckTime = 0; return; }
+            if ((u.stuckTime += dt) < 1.2f) return;
+            if (d < 1.5f) Stand(u);
+            else { u.replans++; Replan(u); u.stuckTime = 0; u.bestDistance = RouteLength(u); }
+        }
+        static float RouteLength(PrototypeUnit u)
+        {
+            float x = u.X, z = u.Z, sum = 0;
+            foreach (var p in u.route) { sum += (float)Math.Sqrt((p.X - x) * (p.X - x) + (p.Z - z) * (p.Z - z)); x = p.X; z = p.Z; }
+            return sum;
+        }
+        // A returning unit keeps the destination of its real order, so later arrivals still gather around it.
+        void Arrive(PrototypeUnit u)
+        {
+            u.route.Clear(); u.hasGoal = false; u.arrived = true; u.replans = 0;
+            if (!u.returning) { u.arrivedX = u.goalX; u.arrivedZ = u.goalZ; }
+            u.returning = false; u.restX = u.X; u.restZ = u.Z; u.calmTime = 0;
+        }
+        // An arrived unit shoved off its place by units passing through walks back once the crowd has gone: at most twice
+        // per order, so neighbours cannot keep trading places.
+        void ReturnToRest(PrototypeUnit u, float dt)
+        {
+            if (!u.arrived || u.returns >= 2 || Ghost(u)) return;
+            float dx = u.restX - u.X, dz = u.restZ - u.Z;
+            if (dx * dx + dz * dz < .25f) return;
+            if ((u.calmTime += dt) < .6f) return;
+            int returns = u.returns; float ax = u.arrivedX, az = u.arrivedZ, rx = u.restX, rz = u.restZ; var message = Message;
+            if (Move(u, rx, rz)) { u.returning = true; u.arrived = true; u.arrivedX = ax; u.arrivedZ = az; }
+            u.returns = returns + 1; Message = message;
+        }
+        // Stops short of the goal; a worker gives up harvesting unless it stands next to its deposit.
+        void Stand(PrototypeUnit u)
+        {
+            var deposit = u.HarvestTarget;
+            if (deposit != null && (Math.Abs(u.X - deposit.X - .5f) > 1.35f || Math.Abs(u.Z - deposit.Z - .5f) > 1.35f)) u.HarvestTarget = null;
+            Arrive(u);
+        }
+
+        // Binary min-heap of cells keyed by A* priority.
+        sealed class CellHeap
+        {
+            readonly List<(int cell, float key)> items = new List<(int, float)>();
+            public int Count => items.Count;
+            public void Clear() => items.Clear();
+            public void Push(int cell, float key)
+            {
+                items.Add((cell, key));
+                for (int i = items.Count - 1; i > 0;)
+                {
+                    int parent = (i - 1) / 2;
+                    if (items[parent].key <= items[i].key) break;
+                    (items[parent], items[i]) = (items[i], items[parent]); i = parent;
+                }
+            }
+            public int Pop()
+            {
+                int top = items[0].cell, last = items.Count - 1;
+                items[0] = items[last]; items.RemoveAt(last);
+                for (int i = 0; ;)
+                {
+                    int l = i * 2 + 1, r = l + 1, least = i;
+                    if (l < items.Count && items[l].key < items[least].key) least = l;
+                    if (r < items.Count && items[r].key < items[least].key) least = r;
+                    if (least == i) break;
+                    (items[least], items[i]) = (items[i], items[least]); i = least;
+                }
+                return top;
+            }
+        }
+    }
+}

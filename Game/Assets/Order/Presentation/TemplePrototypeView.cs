@@ -159,13 +159,10 @@ namespace Order.Presentation
                 Vector2 p=mouse.position.ReadValue();
                 overUI=hud!=null&&hud.IsOverHud(p);
                 if(!overUI)targetZoom=Mathf.Clamp(targetZoom-mouse.scroll.ReadValue().y*.012f,MinZoom,MaxZoom);
-                hasHover=!overUI&&Physics.Raycast(MapCamera.ScreenPointToRay(p),out var hit,180);
+                bool onGround=GroundPoint(p,out var point);hasHover=!overUI&&onGround;
                 if(hasHover)
                 {
-                    // Repeat ray explicitly to keep the hit definitely assigned on all compiler versions.
-                    Physics.Raycast(MapCamera.ScreenPointToRay(p),out hit,180);
-                    hoverX=Mathf.FloorToInt(hit.point.x);hoverZ=Mathf.FloorToInt(hit.point.z);
-                    var point=new Vector2(hit.point.x,hit.point.z);
+                    hoverX=Mathf.FloorToInt(point.x);hoverZ=Mathf.FloorToInt(point.y);
                     if(mouse.rightButton.wasPressedThisFrame){if(Mode!=MatchMode.None)SetMode(MatchMode.None);else MoveSelection(point);}
                     if(mouse.leftButton.wasPressedThisFrame)
                     {
@@ -257,7 +254,14 @@ namespace Order.Presentation
             {
                 if(!unitViews.TryGetValue(unit.Id,out var view))unitViews[unit.Id]=view=CreateUnitView(unit);
                 float ground=Match.HeightAt(unit.X,unit.Z);
-                view.Height=unit.Stats.Flying?Mathf.Lerp(view.Height,ground,1-Mathf.Exp(-dt*2.5f)):ground;
+                if(unit.Stats.Flying)
+                {
+                    // Climb early and fast, sink late and slowly: the flight level follows the highest ground around
+                    // the unit and ahead along its course, so it clears a cliff before reaching the edge.
+                    float level=FlightGround(unit);
+                    view.Height=Mathf.Lerp(view.Height,level,1-Mathf.Exp(-dt*(level>view.Height?8:2.2f)));
+                }
+                else view.Height=ground;
                 var position=new Vector3(unit.X,view.Height,unit.Z);
                 var root=view.Root.transform;
                 var direction=position-root.position;direction.y=0;
@@ -265,9 +269,13 @@ namespace Order.Presentation
                 var target=unit.HarvestTarget;bool mining=!unit.Moving&&target!=null&&target.Remaining>0;
                 var deposit=mining?new Vector3(target.X+.5f,Match.Map.Height(target.X,target.Z),target.Z+.5f):Vector3.zero;
                 if(mining){direction=deposit-position;direction.y=0;}
+                // A moving unit faces its next waypoint, so shoves do not twist it; a shoved idle unit keeps its facing.
+                if(unit.Moving&&!mining)foreach(var next in unit.Route){direction=new Vector3(next.X-unit.X,0,next.Z-unit.Z);break;}
+                else if(!mining)direction=Vector3.zero;
                 if(direction.sqrMagnitude>.0001f)root.rotation=Quaternion.Slerp(root.rotation,Quaternion.LookRotation(direction),dt*10);
                 root.position=position;
-                bool moving=unit.Moving;
+                // A shoved idle unit shuffles its legs too.
+                bool moving=unit.Moving||step>dt*.6f;
                 if(view.Legs.Length>0)
                 {
                     // About one stride per 0.75 units travelled.
@@ -309,6 +317,33 @@ namespace Order.Presentation
         }
         // Selected units get a green circle, the hovered unit (or units under the selection box) a faint one.
         // Circles follow the slope of a ramp; an air unit's circle hangs just under its body, so it stays next to it on screen.
+        // Map point under the cursor. A click on a cliff face means the ground at its foot, as in StarCraft: the point moves
+        // off the wall to the side it faces, so orders, markers and pins never land on the wall itself.
+        bool GroundPoint(Vector2 screen,out Vector2 point)
+        {
+            point=default;
+            if(!Physics.Raycast(MapCamera.ScreenPointToRay(screen),out var hit,180))return false;
+            var at=hit.point;
+            // Past the sloped foot and plinth of the wall (about 0.3), with room for a unit to stand.
+            if(hit.normal.y<.5f){var away=new Vector3(hit.normal.x,0,hit.normal.z).normalized;at+=away*.55f;}
+            point=new Vector2(at.x,at.z);
+            return true;
+        }
+        // Highest terrain within a body's width of the unit and up to two and a half cells ahead on its route.
+        float FlightGround(PrototypeUnit unit)
+        {
+            float H(float x,float z)=>Match.HeightAt(Mathf.Clamp(x,0,63.99f),Mathf.Clamp(z,0,63.99f));
+            float r=unit.Stats.Radius+.3f,level=H(unit.X,unit.Z);
+            for(int i=0;i<8;i++){float a=i*Mathf.PI/4;level=Mathf.Max(level,H(unit.X+Mathf.Cos(a)*r,unit.Z+Mathf.Sin(a)*r));}
+            foreach(var next in unit.Route)
+            {
+                var ahead=new Vector2(next.X-unit.X,next.Z-unit.Z);float distance=Mathf.Min(2.5f,ahead.magnitude);
+                if(distance<.01f)break;ahead/=ahead.magnitude;
+                for(float d=.5f;d<=distance;d+=.5f)level=Mathf.Max(level,H(unit.X+ahead.x*d,unit.Z+ahead.y*d));
+                break;
+            }
+            return level;
+        }
         void UpdateSelectionRings()
         {
             int shown=0,hints=0;
@@ -327,11 +362,14 @@ namespace Order.Presentation
             ring.transform.SetPositionAndRotation(new Vector3(unit.X,y,unit.Z),tilt);
             ring.transform.localScale=Vector3.one*(unit.Stats.Radius+.16f)*scale;
         }
+        // Slope under a point for circles and markers: ramps tilt them, a nearby cliff does not (samples across a drop count as level).
         Vector3 GroundNormal(float x,float z)
         {
             const float e=.3f;
             float H(float px,float pz)=>Match.HeightAt(Mathf.Clamp(px,0,63.99f),Mathf.Clamp(pz,0,63.99f));
-            return new Vector3(H(x-e,z)-H(x+e,z),2*e,H(x,z-e)-H(x,z+e)).normalized;
+            float h=H(x,z);
+            float S(float px,float pz){float s=H(px,pz);return Mathf.Abs(s-h)>.51f?h:s;}
+            return new Vector3(S(x-e,z)-S(x+e,z),2*e,S(x,z-e)-S(x,z+e)).normalized;
         }
         // Click: a unit (Shift toggles, Ctrl or a double click takes all of its kind on screen); otherwise the ground cell
         // picks a building or an explored deposit, and an empty click clears the selection.
@@ -571,13 +609,12 @@ namespace Order.Presentation
             float x=0,z=0;foreach(var u in selection.Units){x+=u.X;z+=u.Z;}
             focus=new Vector3(x/selection.Count,0,z/selection.Count);
         }
-        // Every selected unit goes to the point; workers harvest a deposit there, the rest walk up to it.
-        // The marker sits on the point, or on the deposit when the order targets one.
+        // A group order (formation or gathering on the point, see PrototypeMatch.MoveGroup); workers harvest a deposit there,
+        // the rest walk up to it. The marker sits on the point, or on the deposit when the order targets one.
         public bool MoveSelection(Vector2 point)
         {
             if(selection.Count==0)return false;
-            bool any=false;
-            foreach(var unit in selection.Units)any|=Match.Move(unit,point.x,point.y);
+            bool any=Match.MoveGroup(selection.Units,point.x,point.y);
             int cx=(int)point.x,cz=(int)point.y;
             var deposit=Match.Map.Inside(cx,cz)&&Match.Explored[cx,cz]?Match.Map.ResourceAt(cx,cz):null;
             Mark(deposit!=null?new Vector2(deposit.X+.5f,deposit.Z+.5f):point,any);

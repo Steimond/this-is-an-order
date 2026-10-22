@@ -6,7 +6,8 @@ using Unity.Entities;
 namespace Order.Simulation
 {
     public readonly struct Waypoint { public readonly float X,Z; public Waypoint(float x,float z){X=x;Z=z;} }
-    public sealed class PrototypeMatch
+    // Rules of the test match: economy, construction and vision. Unit movement lives in PrototypeMatch.Movement.cs.
+    public sealed partial class PrototypeMatch
     {
         public readonly TempleMap Map = new TempleMap();
         public readonly bool[,] Visible = new bool[64,64], Explored = new bool[64,64];
@@ -40,83 +41,6 @@ namespace Order.Simulation
         public int SupplyUsed{get{int used=0;foreach(var u in Units)used+=u.Stats.Supply;return used;}}
         public int SupplyLimit{get{int limit=0;foreach(var b in Buildings)if(b.Ready>=1)limit+=Balance.Buildings[b.Kind].Supply;return limit;}}
         public float HeightAt(float x,float z)=>Map.Height((int)x,(int)z,x-(int)x);
-        public bool Occupied(int x, int z) => Map.ResourceAt(x,z)!=null || Buildings.Exists(b => x>=b.X && x<b.X+b.Width && z>=b.Z && z<b.Z+b.Width);
-        public bool CanStep(int x,int z,int nx,int nz) => Map.Inside(nx,nz) && !Occupied(nx,nz) && Math.Abs(Map.Height(x,z)-Map.Height(nx,nz))<=.51f;
-        public bool Move(PrototypeUnit unit,int tx,int tz)=>Move(unit,tx+.5f,tz+.5f);
-        // Continuous destinations and straight segments for a ground unit of the given radius. The cell graph is only an obstacle-search fallback.
-        public bool CanTravel(float ax,float az,float bx,float bz,float radius)
-        {
-            float dx=bx-ax,dz=bz-az;int count=Math.Max(1,(int)Math.Ceiling(Math.Sqrt(dx*dx+dz*dz)/.1));
-            float previous=HeightAt(ax,az);
-            for(int i=0;i<=count;i++)
-            {
-                float x=ax+dx*i/count,z=az+dz*i/count;
-                if(x<radius||z<radius||x>=64-radius||z>=64-radius)return false;
-                float h=HeightAt(x,z);if(Math.Abs(h-previous)>.51f)return false;previous=h;
-                for(int zz=(int)(z-radius);zz<=(int)(z+radius);zz++)for(int xx=(int)(x-radius);xx<=(int)(x+radius);xx++)
-                {
-                    float nearX=Math.Max(xx,Math.Min(x,xx+1)),nearZ=Math.Max(zz,Math.Min(z,zz+1));
-                    if((x-nearX)*(x-nearX)+(z-nearZ)*(z-nearZ)>=radius*radius)continue;
-                    if(Occupied(xx,zz)||Math.Abs(Map.Height(xx,zz,Math.Max(0,Math.Min(1,x-xx)))-h)>.51f)return false;
-                }
-            }
-            return true;
-        }
-        // A worker sent to a deposit harvests it after arrival; other units only walk up to it.
-        public bool Move(PrototypeUnit unit,float targetX,float targetZ)
-        {
-            if(float.IsNaN(targetX)||float.IsNaN(targetZ)||targetX<0||targetZ<0||targetX>=64||targetZ>=64)return false;
-            int tx=(int)targetX,tz=(int)targetZ;
-            unit.HarvestTarget=null;
-            var deposit=Explored[tx,tz]?Map.ResourceAt(tx,tz):null;
-            if(unit.Stats.Flying)
-            {
-                // Air units fly straight over cliffs, buildings and deposits.
-                float r=unit.Stats.Radius;
-                unit.route.Clear();unit.route.Enqueue(new Waypoint(Math.Max(r,Math.Min(64-r,targetX)),Math.Max(r,Math.Min(64-r,targetZ))));
-                Message="Приказ: движение.";return true;
-            }
-            float radius=unit.Stats.Radius;
-            if(deposit==null&&CanTravel(unit.X,unit.Z,targetX,targetZ,radius))
-            {unit.route.Clear();unit.route.Enqueue(new Waypoint(targetX,targetZ));Message="Приказ: движение.";return true;}
-            var previous=new int[4096]; Array.Fill(previous,-1);
-            var open=new Queue<int>(); int start=(int)unit.Z*64+(int)unit.X,end=-1;
-            open.Enqueue(start); previous[start]=start;
-            int[] dx={1,-1,0,0},dz={0,0,1,-1};
-            while(open.Count>0)
-            {
-                int p=open.Dequeue(),x=p%64,z=p/64;
-                if ((deposit==null && x==tx && z==tz) || (deposit!=null && Math.Abs(x-tx)+Math.Abs(z-tz)==1)) {end=p;break;}
-                for(int i=0;i<4;i++)
-                {
-                    int nx=x+dx[i],nz=z+dz[i]; if(!CanStep(x,z,nx,nz)||!CanTravel(x+.5f,z+.5f,nx+.5f,nz+.5f,radius))continue;
-                    int next=nz*64+nx;if(previous[next]>=0)continue;
-                    previous[next]=p;open.Enqueue(next);
-                }
-            }
-            if(end<0) {Message="Нет прохода: используйте рампу.";return false;}
-            var reverse=new Stack<int>();for(int p=end;p!=start;p=previous[p])reverse.Push(p);
-            var points=new List<Waypoint>{new Waypoint(unit.X,unit.Z)};
-            while(reverse.Count>0){int p=reverse.Pop();points.Add(new Waypoint(p%64+.5f,p/64+.5f));}
-            if(deposit==null)
-            {
-                var last=points[points.Count-1];
-                if(!CanTravel(last.X,last.Z,targetX,targetZ,radius)){Message="Недостаточно места для юнита.";return false;}
-                points.Add(new Waypoint(targetX,targetZ));
-            }
-            unit.route.Clear();int anchor=0;
-            while(anchor<points.Count-1)
-            {
-                int next=points.Count-1;
-                while(next>anchor+1&&!CanTravel(points[anchor].X,points[anchor].Z,points[next].X,points[next].Z,radius))next--;
-                if(!CanTravel(points[anchor].X,points[anchor].Z,points[next].X,points[next].Z,radius)){unit.route.Clear();return false;}
-                unit.route.Enqueue(points[next]);anchor=next;
-            }
-            bool harvest=deposit!=null&&unit.Stats.HarvestAmount>0;
-            unit.HarvestTarget=harvest?deposit:null;
-            Message=harvest?"Приказ: добыча ресурса.":"Приказ: движение.";return true;
-        }
-        public void Stop(PrototypeUnit unit){unit.route.Clear();unit.HarvestTarget=null;Message="Приказ: стоп.";}
         public bool CanBuild(int x,int z,int kind,out string reason)
         {
             if(kind<0||kind>1){reason="Неизвестный тип здания";return false;}
@@ -141,39 +65,25 @@ namespace Order.Simulation
             if(!CanBuild(x,z,kind,out var reason)){Message=reason;return false;}
             var stats=Balance.Buildings[kind];Minerals-=stats.Minerals;Gas-=stats.Gas;
             Buildings.Add(new PrototypeBuilding{X=x,Z=z,Width=stats.Width,Kind=kind});
-            RouteAroundNewBuildings();
+            navigationVersion++;RouteAroundNewBuildings();
             Message="Строительство начато.";UpdateVision();return true;
-        }
-        // Ground units whose remaining route now crosses a building plan it again to the same destination.
-        void RouteAroundNewBuildings()
-        {
-            foreach(var u in Units)
-            {
-                if(u.Stats.Flying||!u.Moving)continue;
-                float x=u.X,z=u.Z;bool blocked=false;Waypoint last=default;
-                foreach(var p in u.route){if(!CanTravel(x,z,p.X,p.Z,u.Stats.Radius))blocked=true;x=p.X;z=p.Z;last=p;}
-                if(!blocked)continue;
-                var deposit=u.HarvestTarget;
-                if(!(deposit!=null?Move(u,deposit.X,deposit.Z):Move(u,last.X,last.Z)))u.route.Clear();
-            }
         }
         public void Tick(float dt)
         {
             foreach(var b in Buildings)b.Ready=Math.Min(1,b.Ready+dt/Balance.Buildings[b.Kind].BuildSeconds);
+            // Movement runs in fixed steps, so a long frame and many short ones end in the same place.
+            for(float left=dt;left>1e-6f;left-=Step)StepUnits(Math.Min(Step,left));
             foreach(var u in Units)
             {
-                float travel=dt*u.Stats.Speed;
-                while(u.route.Count>0&&travel>0)
-                {
-                    var p=u.route.Peek();float dx=p.X-u.X,dz=p.Z-u.Z,d=(float)Math.Sqrt(dx*dx+dz*dz);
-                    if(d<=travel){u.X=p.X;u.Z=p.Z;travel-=d;u.route.Dequeue();}
-                    else{u.X+=dx/d*travel;u.Z+=dz/d*travel;travel=0;}
-                }
                 var target=u.HarvestTarget;
-                if(u.route.Count==0&&target!=null&&target.Remaining>0)
+                if(u.route.Count>0||target==null||target.Remaining<=0)continue;
+                u.harvestTimer+=dt;
+                while(u.harvestTimer>=u.Stats.HarvestInterval&&target.Remaining>0)
                 {
-                    u.harvestTimer+=dt;
-                    while(u.harvestTimer>=u.Stats.HarvestInterval&&target.Remaining>0){u.harvestTimer-=u.Stats.HarvestInterval;int amount=Math.Min(u.Stats.HarvestAmount,target.Remaining);target.Remaining-=amount;if(target.Gas)Gas+=amount;else Minerals+=amount;}
+                    u.harvestTimer-=u.Stats.HarvestInterval;int amount=Math.Min(u.Stats.HarvestAmount,target.Remaining);target.Remaining-=amount;
+                    if(target.Gas)Gas+=amount;else Minerals+=amount;
+                    // A depleted deposit no longer blocks movement.
+                    if(target.Remaining==0)navigationVersion++;
                 }
             }
             visionTimer+=dt;if(visionTimer>=.15f){visionTimer=0;UpdateVision();}
@@ -208,6 +118,13 @@ namespace Order.Simulation
         public ResourceDeposit HarvestTarget { get; internal set; }
         internal readonly Queue<Waypoint> route = new Queue<Waypoint>();
         internal float harvestTimer;
+        // Movement state: the order's destination, where the last order ended (for group arrival) and progress tracking.
+        internal float goalX, goalZ, arrivedX, arrivedZ, levelY, bestDistance, stuckTime, startX, startZ, lastDx, lastDz;
+        internal bool hasGoal, arrived, touchedArrived, returning;
+        internal int replans;
+        // Where the unit came to rest after its last order, and how long since a passing unit last shoved it from there.
+        internal float restX, restZ, calmTime;
+        internal int returns;
         public bool Moving=>route.Count>0;
         public int WaypointCount=>route.Count;
         public IEnumerable<Waypoint> Route=>route;
