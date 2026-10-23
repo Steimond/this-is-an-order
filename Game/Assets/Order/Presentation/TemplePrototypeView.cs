@@ -501,7 +501,8 @@ namespace Order.Presentation
                     selectedDeposit=selectedBuilding!=null||!Match.Map.Inside(hoverX,hoverZ)||!Match.Explored[hoverX,hoverZ]?null:Match.Map.ResourceAt(hoverX,hoverZ);
                 }
             }
-            hud?.Refresh();
+            // The selected building turns white on the minimap at once, not at the next world refresh.
+            RefreshMinimap();hud?.Refresh();
         }
         void BoxSelect(List<PrototypeUnit> inside,bool shift)
         {
@@ -857,11 +858,11 @@ namespace Order.Presentation
                 var c=miniBase[z*n+x]*lit;c.a=1;pixels[z*n+x]=c;
             }
             void Cell(int cx,int cz,Color color){for(int z=cz*t;z<cz*t+t;z++)for(int x=cx*t;x<cx*t+t;x++)pixels[z*n+x]=color;}
-            foreach(var r in Match.Map.Resources)if(Match.Explored[r.X,r.Z]&&r.Remaining>0)Cell(r.X,r.Z,MinimapPanel.Resource*(Match.Visible[r.X,r.Z]?1:.4f));
+            foreach(var r in Match.Map.Resources)if(Match.Explored[r.X,r.Z]&&r.Remaining>0)Cell(r.X,r.Z,(r.Plasma?MinimapPanel.Plasma:MinimapPanel.Metal)*(Match.Visible[r.X,r.Z]?1:.4f));
             foreach(var b in Match.Buildings)
             {
                 if(!BuildingShown(b))continue;
-                var color=(b.Owner==PrototypeMatch.Player?MinimapPanel.Own:MinimapPanel.Enemy)*(b.Ready>=1?1:.6f);color.a=1;
+                var color=(b==selectedBuilding?MinimapPanel.Selected:b.Owner==PrototypeMatch.Player?MinimapPanel.Own:MinimapPanel.Enemy)*(b.Ready>=1?1:.6f);color.a=1;
                 for(int z=b.Z;z<b.Z+b.Width;z++)for(int x=b.X;x<b.X+b.Width;x++)Cell(x,z,color);
             }
             miniTexture.SetPixels(pixels);miniTexture.Apply(false);
