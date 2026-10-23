@@ -37,5 +37,6 @@ namespace Order.Content
         }
         public ResourceDeposit ResourceAt(int x, int z) => Resources.Find(r => r.X == x && r.Z == z && r.Remaining > 0);
     }
-    public sealed class ResourceDeposit { public int X, Z, Remaining; public bool Plasma; }
+    // WrappedBy: the side whose machine nanites have wrapped the deposit (-1: none); the wrap outlives its worker.
+    public sealed class ResourceDeposit { public int X, Z, Remaining, WrappedBy = -1; public bool Plasma; }
 }

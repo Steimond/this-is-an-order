@@ -53,7 +53,7 @@ namespace Order.Tests.EditMode
             Assert.That(rifleman.Target,Is.SameAs(guard),"An enemy unit is preferred to a building");
             guard.Health=0;Run(match,1.5f);
             Assert.That(rifleman.Target,Is.Null);Assert.That(rifleman.TargetBuilding,Is.SameAs(node),"With no enemy near, an idle unit attacks the building");
-            Assert.That(node.Health,Is.LessThan(match.Balance.Buildings[0].Health));
+            Assert.That(node.Health,Is.LessThan(match.Balance.Expedition.Buildings[0].Health));
         }
         [Test] public void DestroyingEveryEnemyBuildingWins()
         {
@@ -69,7 +69,7 @@ namespace Order.Tests.EditMode
         }
         [Test] public void ConstructionStartsFragileAndLosingASupplyNodeLowersTheLimit()
         {
-            var match=new PrototypeMatch();var stats=match.Balance.Buildings[0];
+            var match=new PrototypeMatch();var stats=match.Balance.Expedition.Buildings[0];
             var node=Sites.Place(match,15,7,0);
             Assert.That(node.Health,Is.EqualTo(stats.Health/10));
             Run(match,stats.BuildSeconds+.1f);

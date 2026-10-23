@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Order.Content;
+using Order.Contracts;
 using Unity.Entities;
 
 namespace Order.Simulation
@@ -30,17 +31,22 @@ namespace Order.Simulation
         public string Message = "Рабочий готов. ПКМ — движение / добыча.";
         int nextUnitId = 1;
         float visionTimer;
-        public PrototypeMatch(MatchBalance balance=null)
+        public PrototypeMatch(MatchBalance balance=null,FactionId player=FactionId.Expedition,FactionId enemy=FactionId.Expedition)
         {
             Balance=balance??new MatchBalance();
+            factions[Player]=player;factions[Enemy]=enemy;
             for(int side=0;side<2;side++){metalStock[side]=Balance.StartingMetal;plasmaStock[side]=Balance.StartingPlasma;}
             foreach(var r in Map.Resources)r.Remaining=r.Plasma?Balance.PlasmaDeposit:Balance.MetalDeposit;
             AddBuilding(2,10,10,Player,1);
             Spawn(UnitKind.Worker,13.5f,13.5f);UpdateVision();
         }
+        // Each side plays one faction: its roster, how its workers gather and how it builds.
+        readonly FactionId[] factions=new FactionId[2];
+        public FactionId FactionOf(int side)=>factions[side];
+        public FactionBalance Roster(int side)=>Balance.Of(factions[side]);
         public PrototypeUnit Spawn(UnitKind kind,float x,float z,int owner=Player)
         {
-            var unit=new PrototypeUnit(nextUnitId++,kind,Balance.Unit(kind),owner){X=x,Z=z};
+            var unit=new PrototypeUnit(nextUnitId++,kind,Roster(owner).Unit(kind),owner){X=x,Z=z};
             Units.Add(unit);return unit;
         }
         // Test-ground setup: a mixed squad west of the command node for selection and movement checks; with the worker it fills the starting supply.
@@ -49,7 +55,7 @@ namespace Order.Simulation
             Spawn(UnitKind.Melee,8,15.5f);Spawn(UnitKind.Melee,9.2f,15.5f);
             for(int i=0;i<3;i++)Spawn(UnitKind.Ranged,7.4f+i*1.1f,17);
             Spawn(UnitKind.Air,8.5f,18.6f);UpdateVision();
-            Message="Отряд на позиции: штурмовики, стрелки и винтокрыл.";
+            Message="Отряд на позиции.";
         }
         // Test-ground enemy: a squad in the basin north-east of the centre. It stands still and only answers attacks.
         public void AddEnemySquad()
@@ -64,11 +70,11 @@ namespace Order.Simulation
         {
             int used=0;
             foreach(var u in Units)if(u.Owner==owner)used+=u.Stats.Supply;
-            foreach(var b in Buildings)if(b.Owner==owner&&b.started)used+=Balance.Unit(b.queue[0]).Supply;
+            foreach(var b in Buildings)if(b.Owner==owner&&b.started)used+=Roster(owner).Unit(b.queue[0]).Supply;
             return used;
         }
         public int SupplyLimit=>Limit(Player);
-        int Limit(int owner){int limit=0;foreach(var b in Buildings)if(b.Owner==owner&&b.Ready>=1)limit+=Balance.Buildings[b.Kind].Supply;return limit;}
+        int Limit(int owner){int limit=0;foreach(var b in Buildings)if(b.Owner==owner&&b.Ready>=1)limit+=b.Stats.Supply;return limit;}
         public float HeightAt(float x,float z)=>Map.Height((int)x,(int)z,x-(int)x);
         public void Tick(float dt)
         {
@@ -91,7 +97,7 @@ namespace Order.Simulation
             {
                 if(b.Ready<1)continue;
                 bool own=b.Owner==Player;
-                Reveal(b.X+b.Width/2,b.Z+b.Width/2,Balance.Buildings[b.Kind].Vision,false,own?Visible:enemyVisible,own?skyVisible:enemySky,own);
+                Reveal(b.X+b.Width/2,b.Z+b.Width/2,b.Stats.Vision,false,own?Visible:enemyVisible,own?skyVisible:enemySky,own);
             }
             // Cheat: the player sees the whole map.
             if(Revealed)for(int z=0;z<64;z++)for(int x=0;x<64;x++){Visible[x,z]=skyVisible[x,z]=Explored[x,z]=true;}
@@ -144,6 +150,11 @@ namespace Order.Simulation
         public int SiteX { get; internal set; }
         public int SiteZ { get; internal set; }
         internal float siteTimer;
+        // Nanite mining: how far the worker has wrapped its deposit (0–1) and the cocoon it wears while wrapped; seconds
+        // since it was last hit, for the cocoon to grow back.
+        public float Wrap{get;internal set;}
+        public int Cocoon{get;internal set;}
+        internal float sinceHit=float.MaxValue,cocoonGrowth;
         // Mining trips: the load a worker carries to a command node, whether it is plasma, and whether it is mining right now.
         public int Carrying { get; internal set; }
         public bool CarriesPlasma { get; internal set; }
@@ -175,6 +186,9 @@ namespace Order.Simulation
     {
         public int X,Z,Width,Kind,Owner,Health;
         public float Ready;
+        // The owner faction's numbers for this kind; a machine building rises by itself once its site is placed.
+        public BuildingStats Stats{get;internal set;}
+        public bool SelfBuilt{get;internal set;}
         // The worker raising it, while it is at work on it; nobody when the construction waits.
         internal PrototypeUnit builder;
         public PrototypeUnit Builder=>builder!=null&&builder.Alive&&builder.Constructing==this?builder:null;

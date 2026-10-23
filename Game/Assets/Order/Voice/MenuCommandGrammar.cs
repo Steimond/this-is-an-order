@@ -78,6 +78,14 @@ namespace Order.Voice
             if (Is(t, @"\b(?:архив\w*|справочник\w*|обучени\w*)\b")) return Reply("Архив и обучение появятся позже.", out result);
 
             var faction = Regex.Match(t, Faction, Mode);
+            // «Играю за вторую фракцию», «моя фракция — первая», «за другую фракцию».
+            if (Is(t, @"\b(?:играю|играть|сыграю|моя|мою|свою|своя)\b|^за\b") && Is(t, @"\bфракци\w*") && !Is(t, @"\b(?:противник\w*|враг\w*|соперник\w*|бот\w*|ии|компьютер\w*|ассистент\w*|образ\w*)\b"))
+            {
+                if (faction.Success)
+                    return Done(AppCommand.ChoosePlayerFaction(faction.Value.StartsWith("перв", StringComparison.Ordinal) || faction.Value == "1" ? FactionId.Expedition : FactionId.Resonance), out result);
+                if (Is(t, Another)) return Done(AppCommand.ChoosePlayerFaction(state.PlayerFaction == FactionId.Expedition ? FactionId.Resonance : FactionId.Expedition), out result);
+                return Clarify("Уточните свою фракцию: первая или вторая.", out result);
+            }
             if (Is(t, @"\b(?:противник\w*|враг\w*|соперник\w*)\b") || (Is(t, @"\b(?:матч\w*|бо[йя]|игр\w*|сыгра\w*|схватк\w*)\b") && Is(t, @"\b(?:бот\w*|ии|компьютер\w*)\b") && faction.Success))
             {
                 if (faction.Success)

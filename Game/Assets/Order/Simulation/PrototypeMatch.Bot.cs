@@ -5,9 +5,10 @@ using Order.Content;
 namespace Order.Simulation
 {
     // Enemy bot of the test ground, an easy StarCraft-like opponent. Once a second it:
-    // - keeps its workers mining (two on plasma once it has eight) and trains more up to a dozen;
+    // - keeps its workers mining and trains more: humans up to a dozen, two on plasma once it has eight; machines one on
+    //   each deposit round its base, one on plasma once it has five;
     // - adds a supply node before supply runs out and, after its first wave, a second factory once it has metal to spare;
-    //   a worker builds them, by the player's rules, and a building left without its worker gets another one;
+    //   a worker builds them, by its faction's rules, and a human building left without its worker gets another one;
     // - keeps its factories training a mixed army, gathered at the top of its ramp;
     // - meets player units that come near its buildings with the army at home;
     // - from the fifth minute sends the army at the player's buildings each time it has grown to the next wave's size;
@@ -55,7 +56,11 @@ namespace Order.Simulation
             var hq = BotHeadquarters();
             if (hq == null || hq.Ready < 1) return;
             var workers = Units.FindAll(u => u.Owner == Enemy && u.Kind == UnitKind.Worker);
-            int onPlasma = workers.FindAll(w => w.HarvestTarget != null && w.HarvestTarget.Plasma).Count, wantPlasma = workers.Count >= 8 ? 2 : 0;
+            // Hauling workers share deposits: a dozen, two on plasma from eight. Nanite workers hold one deposit each: as
+            // many as there are deposits round the base, one on plasma from five.
+            bool nanites = Roster(Enemy).NaniteMining;
+            int wanted = nanites ? DepositsNear(hq) : BotWorkers;
+            int onPlasma = workers.FindAll(w => w.HarvestTarget != null && w.HarvestTarget.Plasma).Count, wantPlasma = nanites ? (workers.Count >= 5 ? 1 : 0) : workers.Count >= 8 ? 2 : 0;
             foreach (var w in workers)
             {
                 if (w.HarvestTarget != null || w.Moving || Busy(w)) continue;
@@ -76,21 +81,34 @@ namespace Order.Simulation
                 onPlasma++;
             }
             int queued = 0; foreach (var k in hq.queue) if (k == UnitKind.Worker) queued++;
-            if (workers.Count + queued < BotWorkers && hq.queue.Count == 0) Train(hq, UnitKind.Worker);
+            if (workers.Count + queued < wanted && hq.queue.Count == 0) Train(hq, UnitKind.Worker);
             var rally = BotDeposit(hq, false, workers);
             if (rally != null && (!hq.HasRally || Map.ResourceAt((int)hq.RallyX, (int)hq.RallyZ) == null)) SetRally(hq, rally.X + .5f, rally.Z + .5f);
         }
-        // The deposit of the kind nearest the command node among those with the fewest of the bot's workers on them.
-        ResourceDeposit BotDeposit(PrototypeBuilding hq, bool plasma, List<PrototypeUnit> workers)
+        int DepositsNear(PrototypeBuilding hq)
+        {
+            int count = 0;
+            foreach (var r in Map.Resources) if (r.Remaining > 0 && Reach(hq, r) <= 10) count++;
+            return count;
+        }
+        static float Reach(PrototypeBuilding hq, ResourceDeposit r)
         {
             float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f;
+            return (float)Math.Sqrt((r.X + .5f - cx) * (r.X + .5f - cx) + (r.Z + .5f - cz) * (r.Z + .5f - cz));
+        }
+        // The deposit of the kind nearest the command node among those with the fewest of the bot's workers on them; a
+        // nanite worker only takes a deposit nobody holds.
+        ResourceDeposit BotDeposit(PrototypeBuilding hq, bool plasma, List<PrototypeUnit> workers)
+        {
+            bool nanites = Roster(Enemy).NaniteMining;
             ResourceDeposit best = null; float bestScore = float.MaxValue;
             foreach (var r in Map.Resources)
             {
                 if (r.Plasma != plasma || r.Remaining <= 0) continue;
-                float d = (float)Math.Sqrt((r.X + .5f - cx) * (r.X + .5f - cx) + (r.Z + .5f - cz) * (r.Z + .5f - cz));
+                float d = Reach(hq, r);
                 if (d > 10) continue;
                 int on = 0; foreach (var w in workers) if (w.HarvestTarget == r) on++;
+                if (nanites && (on > 0 || (miners.TryGetValue(r, out var holder) && Holds(holder, r)))) continue;
                 float score = on * 100 + d;
                 if (score < bestScore) { bestScore = score; best = r; }
             }
@@ -104,7 +122,7 @@ namespace Order.Simulation
             // A building left without its worker gets another one.
             foreach (var b in Buildings)
             {
-                if (b.Owner != Enemy || b.Ready >= 1 || b.Builder != null) continue;
+                if (b.Owner != Enemy || b.Ready >= 1 || b.SelfBuilt || b.Builder != null) continue;
                 var worker = BotBuilder(b.X + b.Width * .5f, b.Z + b.Width * .5f);
                 if (worker != null) Resume(worker, b);
                 return;
@@ -118,7 +136,7 @@ namespace Order.Simulation
         // A free spot near the command node that leaves a cell of room all round and keeps off the metal line.
         bool BotPlace(PrototypeBuilding hq, int kind)
         {
-            var stats = Balance.Buildings[kind];
+            var stats = Roster(Enemy).Buildings[kind];
             if (metalStock[Enemy] < stats.Metal || plasmaStock[Enemy] < stats.Plasma) return false;
             int w = stats.Width; float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f, level = Map.Height(hq.X, hq.Z);
             int bestX = 0, bestZ = 0; float best = float.MaxValue;
@@ -168,7 +186,7 @@ namespace Order.Simulation
                 UnitKind? pick = null; float least = float.MaxValue;
                 foreach (var (kind, weight) in new[] { (UnitKind.Ranged, 3f), (UnitKind.Melee, 2f), (UnitKind.Air, 1f) })
                 {
-                    var stats = Balance.Unit(kind);
+                    var stats = Roster(Enemy).Unit(kind);
                     if (!Trains(b, kind) || metalStock[Enemy] < stats.Metal || plasmaStock[Enemy] < stats.Plasma) continue;
                     int have = army.FindAll(u => u.Kind == kind).Count; foreach (var q in b.queue) if (q == kind) have++;
                     if (have / weight < least) { least = have / weight; pick = kind; }

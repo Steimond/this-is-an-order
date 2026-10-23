@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a91781e7ed5a16d498537bdf79177c1c, type: 3}
+  m_Name: Cutter
+  m_EditorClassIdentifier: Order.Balance::Order.Balance.UnitBalanceAsset
+  DisplayName: "\u0420\u0435\u0437\u0430\u043A"
+  MoveSpeed: 4.2
+  CollisionRadius: 0.38
+  Health: 120
+  Vision: 8
+  HarvestAmount: 0
+  HarvestInterval: 2
+  WrapSeconds: 0
+  Cocoon: 0
+  CocoonRegen: 0
+  Supply: 2
+  Flying: 0
+  Damage: 12
+  AttackRange: 0.3
+  AttackCooldown: 1.1
+  HitsGround: 1
+  HitsAir: 0
+  Metal: 100
+  Plasma: 25
+  TrainSeconds: 22

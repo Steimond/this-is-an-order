@@ -11,29 +11,44 @@ namespace Order.Editor
         {
             var defaults=new MatchBalance();
             var catalog=Asset<BalanceCatalog>("Resources/PrototypeBalanceCatalog");
-            catalog.Worker=Unit("Worker",defaults.Units[(int)UnitKind.Worker]);
-            catalog.Melee=Unit("Assault",defaults.Units[(int)UnitKind.Melee]);
-            catalog.Ranged=Unit("Rifleman",defaults.Units[(int)UnitKind.Ranged]);
-            catalog.Air=Unit("Gunship",defaults.Units[(int)UnitKind.Air]);
+            var humans=defaults.Expedition;
+            catalog.Worker=Unit("Faction1","Worker",humans.Unit(UnitKind.Worker));
+            catalog.Melee=Unit("Faction1","Assault",humans.Unit(UnitKind.Melee));
+            catalog.Ranged=Unit("Faction1","Rifleman",humans.Unit(UnitKind.Ranged));
+            catalog.Air=Unit("Faction1","Gunship",humans.Unit(UnitKind.Air));
+            catalog.Supply=Building("Faction1","Supply",humans.Buildings[0]);
+            catalog.Factory=Building("Faction1","Factory",humans.Buildings[1]);
+            catalog.Headquarters=Building("Faction1","Headquarters",humans.Buildings[2]);
+            var machines=defaults.Resonance;
+            catalog.Resonance??=new FactionAssets();
+            catalog.Resonance.Worker=Unit("Faction2","Weaver",machines.Unit(UnitKind.Worker));
+            catalog.Resonance.Melee=Unit("Faction2","Cutter",machines.Unit(UnitKind.Melee));
+            catalog.Resonance.Ranged=Unit("Faction2","Emitter",machines.Unit(UnitKind.Ranged));
+            catalog.Resonance.Air=Unit("Faction2","Glider",machines.Unit(UnitKind.Air));
+            catalog.Resonance.Supply=Building("Faction2","ComputeNode",machines.Buildings[0]);
+            catalog.Resonance.Factory=Building("Faction2","Assembler",machines.Buildings[1]);
+            catalog.Resonance.Headquarters=Building("Faction2","Core",machines.Buildings[2]);
             catalog.Economy=Asset<EconomyBalanceAsset>("Shared/Economy");
-            catalog.Supply=Building("Supply",defaults.Buildings[0]);
-            catalog.Factory=Building("Factory",defaults.Buildings[1]);
-            catalog.Headquarters=Building("Headquarters",defaults.Buildings[2]);
             EditorUtility.SetDirty(catalog);AssetDatabase.SaveAssets();
         }
-        static UnitBalanceAsset Unit(string name,UnitStats defaults)
+        static UnitBalanceAsset Unit(string faction,string name,UnitStats defaults)
         {
-            string path=$"Assets/Order/Balance/Faction1/Units/{name}.asset";
-            bool exists=AssetDatabase.LoadAssetAtPath<UnitBalanceAsset>(path)!=null;
-            var asset=Asset<UnitBalanceAsset>($"Faction1/Units/{name}");
-            if(!exists){asset.DisplayName=defaults.Name;asset.MoveSpeed=defaults.Speed;asset.CollisionRadius=defaults.Radius;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.HarvestAmount=defaults.HarvestAmount;asset.HarvestInterval=defaults.HarvestInterval;asset.Supply=defaults.Supply;asset.Flying=defaults.Flying;asset.Damage=defaults.Damage;asset.AttackRange=defaults.AttackRange;asset.AttackCooldown=defaults.AttackCooldown;asset.HitsGround=defaults.HitsGround;asset.HitsAir=defaults.HitsAir;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.TrainSeconds=defaults.TrainSeconds;EditorUtility.SetDirty(asset);}
+            string relative=$"{faction}/Units/{name}";
+            bool exists=AssetDatabase.LoadAssetAtPath<UnitBalanceAsset>($"Assets/Order/Balance/{relative}.asset")!=null;
+            var asset=Asset<UnitBalanceAsset>(relative);
+            if(!exists)
+            {
+                asset.DisplayName=defaults.Name;asset.MoveSpeed=defaults.Speed;asset.CollisionRadius=defaults.Radius;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.HarvestAmount=defaults.HarvestAmount;asset.HarvestInterval=defaults.HarvestInterval;asset.Supply=defaults.Supply;asset.Flying=defaults.Flying;asset.Damage=defaults.Damage;asset.AttackRange=defaults.AttackRange;asset.AttackCooldown=defaults.AttackCooldown;asset.HitsGround=defaults.HitsGround;asset.HitsAir=defaults.HitsAir;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.TrainSeconds=defaults.TrainSeconds;
+                asset.WrapSeconds=defaults.WrapSeconds;asset.Cocoon=defaults.Cocoon;asset.CocoonRegen=defaults.CocoonRegen;
+                EditorUtility.SetDirty(asset);
+            }
             return asset;
         }
-        static BuildingBalanceAsset Building(string name,BuildingStats defaults)
+        static BuildingBalanceAsset Building(string faction,string name,BuildingStats defaults)
         {
-            string path=$"Assets/Order/Balance/Faction1/Buildings/{name}.asset";
-            bool exists=AssetDatabase.LoadAssetAtPath<BuildingBalanceAsset>(path)!=null;
-            var asset=Asset<BuildingBalanceAsset>($"Faction1/Buildings/{name}");
+            string relative=$"{faction}/Buildings/{name}";
+            bool exists=AssetDatabase.LoadAssetAtPath<BuildingBalanceAsset>($"Assets/Order/Balance/{relative}.asset")!=null;
+            var asset=Asset<BuildingBalanceAsset>(relative);
             if(!exists){asset.DisplayName=defaults.Name;asset.Footprint=defaults.Width;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.Supply=defaults.Supply;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.ConstructionSeconds=defaults.BuildSeconds;asset.ModelHeight=defaults.Height;asset.Trains=(UnitKind[])defaults.Trains.Clone();EditorUtility.SetDirty(asset);}
             return asset;
         }

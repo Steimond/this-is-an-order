@@ -13,13 +13,15 @@ namespace Order.Application
         public long Session { get; private set; } = 1;
         public long Revision { get; private set; }
         public AppCommandState State => new AppCommandState(Session, Revision, Screen, Settings.MasterVolume, Settings.AssistantFaction, EnemyFaction,
-            ExitPending, Settings.Options, Settings.Keys);
+            ExitPending, Settings.Options, Settings.Keys, PlayerFaction);
         public AppScreen Screen { get; private set; } = AppScreen.MainMenu;
         // Screen to return to from the options window, and the tab the window reopens on.
         public AppScreen ReturnScreen { get; private set; } = AppScreen.MainMenu;
         public AppScreen SettingsTab { get; private set; } = AppScreen.GameSettings;
         public SettingsSnapshot Settings { get; private set; }
         public FactionId EnemyFaction { get; private set; } = FactionId.Resonance;
+        // The player's faction for the next match; the test ground plays it against EnemyFaction.
+        public FactionId PlayerFaction { get; private set; } = FactionId.Expedition;
         public bool HasMatchDraft { get; private set; }
         public bool ExitPending { get; private set; }
         public string MapId => PrototypeCatalog.MapId;
@@ -143,6 +145,12 @@ namespace Order.Application
                     HasMatchDraft = true;
                     Show(AppScreen.MatchSetup);
                     message = "Матч подготовлен. Игровая симуляция будет добавлена следующим этапом.";
+                    break;
+                case AppCommandKind.ChoosePlayerFaction:
+                    if (!IsFaction(command.Faction)) return Reject("Такой фракции нет.");
+                    PlayerFaction = command.Faction;
+                    Show(AppScreen.MatchSetup);
+                    message = "Ваша фракция: " + PrototypeCatalog.FactionLabel(command.Faction) + ". Полигон начнётся за неё.";
                     break;
                 case AppCommandKind.StartMatch:
                     return new CommandResult(CommandOutcome.Unavailable, "Боевой прототип — следующий этап. Пока доступен полигон: «открой полигон».");

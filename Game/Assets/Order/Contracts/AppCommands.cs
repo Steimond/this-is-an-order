@@ -9,7 +9,7 @@ namespace Order.Contracts
     public enum AppCommandKind
     {
         Navigate, SetMasterVolume, PrepareBotMatch, SetAssistantFaction,
-        Back, OpenSettings, SetOption, SetKey, ResetOptions, LaunchTestMap, RequestExit, ConfirmExit, CancelExit, StartMatch
+        Back, OpenSettings, SetOption, SetKey, ResetOptions, LaunchTestMap, RequestExit, ConfirmExit, CancelExit, StartMatch, ChoosePlayerFaction
     }
     public enum CommandSource { Manual, Text, Voice }
     public enum CommandOutcome { Applied, Rejected, NeedsClarification, StaleContext, Unavailable, Answered }
@@ -41,16 +41,19 @@ namespace Order.Contracts
         public readonly float MasterVolume;
         public readonly FactionId AssistantFaction;
         public readonly FactionId EnemyFaction;
+        // The faction the player plays in the next match (on the test ground for now).
+        public readonly FactionId PlayerFaction;
         public readonly bool ExitPending;
         private readonly IReadOnlyDictionary<string, float> options;
         private readonly IReadOnlyDictionary<string, string> keys;
         public IReadOnlyDictionary<string, float> Options => options ?? NoOptions;
         public IReadOnlyDictionary<string, string> Keys => keys ?? NoKeys;
         public AppCommandState(long session, long revision, AppScreen screen, float masterVolume, FactionId assistantFaction, FactionId enemyFaction,
-            bool exitPending = false, IReadOnlyDictionary<string, float> options = null, IReadOnlyDictionary<string, string> keys = null)
+            bool exitPending = false, IReadOnlyDictionary<string, float> options = null, IReadOnlyDictionary<string, string> keys = null,
+            FactionId playerFaction = FactionId.Expedition)
         {
             Session = session; Revision = revision; Screen = screen; MasterVolume = masterVolume; AssistantFaction = assistantFaction; EnemyFaction = enemyFaction;
-            ExitPending = exitPending; this.options = options; this.keys = keys;
+            ExitPending = exitPending; this.options = options; this.keys = keys; PlayerFaction = playerFaction;
         }
     }
 
@@ -77,6 +80,7 @@ namespace Order.Contracts
         public static AppCommand SetVolume(float value, bool openAudioSettings = false) =>
             new AppCommand(AppCommandKind.SetMasterVolume, volume: value, openAudioSettings: openAudioSettings);
         public static AppCommand PrepareMatch(FactionId enemy) => new AppCommand(AppCommandKind.PrepareBotMatch, faction: enemy);
+        public static AppCommand ChoosePlayerFaction(FactionId faction) => new AppCommand(AppCommandKind.ChoosePlayerFaction, faction: faction);
         public static AppCommand SetAssistant(FactionId faction) => new AppCommand(AppCommandKind.SetAssistantFaction, faction: faction);
         public static AppCommand Back() => new AppCommand(AppCommandKind.Back);
         public static AppCommand OpenSettings() => new AppCommand(AppCommandKind.OpenSettings);

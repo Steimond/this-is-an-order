@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Order.Content;
+using Order.Contracts;
 using Order.Balance;
 using Order.Simulation;
 using Unity.Entities;
@@ -55,11 +56,13 @@ namespace Order.Presentation
         int lastGroup=-1;
         MaterialPropertyBlock markerColor;
         readonly Dictionary<int, UnitView> unitViews = new Dictionary<int, UnitView>();
-        readonly Dictionary<UnitKind, UnitModel> unitModels = new Dictionary<UnitKind, UnitModel>();
-        readonly Mesh[] buildingMeshes = new Mesh[3];
+        readonly Dictionary<(FactionId, UnitKind), UnitModel> unitModels = new Dictionary<(FactionId, UnitKind), UnitModel>();
+        readonly Mesh[,] buildingMeshes = new Mesh[2,3];
         Mesh ringMesh, beaconMesh, shadowMesh, selectionMesh, markerMesh, cargoMesh;
         Material buildingMaterial, enemyBuildingMaterial, ghostMaterial, footprintMaterial, selectedMaterial, neutralMaterial, constructionMaterial, beaconMaterial, unitMaterial, enemyMaterial, beamMaterial, shadowMaterial,
-            unitRingMaterial, hoverRingMaterial, enemyRingMaterial, enemyHoverMaterial, markerMaterial, oreMaterial, plasmaCargoMaterial;
+            unitRingMaterial, hoverRingMaterial, enemyRingMaterial, enemyHoverMaterial, markerMaterial, oreMaterial, plasmaCargoMaterial, naniteMaterial, cocoonMaterial;
+        Mesh cocoonMesh;
+        MaterialPropertyBlock cocoonColor;
         // Enemy team colour on models and the minimap.
         public static readonly Color EnemyColor = new Color(.92f, .16f, .12f);
         CombatEffects combat;
@@ -93,7 +96,9 @@ namespace Order.Presentation
             enabled=true;Mode=MatchMode.None;buildKind=-1;selectedBuilding=null;selectedDeposit=null;focus=new Vector3(13,0,13);zoom=targetZoom=StartZoom;refresh=0;
             var catalog=Resources.Load<BalanceCatalog>("PrototypeBalanceCatalog");
             if(catalog==null)throw new InvalidOperationException("Create balance assets using Order/Create Missing Balance Assets.");
-            Match=new PrototypeMatch(catalog.Snapshot());ui=root;onExit=exit;
+            // Factions: those chosen for the match in the menu (by default humans against the machines), or a restart's.
+            var (player,enemy)=restartAs??(services?.App?.PlayerFaction??FactionId.Expedition,services?.App?.EnemyFaction??FactionId.Resonance);restartAs=null;
+            Match=new PrototypeMatch(catalog.Snapshot(),player,enemy);ui=root;onExit=exit;
             ecsWorld=World.DefaultGameObjectInjectionWorld;
             if(ecsWorld==null)throw new InvalidOperationException("Default ECS world is unavailable.");
             matchEntity=ecsWorld.EntityManager.CreateEntity();
@@ -135,6 +140,8 @@ namespace Order.Presentation
                 depositViews.Add(go);
             }
             beamMaterial=scenery.Glow("Mining beam",new Color(.45f,.9f,1)*3);
+            naniteMaterial=scenery.Glow("Nanite threads",new Color(.62f,.86f,1)*2.4f);
+            cocoonMaterial=scenery.Glow("Nanite cocoon",new Color(.14f,.27f,.38f,1));cocoonMesh=scenery.Own(MachineModels.Cocoon());cocoonColor=new MaterialPropertyBlock();
             shadowMaterial=scenery.Glow("Air unit shadow",new Color(0,0,0,.6f),false,m=>m.SetFloat("_Soft",1));
             shadowMesh=scenery.Own(SoftQuad());
             // StarCraft-like green circles under selected units, a faint one under the hovered unit, and order markers.
@@ -159,10 +166,11 @@ namespace Order.Presentation
             footprint=scenery.Model("Placement footprint",scenery.Own(square.ToMesh("Footprint")),footprintMaterial,worldRoot.transform,false);footprint.SetActive(false);
             UpdateCamera();RefreshWorld();
         }
-        Mesh BuildingMesh(int kind)
+        Mesh BuildingMesh(FactionId faction,int kind)
         {
-            if(buildingMeshes[kind]==null){var stats=Match.Balance.Buildings[kind];buildingMeshes[kind]=scenery.Own(MatchModels.Building(kind,stats.Width,stats.Height));}
-            return buildingMeshes[kind];
+            int f=(int)faction;
+            if(buildingMeshes[f,kind]==null){var stats=Match.Balance.Of(faction).Buildings[kind];buildingMeshes[f,kind]=scenery.Own(faction==FactionId.Resonance?MachineModels.Building(kind,stats.Width,stats.Height):MatchModels.Building(kind,stats.Width,stats.Height));}
+            return buildingMeshes[f,kind];
         }
         void Update()
         {
@@ -255,14 +263,14 @@ namespace Order.Presentation
             footprint.SetActive(Mode==MatchMode.Build&&hasHover);
             if(footprint.activeSelf)
             {
-                bool valid=Match.CanBuild(hoverX,hoverZ,buildKind,out var reason);int w=Match.Balance.Buildings[buildKind].Width;
+                bool valid=Match.CanBuild(hoverX,hoverZ,buildKind,out var reason);int w=Match.Roster(PrototypeMatch.Player).Buildings[buildKind].Width;
                 footprint.transform.position=new Vector3(hoverX+w*.5f,Match.Map.Height(hoverX,hoverZ)+.03f,hoverZ+w*.5f);
                 footprint.transform.localScale=new Vector3(w,1,w);footprintMaterial.SetColor("_Color",valid?new Color(.2f,1,.4f,.5f):new Color(1,.15f,.15f,.55f));
-                ModeHint=Match.Balance.Buildings[buildKind].Name+": "+reason+" · ПКМ / Esc — отмена";
+                ModeHint=Match.Roster(PrototypeMatch.Player).Buildings[buildKind].Name+": "+reason+" · ПКМ / Esc — отмена";
                 if(ghostKind!=buildKind)
                 {
                     if(ghostModel!=null)Destroy(ghostModel);
-                    ghostModel=scenery.Model("Placement ghost",BuildingMesh(buildKind),ghostMaterial,worldRoot.transform,false);ghostKind=buildKind;
+                    ghostModel=scenery.Model("Placement ghost",BuildingMesh(Match.FactionOf(PrototypeMatch.Player),buildKind),ghostMaterial,worldRoot.transform,false);ghostKind=buildKind;
                 }
                 ghostModel.SetActive(true);ghostModel.transform.position=footprint.transform.position;
             }
@@ -279,17 +287,19 @@ namespace Order.Presentation
             public Transform Body, Shadow;
             public Transform[] Legs, Rotors;
             public UnitModel Model;
-            public LineRenderer Beam;
+            public LineRenderer Beam, Nanites;
             // A chunk of ore or a plasma capsule carried home.
-            public GameObject Cargo;
+            public GameObject Cargo, Cocoon;
+            public int CocoonSeen;
             // Kick runs from 1 to 0 after a strike: a melee lunge or a recoil; Sparks counts down to the next welding spark.
             public float Phase, Height, Kick, Sparks;
         }
         UnitView CreateUnitView(PrototypeUnit unit)
         {
-            if(!unitModels.TryGetValue(unit.Kind,out var model))
+            var key=(Match.FactionOf(unit.Owner),unit.Kind);
+            if(!unitModels.TryGetValue(key,out var model))
             {
-                model=MatchModels.Unit(unit.Kind);unitModels[unit.Kind]=model;
+                model=key.Item1==FactionId.Resonance?MachineModels.Unit(unit.Kind):MatchModels.Unit(unit.Kind);unitModels[key]=model;
                 scenery.Own(model.Body);if(model.Leg!=null)scenery.Own(model.Leg);if(model.Rotor!=null)scenery.Own(model.Rotor);
             }
             var view=new UnitView{Model=model,Root=new GameObject(unit.Stats.Name+" #"+unit.Id),Height=Match.HeightAt(unit.X,unit.Z)};
@@ -329,7 +339,9 @@ namespace Order.Presentation
                 var root=view.Root.transform;
                 var direction=position-root.position;direction.y=0;
                 float step=direction.magnitude;
-                var target=unit.HarvestTarget;bool mining=unit.Mining&&target!=null&&target.Remaining>0;
+                var target=unit.HarvestTarget;bool nanite=unit.Kind==UnitKind.Worker&&Match.Roster(unit.Owner).NaniteMining;
+                // A hauling worker mines with a beam; a nanite worker wraps its deposit (facing it from the start of the wrap).
+                bool mining=target!=null&&target.Remaining>0&&(nanite?unit.Wrap>0:unit.Mining);
                 var deposit=mining?new Vector3(target.X+.5f,Match.Map.Height(target.X,target.Z),target.Z+.5f):Vector3.zero;
                 if(mining){direction=deposit-position;direction.y=0;}
                 // A building worker faces its building and welds it with the same beam: into the footprint, at the top of
@@ -338,7 +350,7 @@ namespace Order.Presentation
                 var weld=Vector3.zero;
                 if(welding)
                 {
-                    float top=Match.Balance.Buildings[site.Kind].Height*site.Ready,cx=site.X+site.Width*.5f,cz=site.Z+site.Width*.5f;
+                    float top=site.Stats.Height*site.Ready,cx=site.X+site.Width*.5f,cz=site.Z+site.Width*.5f;
                     var edge=new Vector2(Mathf.Clamp(unit.X,site.X,site.X+site.Width),Mathf.Clamp(unit.Z,site.Z,site.Z+site.Width));
                     var into=Vector2.Lerp(edge,new Vector2(cx,cz),.3f+.12f*Mathf.Sin(time*2.3f+unit.Id));
                     var along=new Vector2(-(cz-edge.y),cx-edge.x).normalized*.35f*Mathf.Sin(time*1.7f+unit.Id*.7f);
@@ -379,7 +391,7 @@ namespace Order.Presentation
                 }
                 for(int i=0;i<view.Rotors.Length;i++)view.Rotors[i].localRotation=Quaternion.Euler(0,time*1300*(i%2==0?1:-1)+i*40,0);
                 if(view.Shadow!=null)view.Shadow.position=new Vector3(unit.X,ground+.06f,unit.Z);
-                bool beam=mining||welding;
+                bool beam=(mining&&!nanite)||welding;
                 if(beam&&view.Beam==null)
                 {
                     view.Beam=new GameObject("Mining beam",typeof(LineRenderer)).GetComponent<LineRenderer>();view.Beam.transform.SetParent(view.Root.transform);
@@ -393,6 +405,7 @@ namespace Order.Presentation
                     view.Beam.SetPosition(1,mining?deposit+Vector3.up*(target.Plasma?.25f:.55f)+jitter:weld+jitter);
                     view.Beam.widthMultiplier=.05f+.015f*Mathf.Sin(time*40);
                 }
+                Weave(view,unit,nanite&&mining,deposit,time);
                 // Welding throws short sparks where the beam meets the building.
                 if(welding&&seen&&(view.Sparks-=dt)<=0){view.Sparks=.11f+.06f*Mathf.PerlinNoise(time*3,unit.Id);combat.Flash(weld,new Color(3,2.3f,1.2f),.2f,.09f,1.6f);}
                 bool carrying=unit.Carrying>0;
@@ -411,7 +424,7 @@ namespace Order.Presentation
             }
             foreach(var (b,view) in buildingViews)
             {
-                var stats=Match.Balance.Buildings[b.Kind];
+                var stats=b.Stats;
                 if(!view.Model.activeSelf||(b.Owner!=PrototypeMatch.Player&&!Match.SeenBy(PrototypeMatch.Player,b)))continue;
                 if(b.Health<stats.Health||selectedBuilding==b)
                     combat.Bar(new Vector3(b.X+b.Width*.5f,Match.Map.Height(b.X,b.Z)+stats.Height+.45f,b.Z+b.Width*.5f),b.Width*.8f,b.Health/(float)stats.Health);
@@ -424,6 +437,41 @@ namespace Order.Presentation
                 selection.Prune(Match.Units);
             }
         }
+        // A nanite worker wraps its deposit: glowing threads spiral from its arms round the deposit and climb it as the
+        // wrap grows, then keep slowly turning. Its cocoon is a faint shell round the body that flares when it takes a
+        // blow and thins out as it wears down.
+        void Weave(UnitView view,PrototypeUnit unit,bool wrapping,Vector3 deposit,float time)
+        {
+            if(wrapping&&view.Nanites==null)
+            {
+                view.Nanites=new GameObject("Nanite threads",typeof(LineRenderer)).GetComponent<LineRenderer>();view.Nanites.transform.SetParent(view.Root.transform);
+                view.Nanites.sharedMaterial=naniteMaterial;view.Nanites.positionCount=NaniteThread;view.Nanites.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
+                view.Nanites.widthMultiplier=.035f;
+            }
+            if(view.Nanites!=null)view.Nanites.enabled=wrapping;
+            if(wrapping)
+            {
+                var from=view.Body.TransformPoint(new Vector3(0,.3f,.3f));float climb=.08f+.62f*unit.Wrap;
+                for(int i=0;i<NaniteThread;i++)
+                {
+                    float t=i/(NaniteThread-1f),a=t*Mathf.PI*5+time*1.3f+unit.Id,r=.42f-.12f*t;
+                    var round=deposit+new Vector3(Mathf.Cos(a)*r,.04f+climb*t,Mathf.Sin(a)*r);
+                    // The first stretch leaves the worker's arms and joins the spiral.
+                    view.Nanites.SetPosition(i,t<.12f?Vector3.Lerp(from,round,t/.12f):round);
+                }
+            }
+            bool shell=unit.Cocoon>0&&view.Root.activeSelf;
+            if(shell&&view.Cocoon==null)view.Cocoon=scenery.Model("Nanite cocoon",cocoonMesh,cocoonMaterial,view.Body,false);
+            if(view.Cocoon==null)return;
+            if(view.Cocoon.activeSelf!=shell)view.Cocoon.SetActive(shell);
+            if(!shell){view.CocoonSeen=0;return;}
+            float share=unit.Cocoon/(float)Mathf.Max(1,unit.Stats.Cocoon);
+            float flare=unit.Cocoon<view.CocoonSeen?2.5f:1;view.CocoonSeen=unit.Cocoon;
+            cocoonColor.SetColor("_Color",new Color(.14f,.27f,.38f,1)*(.35f+.65f*share)*flare*(1+.12f*Mathf.Sin(time*3+unit.Id)));
+            view.Cocoon.GetComponent<MeshRenderer>().SetPropertyBlock(cocoonColor);
+            view.Cocoon.transform.localScale=Vector3.one*(.92f+.08f*share);
+        }
+        const int NaniteThread=28;
         // Selected units get a green circle, the hovered unit (or units under the selection box) a faint one.
         // Circles follow the slope of a ramp; an air unit's circle hangs just under its body, so it stays next to it on screen.
         // Map point under the cursor. A click on a cliff face means the ground at its foot, as in StarCraft: the point moves
@@ -617,7 +665,7 @@ namespace Order.Presentation
             foreach(var b in ruins)
             {
                 if(!Match.SeenBy(PrototypeMatch.Player,b)&&b.Owner!=PrototypeMatch.Player)continue;
-                float ground=Match.Map.Height(b.X,b.Z),h=Match.Balance.Buildings[b.Kind].Height;
+                float ground=Match.Map.Height(b.X,b.Z),h=b.Stats.Height;
                 for(int i=0;i<3;i++)
                 {
                     var at=new Vector3(b.X+b.Width*(.3f+.2f*i),ground+h*.5f,b.Z+b.Width*(i==1?.7f:.35f));
@@ -783,7 +831,7 @@ namespace Order.Presentation
         {
             foreach(var (b,view) in buildingViews)
             {
-                float h=Match.Balance.Buildings[b.Kind].Height,ground=Match.Map.Height(b.X,b.Z);
+                float h=b.Stats.Height,ground=Match.Map.Height(b.X,b.Z);
                 bool shown=BuildingShown(b);
                 if(view.Model.activeSelf!=shown)view.Model.SetActive(shown);
                 // The full-sized model rises through the opaque terrain; it never scales up.
@@ -801,9 +849,9 @@ namespace Order.Presentation
             foreach(var u in Match.Units)
             {
                 if(u.Owner!=PrototypeMatch.Player||u.SiteKind<0)continue;
-                if(siteGhosts.Count<=shown)siteGhosts.Add(scenery.Model("Planned site",BuildingMesh(u.SiteKind),ghostMaterial,worldRoot.transform,false));
-                var ghost=siteGhosts[shown++];ghost.SetActive(true);ghost.GetComponent<MeshFilter>().sharedMesh=BuildingMesh(u.SiteKind);
-                int w=Match.Balance.Buildings[u.SiteKind].Width;
+                if(siteGhosts.Count<=shown)siteGhosts.Add(scenery.Model("Planned site",BuildingMesh(Match.FactionOf(u.Owner),u.SiteKind),ghostMaterial,worldRoot.transform,false));
+                var ghost=siteGhosts[shown++];ghost.SetActive(true);ghost.GetComponent<MeshFilter>().sharedMesh=BuildingMesh(Match.FactionOf(u.Owner),u.SiteKind);
+                int w=Match.Roster(u.Owner).Buildings[u.SiteKind].Width;
                 ghost.transform.position=new Vector3(u.SiteX+w*.5f,Match.Map.Height(u.SiteX,u.SiteZ)+.03f,u.SiteZ+w*.5f);
             }
             for(int i=shown;i<siteGhosts.Count;i++)siteGhosts[i].SetActive(false);
@@ -815,7 +863,7 @@ namespace Order.Presentation
             {
                 if(buildingViews.ContainsKey(b))continue;
                 var material=b.Owner==PrototypeMatch.Player?buildingMaterial:enemyBuildingMaterial;
-                buildingViews[b]=new BuildingView{Model=scenery.Model(Match.Balance.Buildings[b.Kind].Name,BuildingMesh(b.Kind),material,worldRoot.transform),
+                buildingViews[b]=new BuildingView{Model=scenery.Model(b.Stats.Name,BuildingMesh(Match.FactionOf(b.Owner),b.Kind),material,worldRoot.transform),
                     Ring=scenery.Model("Construction",ringMesh,constructionMaterial,worldRoot.transform,false)};
             }
             if(buildingViews.Count==Match.Buildings.Count)return;
@@ -878,7 +926,7 @@ namespace Order.Presentation
         {
             if(mode==MatchMode.Build&&(kind<0||kind>1))mode=MatchMode.None;
             if(mode==MatchMode.Attack&&!HasFighter()){Match.Message="Выбранные юниты не атакуют.";mode=MatchMode.None;}
-            if(mode==MatchMode.Rally&&(selectedBuilding==null||Match.Balance.Buildings[selectedBuilding.Kind].Trains.Length==0))mode=MatchMode.None;
+            if(mode==MatchMode.Rally&&(selectedBuilding==null||selectedBuilding.Stats.Trains.Length==0))mode=MatchMode.None;
             if((mode==MatchMode.Move&&!selection.Own)||(mode==MatchMode.Harvest&&!HasHarvester()))SelectWorker();
             Mode=mode;buildKind=mode==MatchMode.Build?kind:-1;ModeHint=Hint();hud?.Refresh();
         }
@@ -936,7 +984,7 @@ namespace Order.Presentation
         public bool Build(int x,int z,int kind)
         {
             if(kind<0||kind>1)return false;
-            int w=Match.Balance.Buildings[kind].Width;float cx=x+w*.5f,cz=z+w*.5f;
+            int w=Match.Roster(PrototypeMatch.Player).Buildings[kind].Width;float cx=x+w*.5f,cz=z+w*.5f;
             PrototypeUnit worker=null;float best=float.MaxValue;
             foreach(var u in selection.Orderable)
             {
@@ -985,7 +1033,7 @@ namespace Order.Presentation
         // A rally point on a deposit is drawn at its centre: workers will harvest it.
         public void SetRallyPoint(Vector2 point)
         {
-            if(selectedBuilding==null||selectedBuilding.Owner!=PrototypeMatch.Player||Match.Balance.Buildings[selectedBuilding.Kind].Trains.Length==0)return;
+            if(selectedBuilding==null||selectedBuilding.Owner!=PrototypeMatch.Player||selectedBuilding.Stats.Trains.Length==0)return;
             int cx=(int)point.x,cz=(int)point.y;
             var deposit=Match.Map.Inside(cx,cz)&&Match.Explored[cx,cz]?Match.Map.ResourceAt(cx,cz):null;
             if(deposit!=null)point=new Vector2(deposit.X+.5f,deposit.Z+.5f);
@@ -1075,6 +1123,13 @@ namespace Order.Presentation
             return result;
         }
         public void Exit()=>onExit?.Invoke();
+        // A new match on the same screen with other factions (the editor cheat panel).
+        (FactionId,FactionId)? restartAs;
+        public void Restart(FactionId player,FactionId enemy)
+        {
+            var root=ui;var exit=onExit;var with=services;
+            Shutdown();restartAs=(player,enemy);Initialize(root,exit,with);
+        }
         public void Shutdown()
         {
             enabled=false;

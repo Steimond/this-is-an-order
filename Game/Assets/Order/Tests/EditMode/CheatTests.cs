@@ -15,9 +15,9 @@ namespace Order.Tests.EditMode
             Assert.That(match.ToggleFastBuild(),Is.True);Assert.That(match.Cheated,Is.True);
             var node=Sites.Place(match,15,7,0);
             var hq=match.Buildings.Find(b=>b.Kind==2&&b.Owner==PrototypeMatch.Player);Assert.That(match.Train(hq,UnitKind.Worker),Is.True);
-            Run(match,match.Balance.Buildings[0].BuildSeconds/PrototypeMatch.FastFactor+.1f);
+            Run(match,match.Balance.Expedition.Buildings[0].BuildSeconds/PrototypeMatch.FastFactor+.1f);
             Assert.That(node.Ready,Is.EqualTo(1));
-            Run(match,match.Balance.Worker.TrainSeconds/PrototypeMatch.FastFactor+.1f);
+            Run(match,match.Balance.Expedition.Worker.TrainSeconds/PrototypeMatch.FastFactor+.1f);
             Assert.That(match.Units.FindAll(u=>u.Kind==UnitKind.Worker).Count,Is.EqualTo(2));
             Assert.That(match.ToggleFastBuild(),Is.False);
         }
@@ -26,7 +26,7 @@ namespace Order.Tests.EditMode
             var match=new PrototypeMatch();match.AddTestSquad();var hq=match.Buildings[0];
             Assert.That(match.SupplyUsed,Is.EqualTo(match.SupplyLimit));
             match.ToggleNoSupply();match.Train(hq,UnitKind.Worker);
-            Run(match,match.Balance.Worker.TrainSeconds+.1f);
+            Run(match,match.Balance.Expedition.Worker.TrainSeconds+.1f);
             Assert.That(hq.SupplyBlocked,Is.False);Assert.That(match.SupplyUsed,Is.GreaterThan(match.SupplyLimit));
         }
         [Test] public void RevealShowsTheWholeMapAndInvulnerabilityStopsDamage()

@@ -25,7 +25,7 @@ namespace Order.Tests.EditMode
         [Test] public void BalanceControlsEconomyMovementAndConstructionDuration()
         {
             var balance=new MatchBalance{StartingMetal=999,StartingPlasma=777,MetalDeposit=111,PlasmaDeposit=333};
-            balance.Worker.Speed=2;balance.Buildings[0].BuildSeconds=12;balance.Buildings[0].Metal=37;
+            balance.Expedition.Worker.Speed=2;balance.Expedition.Buildings[0].BuildSeconds=12;balance.Expedition.Buildings[0].Metal=37;
             var match=new PrototypeMatch(balance);var worker=match.Units[0];
             Assert.That(match.Plasma,Is.EqualTo(777));Assert.That(match.Map.ResourceAt(5,5).Remaining,Is.EqualTo(111));
             var node=Sites.Place(match,15,14,0);Assert.That(match.Metal,Is.EqualTo(962));

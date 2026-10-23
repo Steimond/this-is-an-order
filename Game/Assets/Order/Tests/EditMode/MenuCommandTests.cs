@@ -175,6 +175,22 @@ namespace Order.Tests.EditMode
             Assert.That(MenuCatalog.Key(app.Settings.Keys, MenuCatalog.Find("key.talk")), Is.EqualTo("V"));
         }
 
+        [Test] public void PlayerFactionPhrases()
+        {
+            Assert.That(app.PlayerFaction, Is.EqualTo(FactionId.Expedition));
+            Say("играю за вторую фракцию");
+            Assert.That(app.PlayerFaction, Is.EqualTo(FactionId.Resonance)); Assert.That(app.Screen, Is.EqualTo(AppScreen.MatchSetup));
+            Assert.That(app.EnemyFaction, Is.EqualTo(FactionId.Resonance), "The opponent stays as it was");
+            Say("моя фракция первая");
+            Assert.That(app.PlayerFaction, Is.EqualTo(FactionId.Expedition));
+            Say("за другую фракцию");
+            Assert.That(app.PlayerFaction, Is.EqualTo(FactionId.Resonance));
+            Say("сыграть с ботом первой фракции");
+            Assert.That(app.EnemyFaction, Is.EqualTo(FactionId.Expedition), "A match against a bot sets the opponent");
+            Assert.That(app.PlayerFaction, Is.EqualTo(FactionId.Resonance));
+            Assert.That(Manual(AppCommand.ChoosePlayerFaction((FactionId)7)).Applied, Is.False);
+        }
+
         [Test] public void AnotherVariantPhrases()
         {
             Say("переключи ассистента на другого");

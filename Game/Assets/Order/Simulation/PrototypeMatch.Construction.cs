@@ -11,6 +11,8 @@ namespace Order.Simulation
     // - the building rises only while its worker stands by it, one worker per building. A worker given another order or
     //   killed leaves the building waiting, and any worker of the side can resume it;
     // - a building under construction can be cancelled for three quarters of its cost.
+    // Machines place their sites the same way, but the worker throws a construction grenade and is free at once: the
+    // building rises by itself (the nanite visuals and the network coverage come with the next steps, SETTING.md).
     public sealed partial class PrototypeMatch
     {
         // How close to the footprint a worker builds; the view uses it for the welding beam too.
@@ -22,7 +24,7 @@ namespace Order.Simulation
         public bool CanBuild(int x,int z,int kind,out string reason,int owner=Player)
         {
             if(!SiteFits(x,z,kind,owner,owner==Player,out reason))return false;
-            int w=Balance.Buildings[kind].Width;
+            int w=Roster(owner).Buildings[kind].Width;
             foreach(var u in Units)if(u.Owner!=owner&&SeenBy(owner,u)&&On(u,x,z,w)){reason="Здесь стоит юнит противника";return false;}
             reason="ЛКМ — построить";return true;
         }
@@ -30,7 +32,7 @@ namespace Order.Simulation
         bool SiteFits(int x,int z,int kind,int owner,bool sight,out string reason)
         {
             if(kind<0||kind>1){reason="Неизвестный тип здания";return false;}
-            var stats=Balance.Buildings[kind];int w=stats.Width;float h=Map.Inside(x,z)?Map.Height(x,z):0;
+            var stats=Roster(owner).Buildings[kind];int w=stats.Width;float h=Map.Inside(x,z)?Map.Height(x,z):0;
             for(int zz=z;zz<z+w;zz++)for(int xx=x;xx<x+w;xx++)
             {
                 if(!Map.Inside(xx,zz)){reason="За границей карты";return false;}
@@ -54,7 +56,7 @@ namespace Order.Simulation
             if(worker==null||!worker.Alive||worker.Kind!=UnitKind.Worker){Message="Строить может только рабочий.";return false;}
             int owner=worker.Owner;
             if(!CanBuild(x,z,kind,out var reason,owner)){if(owner==Player)Message=reason;return false;}
-            var stats=Balance.Buildings[kind];
+            var stats=Roster(owner).Buildings[kind];
             if(!SiteSpot(worker,x,z,stats.Width,out float sx,out float sz)){if(owner==Player)Message="К месту стройки не подойти";return false;}
             var message=Message;
             GiveOrder(worker,UnitOrder.Move);PlanPath(worker,sx,sz);
@@ -68,20 +70,21 @@ namespace Order.Simulation
             float sx=0,sz=0;
             string reason=worker==null||!worker.Alive||worker.Kind!=UnitKind.Worker?"Строить может только рабочий."
                 :building==null||building.Health<=0||building.Ready>=1||building.Owner!=worker.Owner?"Это здание не строится."
+                :building.SelfBuilt?"Это здание строится само."
                 :building.Builder!=null&&building.Builder!=worker?"Здание уже строит другой рабочий."
                 :!SiteSpot(worker,building.X,building.Z,building.Width,out sx,out sz)?"К зданию не подойти.":null;
             if(reason!=null){if(worker==null||worker.Owner==Player)Message=reason;return false;}
             var message=Message;
             GiveOrder(worker,UnitOrder.Move);PlanPath(worker,sx,sz);
             worker.Constructing=building;building.builder=worker;worker.siteTimer=0;
-            Message=worker.Owner==Player?$"{worker.Stats.Name}: продолжает стройку — {Balance.Buildings[building.Kind].Name}.":message;
+            Message=worker.Owner==Player?$"{worker.Stats.Name}: продолжает стройку — {building.Stats.Name}.":message;
             return true;
         }
         // Returns three quarters of the cost; the worker is free.
         public bool CancelConstruction(PrototypeBuilding building)
         {
             if(building==null||building.Ready>=1||building.Health<=0||!Buildings.Contains(building))return false;
-            var stats=Balance.Buildings[building.Kind];
+            var stats=building.Stats;
             int metal=(int)(stats.Metal*CancelRefund),plasma=(int)(stats.Plasma*CancelRefund);
             metalStock[building.Owner]+=metal;plasmaStock[building.Owner]+=plasma;
             var builder=building.Builder;if(builder!=null)builder.Constructing=null;
@@ -98,17 +101,17 @@ namespace Order.Simulation
             {
                 if(b.Ready>=1)continue;
                 var builder=b.Builder;
-                if(builder==null||Gap(builder,b)>BuildReach)continue;
+                if(!b.SelfBuilt&&(builder==null||Gap(builder,b)>BuildReach))continue;
                 // A building under construction gains its health as it rises, from a tenth of the full value: by whole points
                 // of the progress made, so short frames do not round it up faster than the building rises. Damage taken
                 // on the way stays.
-                var stats=Balance.Buildings[b.Kind];float rate=FastBuild&&b.Owner==Player?FastFactor:1,step=Math.Min(dt*rate/stats.BuildSeconds,1-b.Ready);
+                var stats=b.Stats;float rate=FastBuild&&b.Owner==Player?FastFactor:1,step=Math.Min(dt*rate/stats.BuildSeconds,1-b.Ready);
                 float before=b.Ready;
                 b.Ready=Math.Min(1,b.Ready+step);
                 if(1-b.Ready<1e-5f)b.Ready=1;
                 b.Health=Math.Min(stats.Health,b.Health+(int)Math.Round(stats.Health*.9f*b.Ready)-(int)Math.Round(stats.Health*.9f*before));
                 if(b.Ready<1)continue;
-                builder.Constructing=null;b.builder=null;
+                if(builder!=null)builder.Constructing=null;b.builder=null;
                 if(b.Owner==Player)Message=$"Построено: {stats.Name}.";
             }
         }
@@ -128,7 +131,7 @@ namespace Order.Simulation
                     continue;
                 }
                 if(u.SiteKind<0||u.Moving)continue;
-                var stats=Balance.Buildings[u.SiteKind];int x=u.SiteX,z=u.SiteZ,w=stats.Width;
+                var stats=Roster(u.Owner).Buildings[u.SiteKind];int x=u.SiteX,z=u.SiteZ,w=stats.Width;
                 if(SiteGap(u,x,z,w)>BuildReach){EndSite(u,"Не дойти до места стройки.");continue;}
                 if(!SiteFits(x,z,u.SiteKind,u.Owner,false,out var reason)){EndSite(u,reason+".");continue;}
                 bool blocked=false;
@@ -143,8 +146,9 @@ namespace Order.Simulation
                 metalStock[u.Owner]-=stats.Metal;plasmaStock[u.Owner]-=stats.Plasma;
                 var building=AddBuilding(u.SiteKind,x,z,u.Owner,0);
                 RouteAroundNewBuildings();
-                u.SiteKind=-1;u.Constructing=building;building.builder=u;u.siteTimer=0;
-                if(u.Owner==Player)Message=$"Строительство начато: {stats.Name}.";
+                u.SiteKind=-1;u.siteTimer=0;
+                if(Roster(u.Owner).SelfBuilding)building.SelfBuilt=true;else{u.Constructing=building;building.builder=u;}
+                if(u.Owner==Player)Message=building.SelfBuilt?$"Граната брошена, наниты строят: {stats.Name}.":$"Строительство начато: {stats.Name}.";
             }
         }
         void EndSite(PrototypeUnit u,string reason){u.SiteKind=-1;u.siteTimer=0;if(u.Owner==Player)Message=reason;}

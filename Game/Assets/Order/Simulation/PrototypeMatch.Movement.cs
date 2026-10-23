@@ -306,7 +306,7 @@ namespace Order.Simulation
         public void PrepareNavigation()
         {
             var radii = new HashSet<float>();
-            foreach (var stats in Balance.Units) if (!stats.Flying) radii.Add(stats.Radius);
+            foreach (var roster in new[] { Balance.Expedition, Balance.Resonance }) foreach (var stats in roster.Units) if (!stats.Flying) radii.Add(stats.Radius);
             foreach (var radius in radii) for (int cell = 0; cell < 4096; cell++) for (int dir = 0; dir < 8; dir++) Passable(cell, dir, radius);
         }
         bool FreeSpot(PrototypeUnit unit, float x, float z, float level)

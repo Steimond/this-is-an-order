@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Order.Content;
+using Order.Contracts;
 using Order.Simulation;
 using UnityEngine.UIElements;
 
@@ -9,7 +10,7 @@ namespace Order.Presentation
 {
     // Editor-only cheat menu of the test ground: the "ЧИТЫ" button (F9) in the top bar opens a panel of buttons for
     // resources, fast construction and training, unlimited supply, the whole map, invulnerability, an instant win, the
-    // enemy bot (on or off, or an attack wave right now) and
+    // enemy bot (on or off, or an attack wave right now), a restart with other factions and
     // units of either side in the middle of the view. Builds of the game have neither the button nor the panel.
     sealed class CheatPanel
     {
@@ -18,6 +19,7 @@ namespace Order.Presentation
         readonly VisualElement panel;
         readonly Button toggle, fast, supply, map, immortal, bot;
         readonly List<Button> counts = new List<Button>();
+        readonly List<(Button button, FactionId player, FactionId enemy)> raceButtons = new List<(Button, FactionId, FactionId)>();
         static readonly int[] Counts = { 1, 5, 10 };
         int count = 5;
         public bool IsOpen => panel.ClassListContains("is-open");
@@ -40,6 +42,13 @@ namespace Order.Presentation
             var enemy = Row(body, "БОТ");
             bot = Add(enemy, "ВКЛЮЧЁН", m => m.ToggleBot());
             enemy.Add(Hud.Button("ВОЛНА СЕЙЧАС", () => Run(m => m.SendWaveNow())));
+            // A new match with other factions: player against bot.
+            var races = Row(body, "РАСЫ");
+            foreach (var (mine, theirs, title) in new[] { (FactionId.Expedition, FactionId.Resonance, "ЛЮДИ — МАШИНЫ"), (FactionId.Resonance, FactionId.Expedition, "МАШИНЫ — ЛЮДИ"),
+                (FactionId.Expedition, FactionId.Expedition, "ЛЮДИ — ЛЮДИ"), (FactionId.Resonance, FactionId.Resonance, "МАШИНЫ — МАШИНЫ") })
+            {
+                var button = Hud.Button(title, () => host.Restart(mine, theirs)); races.Add(button); raceButtons.Add((button, mine, theirs));
+            }
             var amount = Row(body, "СКОЛЬКО");
             foreach (var n in Counts) { var value = n; var button = Hud.Button("×" + n, () => { count = value; refresh(); }); amount.Add(button); counts.Add(button); }
             Spawn(Row(body, "СВОИ"), PrototypeMatch.Player);
@@ -60,6 +69,7 @@ namespace Order.Presentation
             immortal.EnableInClassList("is-active", match.Invulnerable);
             bot.EnableInClassList("is-active", match.BotEnabled);
             for (int i = 0; i < counts.Count; i++) counts[i].EnableInClassList("is-active", Counts[i] == count);
+            foreach (var (button, player, enemy) in raceButtons) button.EnableInClassList("is-active", match.FactionOf(PrototypeMatch.Player) == player && match.FactionOf(PrototypeMatch.Enemy) == enemy);
         }
 
         static VisualElement Row(VisualElement body, string caption)
@@ -80,7 +90,7 @@ namespace Order.Presentation
             foreach (UnitKind kind in Enum.GetValues(typeof(UnitKind)))
             {
                 var unit = kind;
-                row.Add(Hud.Button(host.Match.Balance.Unit(kind).Name.ToUpperInvariant(), () =>
+                row.Add(Hud.Button(host.Match.Roster(owner).Unit(kind).Name.ToUpperInvariant(), () =>
                 {
                     var at = host.CameraFocus;
                     var units = host.Match.SpawnSquad(unit, count, at.x, at.y, owner);

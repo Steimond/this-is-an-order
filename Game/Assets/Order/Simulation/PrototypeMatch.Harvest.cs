@@ -4,7 +4,7 @@ using Order.Content;
 
 namespace Order.Simulation
 {
-    // Mining trips in the spirit of StarCraft:
+    // Mining trips of the humans, in the spirit of StarCraft (the machines wrap deposits instead, see Weave):
     // - a worker mines its deposit for the harvest interval, one worker per deposit at a time, then carries the load to the
     //   nearest finished command node and goes back for more;
     // - a busy deposit sends the worker to a free one of the same kind next to it, otherwise it waits its turn;
@@ -14,7 +14,7 @@ namespace Order.Simulation
     {
         const float DropReach = .7f, NeighbourReach = 3.2f, SwitchReach = 9;
         readonly Dictionary<ResourceDeposit, PrototypeUnit> miners = new Dictionary<ResourceDeposit, PrototypeUnit>();
-        // Everything delivered by workers in this match: the income, without refunds or cheats.
+        // Everything the player's workers delivered or mined in this match: the income, without refunds or cheats.
         public int MetalHarvested { get; private set; }
         public int PlasmaHarvested { get; private set; }
 
@@ -22,6 +22,7 @@ namespace Order.Simulation
         {
             foreach (var u in Units)
             {
+                if (u.Kind == UnitKind.Worker && Roster(u.Owner).NaniteMining) { Weave(u, dt); continue; }
                 var deposit = u.HarvestTarget;
                 if (deposit == null) { Release(u); u.Mining = false; u.delivering = false; continue; }
                 if (u.Carrying > 0)
@@ -59,6 +60,54 @@ namespace Order.Simulation
                 u.Carrying = amount; u.CarriesPlasma = deposit.Plasma;
                 if (!Haul(u)) StopHarvest(u);
             }
+        }
+        // Nanite mining of the machines (SETTING.md): no trips. The worker wraps the deposit (WrapSeconds), then stays on
+        // it and adds a portion to its side's stock every tick. One worker per deposit, held for as long as it stays; a
+        // busy deposit sends it to a free one nearby. While wrapped it wears a cocoon that takes blows first and grows back
+        // once it has not been hit for a while; leaving the deposit dissolves it. The wrap outlives its worker: another
+        // worker of the side attaches to a deposit wrapped before at once.
+        const float CocoonCalm = 3;
+        void Weave(PrototypeUnit u, float dt)
+        {
+            var deposit = u.HarvestTarget; var stats = u.Stats;
+            u.sinceHit += dt;
+            bool there = deposit != null && u.route.Count == 0 && deposit.Remaining > 0 && NextTo(u, deposit);
+            if (!there) { Release(u); u.Mining = false; u.Wrap = 0; u.Cocoon = 0; u.cocoonGrowth = 0; }
+            if (deposit == null || u.route.Count > 0) return;
+            if (deposit.Remaining <= 0) { GatherFrom(u, Nearby(deposit, u, SwitchReach, true)); return; }
+            if (!NextTo(u, deposit)) { GatherFrom(u, deposit); return; }
+            if (miners.TryGetValue(deposit, out var other) && other != u && Holds(other, deposit))
+            {
+                var free = Nearby(deposit, u, SwitchReach, true);
+                if (free != null) { GatherFrom(u, free); return; }
+                StopHarvest(u);
+                if (u.Owner == Player) Message = "Свободных залежей рядом нет: на каждой уже работает рабочий.";
+                return;
+            }
+            miners[deposit] = u;
+            if (u.Wrap < 1)
+            {
+                float before = u.Wrap;
+                u.Wrap = deposit.WrappedBy == u.Owner || stats.WrapSeconds <= 0 ? 1 : Math.Min(1, u.Wrap + dt / stats.WrapSeconds);
+                // A fresh wrap grows the cocoon with it; on a deposit wrapped before the cocoon grows back as usual.
+                if (deposit.WrappedBy != u.Owner) u.Cocoon = Math.Min(stats.Cocoon, u.Cocoon + (int)(stats.Cocoon * u.Wrap) - (int)(stats.Cocoon * before));
+                if (u.Wrap < 1) return;
+                deposit.WrappedBy = u.Owner; u.harvestTimer = 0;
+            }
+            u.Mining = true;
+            if (u.sinceHit >= CocoonCalm && u.Cocoon < stats.Cocoon)
+            {
+                u.cocoonGrowth += stats.CocoonRegen * dt;
+                int grown = (int)u.cocoonGrowth; u.cocoonGrowth -= grown;
+                u.Cocoon = Math.Min(stats.Cocoon, u.Cocoon + grown);
+            }
+            if ((u.harvestTimer += dt) < stats.HarvestInterval) return;
+            u.harvestTimer = 0;
+            int amount = Math.Min(stats.HarvestAmount, deposit.Remaining);
+            deposit.Remaining -= amount;
+            if (deposit.Remaining == 0) NavigationChanged(deposit.X, deposit.Z, 1);
+            if (deposit.Plasma) plasmaStock[u.Owner] += amount; else metalStock[u.Owner] += amount;
+            if (u.Owner == Player) { if (deposit.Plasma) PlasmaHarvested += amount; else MetalHarvested += amount; }
         }
         bool Holds(PrototypeUnit u, ResourceDeposit deposit) => u.Alive && u.HarvestTarget == deposit && u.Carrying == 0 && u.route.Count == 0 && Units.Contains(u);
         void Release(PrototypeUnit u)

@@ -33,11 +33,11 @@ namespace Order.Tests.EditMode
             Assert.That(match.Metal,Is.EqualTo(metal),"Nothing is paid before the worker gets there");
             Assert.That(match.Buildings.Count,Is.EqualTo(1));
             var node=Sites.Place(match,18,8,0,worker:worker);
-            Assert.That(match.Metal,Is.EqualTo(metal-match.Balance.Buildings[0].Metal));
+            Assert.That(match.Metal,Is.EqualTo(metal-match.Balance.Expedition.Buildings[0].Metal));
             Assert.That(node.Builder,Is.SameAs(worker));Assert.That(worker.Constructing,Is.SameAs(node));Assert.That(worker.SiteKind,Is.EqualTo(-1));
             Assert.That(PrototypeMatch.Gap(worker,node),Is.LessThanOrEqualTo(PrototypeMatch.BuildReach));
             Assert.That(match.CanTravel(worker.X,worker.Z,worker.X,worker.Z,worker.Stats.Radius),Is.True,"The worker stands outside the footprint");
-            Run(match,match.Balance.Buildings[0].BuildSeconds+.1f);
+            Run(match,match.Balance.Expedition.Buildings[0].BuildSeconds+.1f);
             Assert.That(node.Ready,Is.EqualTo(1));Assert.That(worker.Constructing,Is.Null);Assert.That(match.SupplyLimit,Is.EqualTo(18));
             Assert.That(match.Message,Does.Contain("Построено"));
         }
@@ -51,7 +51,7 @@ namespace Order.Tests.EditMode
             Run(match,3);Assert.That(node.Ready,Is.EqualTo(ready),"Without its worker the construction waits");
             var helper=match.Spawn(UnitKind.Worker,13.5f,17.5f);
             Assert.That(match.Resume(helper,node),Is.True,match.Message);Assert.That(node.Builder,Is.SameAs(helper));
-            Run(match,match.Balance.Buildings[0].BuildSeconds*(1-ready)+1);
+            Run(match,match.Balance.Expedition.Buildings[0].BuildSeconds*(1-ready)+1);
             Assert.That(node.Ready,Is.EqualTo(1));Assert.That(helper.Constructing,Is.Null);
         }
         [Test] public void OneWorkerPerBuildingAndStopLeavesItWaiting()
@@ -75,7 +75,7 @@ namespace Order.Tests.EditMode
         }
         [Test] public void CancelReturnsThreeQuartersAndFreesTheWorker()
         {
-            var match=new PrototypeMatch();var worker=Worker(match);var stats=match.Balance.Buildings[1];
+            var match=new PrototypeMatch();var worker=Worker(match);var stats=match.Balance.Expedition.Buildings[1];
             var factory=Sites.Place(match,15,14,1);Run(match,2);
             int metal=match.Metal,plasma=match.Plasma;
             Assert.That(match.CancelConstruction(factory),Is.True);
@@ -117,7 +117,7 @@ namespace Order.Tests.EditMode
             var match=new PrototypeMatch();var worker=Worker(match);
             var node=Sites.Place(match,15,14,0);
             match.Enqueue(worker,new QueuedOrder(UnitOrder.Move,18.5f,11.5f));
-            Run(match,match.Balance.Buildings[0].BuildSeconds-1);
+            Run(match,match.Balance.Expedition.Buildings[0].BuildSeconds-1);
             Assert.That(worker.Constructing,Is.SameAs(node));Assert.That(worker.Queued.Count,Is.EqualTo(1));
             Run(match,4);
             Assert.That(node.Ready,Is.EqualTo(1));Assert.That(worker.X,Is.EqualTo(18.5f).Within(.05f));Assert.That(worker.Z,Is.EqualTo(11.5f).Within(.05f));
@@ -126,7 +126,7 @@ namespace Order.Tests.EditMode
         {
             foreach(var frame in new[]{.005f,.05f})
             {
-                var match=new PrototypeMatch();var stats=match.Balance.Buildings[0];
+                var match=new PrototypeMatch();var stats=match.Balance.Expedition.Buildings[0];
                 var node=Sites.Place(match,15,14,0);
                 for(float t=0;t<stats.BuildSeconds*.5f-1e-4f;t+=frame)match.Tick(frame);
                 Assert.That(node.Ready,Is.EqualTo(.5f).Within(.01f));

@@ -40,10 +40,9 @@ namespace Order.Presentation
         private readonly Phrasebook phrasebook;
         private readonly PhrasebookPanel phrasebookPanel;
         private readonly List<(Button card, FactionId faction)> assistantCards = new List<(Button, FactionId)>();
-        private readonly List<(Button card, FactionId faction)> enemyCards = new List<(Button, FactionId)>();
         private Label matchSummary;
         private HudStatus panelBrain;
-        private HudSegmented difficulty;
+        private HudSegmented difficulty, playerChoice, enemyChoice;
         private AppScreen? contextScreen;
         private SettingsSnapshot shownSettings;
         private bool syncing, busy, consoleFocused;
@@ -402,10 +401,11 @@ namespace Order.Presentation
 
             syncing = true;
             foreach (var (card, id) in assistantCards) card.EnableInClassList("is-selected", id == faction);
-            foreach (var (card, id) in enemyCards) card.EnableInClassList("is-selected", app.HasMatchDraft && id == app.EnemyFaction);
+            enemyChoice?.SetValueWithoutNotify((int)app.EnemyFaction);
+            playerChoice?.SetValueWithoutNotify((int)app.PlayerFaction);
             difficulty?.SetValueWithoutNotify((int)MenuCatalog.Value(app.Settings, MenuCatalog.Find(MenuCatalog.Difficulty)));
             if (matchSummary != null)
-                matchSummary.text = app.HasMatchDraft ? "Противник: " + PrototypeCatalog.FactionLabel(app.EnemyFaction) + " · карта и сложность выбраны." : "Выберите фракцию противника.";
+                matchSummary.text = "Вы: " + PrototypeCatalog.FactionLabel(app.PlayerFaction) + " · противник: " + PrototypeCatalog.FactionLabel(app.EnemyFaction) + (app.HasMatchDraft ? " · карта и сложность выбраны." : ". Полигон играется этими фракциями.");
             syncing = false;
             ApplyInterfaceOptions();
         }
@@ -446,8 +446,8 @@ namespace Order.Presentation
         {
             contextScreen = target;
             context.Clear();
-            assistantCards.Clear(); enemyCards.Clear();
-            matchSummary = null; panelBrain = null; difficulty = null;
+            assistantCards.Clear();
+            matchSummary = null; panelBrain = null; difficulty = null; playerChoice = null; enemyChoice = null;
             if (target == AppScreen.MatchSetup) BuildSkirmish(); else BuildBriefing();
             SlowTick();
         }
@@ -497,17 +497,15 @@ namespace Order.Presentation
                 (int)MenuCatalog.Value(app.Settings, level), new List<int>(level.Locked));
             difficulty.RegisterValueChangedCallback(evt => Send(AppCommand.SetOption(level.Id, evt.newValue)));
             operationBody.Add(difficulty);
-            operationBody.Add(Hud.Text("ПРОТИВНИК", "field-title"));
-            var cards = Hud.Box("faction-cards");
-            foreach (var faction in new[] { FactionId.Expedition, FactionId.Resonance })
-            {
-                var card = Hud.FactionCard(faction, PrototypeCatalog.FactionLabel(faction).ToUpperInvariant(), "Бот · обычная",
-                    () => Send(AppCommand.PrepareMatch(faction), true));
-                card.AddToClassList("faction-card--enemy");
-                enemyCards.Add((card, faction));
-                cards.Add(card);
-            }
-            operationBody.Add(cards);
+            operationBody.Add(Hud.Text("ВАША ФРАКЦИЯ", "field-title"));
+            // Compact switches rather than cards, so the whole setup fits the panel.
+            playerChoice = new HudSegmented(new List<string> { "ФРАКЦИЯ 1 · ЛЮДИ", "ФРАКЦИЯ 2 · МАШИНЫ" }, (int)app.PlayerFaction, new List<int>());
+            playerChoice.RegisterValueChangedCallback(evt => Send(AppCommand.ChoosePlayerFaction((FactionId)evt.newValue)));
+            operationBody.Add(playerChoice);
+            operationBody.Add(Hud.Text("ПРОТИВНИК · БОТ", "field-title"));
+            enemyChoice = new HudSegmented(new List<string> { "ФРАКЦИЯ 1 · ЛЮДИ", "ФРАКЦИЯ 2 · МАШИНЫ" }, (int)app.EnemyFaction, new List<int>());
+            enemyChoice.RegisterValueChangedCallback(evt => Send(AppCommand.PrepareMatch((FactionId)evt.newValue)));
+            operationBody.Add(enemyChoice);
             matchSummary = Hud.Text("", "match-summary");
             operationBody.Add(matchSummary);
             context.Add(operation);
@@ -517,7 +515,7 @@ namespace Order.Presentation
             start.AddToClassList("context__play");
             start.SetEnabled(false);
             context.Add(start);
-            context.Add(Hud.Text("Боевой прототип — следующий этап. Пока доступен полигон.", "context__note"));
+            context.Add(Hud.Text("Боевой прототип — следующий этап. Пока доступен полигон: он играется выбранными фракциями.", "context__note"));
         }
 
         private static VisualElement SystemRow(string title, VisualElement status)

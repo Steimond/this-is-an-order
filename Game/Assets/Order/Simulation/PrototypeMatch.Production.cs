@@ -15,18 +15,18 @@ namespace Order.Simulation
 
         PrototypeBuilding AddBuilding(int kind, int x, int z, int owner, float ready)
         {
-            var stats = Balance.Buildings[kind];
-            var building = new PrototypeBuilding { X = x, Z = z, Width = stats.Width, Kind = kind, Owner = owner, Ready = ready, Health = ready >= 1 ? stats.Health : Math.Max(1, stats.Health / 10) };
+            var stats = Roster(owner).Buildings[kind];
+            var building = new PrototypeBuilding { X = x, Z = z, Width = stats.Width, Kind = kind, Owner = owner, Stats = stats, Ready = ready, Health = ready >= 1 ? stats.Health : Math.Max(1, stats.Health / 10) };
             Buildings.Add(building);
             NavigationChanged(x, z, stats.Width);
             return building;
         }
-        public bool Trains(PrototypeBuilding b, UnitKind kind) => Array.IndexOf(Balance.Buildings[b.Kind].Trains, kind) >= 0;
+        public bool Trains(PrototypeBuilding b, UnitKind kind) => Array.IndexOf(b.Stats.Trains, kind) >= 0;
 
         public bool Train(PrototypeBuilding b, UnitKind kind)
         {
-            var stats = Balance.Unit(kind);
-            string reason = b.Ready < 1 ? "Здание ещё строится." : !Trains(b, kind) ? $"{Balance.Buildings[b.Kind].Name} не обучает: {stats.Name}."
+            var stats = Roster(b.Owner).Unit(kind);
+            string reason = b.Ready < 1 ? "Здание ещё строится." : !Trains(b, kind) ? $"{b.Stats.Name} не обучает: {stats.Name}."
                 : b.queue.Count >= QueueSize ? "Очередь заполнена." : metalStock[b.Owner] < stats.Metal ? "Недостаточно металла." : plasmaStock[b.Owner] < stats.Plasma ? "Недостаточно плазмы." : null;
             if (reason != null) { if (b.Owner == Player) Message = reason; return false; }
             metalStock[b.Owner] -= stats.Metal; plasmaStock[b.Owner] -= stats.Plasma;
@@ -38,7 +38,7 @@ namespace Order.Simulation
         public bool CancelTraining(PrototypeBuilding b, int index)
         {
             if (index < 0 || index >= b.queue.Count) return false;
-            var stats = Balance.Unit(b.queue[index]);
+            var stats = Roster(b.Owner).Unit(b.queue[index]);
             metalStock[b.Owner] += stats.Metal; plasmaStock[b.Owner] += stats.Plasma;
             b.queue.RemoveAt(index);
             if (index == 0) { b.started = false; b.Training = 0; b.SupplyBlocked = false; }
@@ -56,7 +56,7 @@ namespace Order.Simulation
             foreach (var b in Buildings)
             {
                 if (b.Ready < 1 || b.queue.Count == 0) continue;
-                var stats = Balance.Unit(b.queue[0]);
+                var stats = Roster(b.Owner).Unit(b.queue[0]);
                 if (!b.started)
                 {
                     bool blocked = !(NoSupply && b.Owner == Player) && Supply(b.Owner) + stats.Supply > Limit(b.Owner);

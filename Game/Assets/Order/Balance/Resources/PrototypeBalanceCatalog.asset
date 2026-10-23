@@ -19,4 +19,12 @@ MonoBehaviour:
   Supply: {fileID: 11400000, guid: de12dedff54d1024f8387dbc99d37c19, type: 2}
   Factory: {fileID: 11400000, guid: 56c846026e24ee34e8d601a7f0d15708, type: 2}
   Headquarters: {fileID: 11400000, guid: 720d5115959f754438e353af438d1006, type: 2}
+  Resonance:
+    Worker: {fileID: 11400000, guid: d558beac2f18a704dbce7bf4d5e65ae1, type: 2}
+    Melee: {fileID: 11400000, guid: 82b385bb71d60a140ad7f909b94fbd68, type: 2}
+    Ranged: {fileID: 11400000, guid: 15ffd41e6f15127459a7c200a0b9c772, type: 2}
+    Air: {fileID: 11400000, guid: 8da15f0454468004aab866f309138593, type: 2}
+    Supply: {fileID: 11400000, guid: 5cef7b2de9befa840a602e1e75638ddb, type: 2}
+    Factory: {fileID: 11400000, guid: 9b77c6de6cad09f4a9c37feb6d30ecf9, type: 2}
+    Headquarters: {fileID: 11400000, guid: 694a99515fd04704dba43a657b0aba1a, type: 2}
   Economy: {fileID: 11400000, guid: 96c7291b177d491458539ac1f77f7a24, type: 2}

@@ -34,14 +34,14 @@ namespace Order.Simulation
         {
             Cheated = true;
             var spawned = SpawnAround(kind, count, x, z, owner);
-            Message = spawned.Count > 0 ? $"Чит: {Balance.Unit(kind).Name} ×{spawned.Count}{(owner == Player ? "" : " у противника")}." : "Нет места для юнитов.";
+            Message = spawned.Count > 0 ? $"Чит: {Roster(owner).Unit(kind).Name} ×{spawned.Count}{(owner == Player ? "" : " у противника")}." : "Нет места для юнитов.";
             return spawned;
         }
         // Units on free ground around a point, nearest first: for cheats and for the bot's starting workers.
         List<PrototypeUnit> SpawnAround(UnitKind kind, int count, float x, float z, int owner)
         {
             var spawned = new List<PrototypeUnit>();
-            var stats = Balance.Unit(kind);
+            var stats = Roster(owner).Unit(kind);
             float spacing = stats.Radius * 2.1f;
             for (int ring = 0; ring < 30 && spawned.Count < count; ring++)
             {

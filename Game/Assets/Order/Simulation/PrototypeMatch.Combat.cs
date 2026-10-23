@@ -334,7 +334,13 @@ namespace Order.Simulation
         }
         void Hit(PrototypeUnit attacker, PrototypeUnit target)
         {
-            if (!(Invulnerable && target.Owner == Player)) target.Health = Math.Max(0, target.Health - attacker.Stats.Damage);
+            if (!(Invulnerable && target.Owner == Player))
+            {
+                // A machine worker's nanite cocoon takes the blow first.
+                int damage = attacker.Stats.Damage, absorbed = Math.Min(target.Cocoon, damage);
+                target.Cocoon -= absorbed; target.Health = Math.Max(0, target.Health - (damage - absorbed));
+                target.sinceHit = 0;
+            }
             Attacked?.Invoke(attacker, target);
             if (!target.Alive) return;
             target.aggressor = attacker;

@@ -324,19 +324,6 @@
 .faction-card.is-selected .faction-card__emblem { color: var(--hud-hot); }
 .faction-card.is-selected .faction-card__mark { opacity: 1; }
 
-.faction-card--enemy {
-    min-height: 100px;
-}
-
-.faction-card--enemy.is-selected > .hud-frame {
-    color: var(--hud-warn);
-    -unity-background-image-tint-color: var(--hud-warn-soft);
-}
-
-.faction-card--enemy.is-selected > .hud-button__bar { background-color: var(--hud-warn); }
-.faction-card--enemy.is-selected .faction-card__emblem,
-.faction-card--enemy.is-selected .faction-card__mark { color: var(--hud-warn); }
-
 .system-row {
     flex-direction: row;
     justify-content: space-between;

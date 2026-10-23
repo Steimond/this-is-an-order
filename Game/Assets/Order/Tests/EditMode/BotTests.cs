@@ -15,11 +15,11 @@ namespace Order.Tests.EditMode
             var match=Game();var factory=match.Buildings.Find(b=>b.Owner==Enemy&&b.Kind==1);
             int playerMetal=match.Metal,enemyMetal=match.MetalOf(Enemy);
             Assert.That(match.Train(factory,UnitKind.Ranged),Is.True);
-            Assert.That(match.Metal,Is.EqualTo(playerMetal));Assert.That(match.MetalOf(Enemy),Is.EqualTo(enemyMetal-match.Balance.Unit(UnitKind.Ranged).Metal));
+            Assert.That(match.Metal,Is.EqualTo(playerMetal));Assert.That(match.MetalOf(Enemy),Is.EqualTo(enemyMetal-match.Balance.Expedition.Unit(UnitKind.Ranged).Metal));
             match.Spawn(UnitKind.Worker,48.5f,47.2f,Enemy);
             Assert.That(match.CanBuild(48,44,0,out _,Enemy),Is.True,"The bot builds without the player's vision");
             int before=match.MetalOf(Enemy);Sites.Place(match,48,44,0,Enemy);
-            Assert.That(match.MetalOf(Enemy),Is.EqualTo(before-match.Balance.Buildings[0].Metal));
+            Assert.That(match.MetalOf(Enemy),Is.EqualTo(before-match.Balance.Expedition.Buildings[0].Metal));
             Assert.That(match.Metal,Is.EqualTo(playerMetal));
         }
         [Test] public void BotBuildsWithAWorkerAndSendsAnotherWhenItsBuilderDies()
@@ -31,7 +31,7 @@ namespace Order.Tests.EditMode
             var first=site.Builder;Assert.That(first,Is.Not.Null);Assert.That(first.Kind,Is.EqualTo(UnitKind.Worker));
             first.Health=0;Run(match,3);
             Assert.That(site.Builder,Is.Not.Null.And.Not.SameAs(first),"Another worker takes the building over");
-            Run(match,match.Balance.Buildings[site.Kind].BuildSeconds+4);
+            Run(match,match.Balance.Expedition.Buildings[site.Kind].BuildSeconds+4);
             Assert.That(site.Ready,Is.EqualTo(1));
         }
         [Test] public void IdleBotDoesNothing()
