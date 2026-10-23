@@ -202,6 +202,31 @@ namespace Order.Presentation
                 Box(Metal, new Vector3(w * .2f, h * .95f, w * .32f), new Vector3(w * .36f, .05f, .06f));
                 Box(new Color(1, .7f, .3f), new Vector3(w * .04f, h * .9f, w * .32f), new Vector3(.06f, .06f, .06f), 0, 1);
             }
+            else if (kind == 4)
+            {
+                // Extractor: a squat cap sealed over the rift, a band of glass showing the plasma inside, a domed top with a
+                // vent stack glowing purple, and a side tank with the team stripe on three braced legs.
+                var plasma = new Color(1, .36f, .92f);
+                Prism(Concrete, Vector3.zero, 8, w * .5f, w * .46f, 0, .16f, 0, 0, 0, .5f);
+                Prism(Plate, Vector3.zero, 8, w * .36f, w * .32f, .16f, h * .5f, 0, 0, 0, .5f);
+                Prism(plasma, Vector3.zero, 8, w * .365f, w * .35f, h * .28f, h * .36f, 0, 1, 0, .5f);
+                Prism(Light, Vector3.zero, 8, w * .37f, w * .36f, h * .42f, h * .47f, 1, 0, 0, .5f);
+                Prism(Metal, Vector3.zero, 8, w * .33f, w * .12f, h * .5f, h * .64f, 0, 0, 0, .5f);
+                Prism(Metal, new Vector3(-w * .08f, 0, w * .06f), 8, w * .07f, w * .055f, h * .6f, h * .95f);
+                Prism(plasma, new Vector3(-w * .08f, 0, w * .06f), 8, w * .058f, w * .058f, h * .95f, h * .99f, 0, 1);
+                for (int i = 0; i < 3; i++)
+                {
+                    float a = (i / 3f + .08f) * Mathf.PI * 2;
+                    var foot = new Vector3(Mathf.Cos(a) * w * .46f, 0, Mathf.Sin(a) * w * .46f);
+                    b.Paint = Metal; b.Team = 0; b.Glow = 0;
+                    b.Place(foot * .55f + Vector3.up * h * .2f, Quaternion.LookRotation(foot.normalized) * Quaternion.Euler(-38, 0, 0), Vector3.one);
+                    b.Box(Vector3.zero, new Vector3(.06f, .06f, w * .34f));
+                }
+                var tank = new Vector3(w * .3f, 0, -w * .2f);
+                Prism(Plate, tank, 8, w * .11f, w * .11f, .16f, h * .44f);
+                Prism(Light, tank, 8, w * .115f, w * .115f, h * .3f, h * .34f, 1);
+                Box(Metal, new Vector3(w * .2f, h * .4f, -w * .12f), new Vector3(w * .14f, .05f, .05f));
+            }
             else
             {
                 Prism(Concrete, Vector3.zero, 8, w * .5f, w * .48f, 0, .2f, 0, 0, 0, .5f);

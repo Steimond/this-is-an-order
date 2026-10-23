@@ -109,8 +109,10 @@ namespace Order.Simulation
         {
             unit.Order = order; unit.ordered = null; unit.orderedBuilding = null; unit.Target = null; unit.TargetBuilding = null;
             unit.aggressor = null; unit.engaged = false; unit.returning = false; unit.returns = 0; unit.delivering = false; unit.queued.Clear();
-            // Any new order takes a worker off its construction: the building waits, a planned site is dropped.
+            // Any new order takes a worker off its construction: the building waits, a planned site is dropped. It also
+            // ends a repair and stops a machine being taken apart.
             unit.Constructing = null; unit.SiteKind = -1;
+            unit.Repairing = null; unit.RepairingUnit = null; unit.Welding = false; unit.Disassembling = false; unit.Disassembly = 0;
         }
 
         // ---------- Steps ----------
@@ -119,7 +121,7 @@ namespace Order.Simulation
         {
             if (u.cooldown > 0) u.cooldown -= dt;
             if (u.leaping) return;
-            if (!u.Alive || u.Stats.Damage <= 0 || u.Order == UnitOrder.Move || u.HarvestTarget != null) { u.Target = null; u.TargetBuilding = null; return; }
+            if (!u.Alive || u.Stats.Damage <= 0 || u.Order == UnitOrder.Move || u.HarvestTarget != null || u.Disassembling) { u.Target = null; u.TargetBuilding = null; return; }
             var target = PickTarget(u);
             var building = target == null ? PickBuilding(u) : null;
             // A new target takes a moment to aim at, different for every unit, so a squad does not fire in one volley.
@@ -351,7 +353,7 @@ namespace Order.Simulation
         }
         void Hit(PrototypeUnit attacker, PrototypeBuilding target)
         {
-            if (!(Invulnerable && target.Owner == Player)) target.Health = Math.Max(0, target.Health - Damage(attacker));
+            if (!(Invulnerable && target.Owner == Player)) { target.Health = Math.Max(0, target.Health - Damage(attacker)); target.sinceHit = 0; }
             AttackedBuilding?.Invoke(attacker, target);
             if (target.Owner == Player && attacker.Owner != Player) Alert(target.X + target.Width * .5f, target.Z + target.Width * .5f, true);
             if (target.Health > 0) CallForHelp(target.Owner, target.X + target.Width * .5f, target.Z + target.Width * .5f, attacker, null);
@@ -390,6 +392,8 @@ namespace Order.Simulation
                 if (u.TargetBuilding != null && u.TargetBuilding.Health <= 0) u.TargetBuilding = null;
                 if (u.orderedBuilding != null && u.orderedBuilding.Health <= 0) u.orderedBuilding = null;
                 if (u.Constructing != null && u.Constructing.Health <= 0) u.Constructing = null;
+                if (u.Repairing != null && u.Repairing.Health <= 0) { u.Repairing = null; u.Welding = false; }
+                if (u.RepairingUnit != null && !u.RepairingUnit.Alive) { u.RepairingUnit = null; u.Welding = false; }
                 if (u.leapTarget != null && !u.leapTarget.Alive) u.leapTarget = null;
             }
             foreach (var u in dead) { u.route.Clear(); u.Target = null; u.TargetBuilding = null; Died?.Invoke(u); }

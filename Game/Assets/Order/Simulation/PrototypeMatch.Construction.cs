@@ -36,11 +36,21 @@ namespace Order.Simulation
             var roster=Roster(owner);
             if(Array.IndexOf(roster.Buildable,kind)<0){reason="Это здание не строится";return false;}
             var stats=roster.Buildings[kind];int w=stats.Width;float h=Map.Inside(x,z)?Map.Height(x,z):0;
+            // An extractor goes over a plasma rift: the rift's own cell is taken by it, every other cell must be free.
+            ResourceDeposit rift=null;
             for(int zz=z;zz<z+w;zz++)for(int xx=x;xx<x+w;xx++)
             {
                 if(!Map.Inside(xx,zz)){reason="За границей карты";return false;}
                 if(sight&&!Visible[xx,zz]){reason="Нужна текущая видимость";return false;}
-                if(Map.Ramp(xx,zz)||Map.Height(xx,zz)!=h||Occupied(xx,zz)){reason="Занято, рампа или перепад высот";return false;}
+                var here=stats.Extracts?Map.ResourceAt(xx,zz):null;
+                if(here!=null&&here.Plasma&&rift==null&&ExtractorOn(here)==null){rift=here;continue;}
+                if(Map.Ramp(xx,zz)||Map.Height(xx,zz)!=h||Occupied(xx,zz)){reason=here!=null&&here.Plasma?"На разломе уже стоит экстрактор":"Занято, рампа или перепад высот";return false;}
+            }
+            if(stats.Extracts)
+            {
+                if(rift==null){reason="Ставится только на разлом плазмы";return false;}
+                // A rift a machine worker holds wrapped stays with it.
+                if(miners.TryGetValue(rift,out var holder)&&holder.Owner!=owner&&Holds(holder,rift)){reason="Разлом занят противником";return false;}
             }
             // Machines build only inside the coverage of their network (the core itself starts a network).
             if(roster.Network&&kind!=FactionBalance.Main&&!Covered(owner,x+w*.5f,z+w*.5f)){reason="Вне покрытия сети";return false;}
@@ -112,7 +122,8 @@ namespace Order.Simulation
             if(building.Owner==Player)Message=$"Стройка отменена: {stats.Name}. Возвращено: металл {metal}"+(plasma>0?$", плазма {plasma}.":".");
             return true;
         }
-        static bool Busy(PrototypeUnit u)=>u.Constructing!=null||u.SiteKind>=0;
+        // A worker at a construction or repair, or on its way to one; machines being taken apart are busy too.
+        static bool Busy(PrototypeUnit u)=>u.Constructing!=null||u.SiteKind>=0||u.Repairing!=null||u.RepairingUnit!=null||u.Disassembling;
 
         // Buildings rise while their worker is by them.
         void TickBuildings(float dt)

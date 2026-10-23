@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 371d85a61455cbf4ca41c7689d12db76, type: 3}
+  m_Name: Extractor
+  m_EditorClassIdentifier: Order.Balance::Order.Balance.BuildingBalanceAsset
+  DisplayName: "\u042D\u043A\u0441\u0442\u0440\u0430\u043A\u0442\u043E\u0440"
+  Footprint: 1
+  Metal: 75
+  Plasma: 0
+  Supply: 0
+  Health: 500
+  Vision: 5
+  ConstructionSeconds: 12
+  ModelHeight: 1.5
+  Trains: 
+  Coverage: 0
+  Relays: 0
+  Researches: 0
+  Extracts: 1

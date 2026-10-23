@@ -54,7 +54,7 @@ namespace Order.Presentation
     {
         Gear, Power, Mic, ChevronLeft, ChevronRight, Close, Lock, Back, Check, Grid,
         Worker, Headquarters, Supply, Factory, Metal, Plasma, Move, Stop, Harvest, Pin, Base, Target, Armor, Menu, ClearPins, Train, Build,
-        Assault, Rifleman, Gunship, Hold, Relay, Spider, Leaper, Upgrade
+        Assault, Rifleman, Gunship, Hold, Relay, Spider, Leaper, Upgrade, Repair, Disassemble, Extractor
     }
 
     public sealed class HudIcon : HudVector
@@ -128,6 +128,23 @@ namespace Order.Presentation
                     // A mast with signal arcs on both sides.
                     Shape(p, P, .5f, .36f, .5f, .86f); Shape(p, P, .36f, .86f, .64f, .86f);
                     HudPaint.Arc(p, P(.5f, .36f), size * .14f, 200, 340); HudPaint.Arc(p, P(.5f, .36f), size * .26f, 205, 335);
+                    break;
+                case HudIconKind.Repair:
+                    // A wrench: the open jaw up and to the right, the handle down to the left.
+                    HudPaint.Arc(p, P(.64f, .36f), size * .17f, 15, 255);
+                    Shape(p, P, .52f, .48f, .2f, .8f);
+                    break;
+                case HudIconKind.Disassemble:
+                    // A unit coming apart into nanites that drain away below it.
+                    Shape(p, P, .3f, .48f, .3f, .22f, .7f, .22f, .7f, .48f);
+                    foreach (var (x, y) in new[] { (.3f, .64f), (.5f, .6f), (.7f, .64f), (.4f, .8f), (.6f, .8f), (.5f, .92f) }) HudPaint.Circle(p, P(x, y), size * .035f);
+                    break;
+                case HudIconKind.Extractor:
+                    // A rig over the rift: a tapering housing with a band, a vent stack and the ground line.
+                    Shape(p, P, .12f, .86f, .88f, .86f);
+                    Shape(p, P, .26f, .86f, .36f, .42f, .64f, .42f, .74f, .86f);
+                    Shape(p, P, .31f, .64f, .69f, .64f);
+                    Shape(p, P, .44f, .42f, .44f, .16f, .56f, .16f, .56f, .42f);
                     break;
                 case HudIconKind.Upgrade:
                     // Two chevrons pointing up over a bar.

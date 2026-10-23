@@ -24,6 +24,7 @@ MonoBehaviour:
   CocoonRegen: 0
   Supply: 1
   Flying: 0
+  Mechanical: 1
   Damage: 5
   AttackRange: 0.2
   AttackCooldown: 0.6

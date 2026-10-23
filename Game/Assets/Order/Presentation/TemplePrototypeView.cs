@@ -209,6 +209,16 @@ namespace Order.Presentation
                 if(hasHover)
                 {
                     hoverX=Mathf.FloorToInt(point.x);hoverZ=Mathf.FloorToInt(point.y);
+                    // An extractor placed near a rift snaps onto it.
+                    if(Mode==MatchMode.Build&&Match.Roster(PrototypeMatch.Player).Buildings[buildKind].Extracts)
+                    {
+                        float best=1.6f*1.6f;
+                        foreach(var r in Match.Map.Resources)
+                        {
+                            float dx=r.X+.5f-point.x,dz=r.Z+.5f-point.y;
+                            if(r.Plasma&&r.Remaining>0&&dx*dx+dz*dz<best){best=dx*dx+dz*dz;hoverX=r.X;hoverZ=r.Z;}
+                        }
+                    }
                     // Right click on a visible enemy attacks it, anywhere else moves; in a targeting mode it cancels the mode.
                     if(mouse.rightButton.wasPressedThisFrame)
                     {
@@ -218,7 +228,10 @@ namespace Order.Presentation
                         {
                             bool queue=Queueing();var enemy=EnemyAt(p);var structure=enemy==null?EnemyBuildingAt(p):null;var site=enemy==null&&structure==null&&!queue?SiteAt(p):null;
                             if(enemy!=null&&selection.Own)AttackSelection(enemy,queue);else if(structure!=null&&selection.Own)AttackSelection(structure,queue);
-                            else if(site==null||!ResumeSelection(site))MoveSelection(point,queue);
+                            else if(site!=null&&ResumeSelection(site)){}
+                            // Workers on own damaged buildings and machinery repair them, as SCVs do.
+                            else if(!queue&&Repairers(null).Count>0&&RepairTargetAt(p,true,out var mend,out var machine)&&RepairSelection(mend,machine)){}
+                            else MoveSelection(ExtractorPoint(p,point),queue);
                         }
                     }
                     if(mouse.leftButton.wasPressedThisFrame)
@@ -232,6 +245,12 @@ namespace Order.Presentation
                             bool queue=Queueing();var enemy=EnemyAt(p);var structure=enemy==null?EnemyBuildingAt(p):null;
                             if(enemy!=null)AttackSelection(enemy,queue);else if(structure!=null)AttackSelection(structure,queue);else AttackMoveSelection(point,queue);
                             if(!queue)SetMode(MatchMode.None);
+                        }
+                        else if(Mode==MatchMode.Repair)
+                        {
+                            // A wrong target keeps the mode on, as in StarCraft.
+                            if(!RepairTargetAt(p,false,out var mend,out var machine)){Match.Message="Укажите своё здание или технику.";hud?.Refresh();}
+                            else if(RepairSelection(mend,machine))SetMode(MatchMode.None);
                         }
                         else if(Mode!=MatchMode.None)OrderTo(point);
                         else{pressing=true;dragStart=p;}
@@ -300,6 +319,10 @@ namespace Order.Presentation
             public int CocoonSeen;
             // Kick runs from 1 to 0 after a strike: a melee lunge or a recoil; Sparks counts down to the next welding spark.
             public float Phase, Height, Kick, Sparks;
+            // Machines: the next mending glint, and the renderers cut while the unit is taken apart.
+            public float Mend;
+            public MeshRenderer[] Renderers;
+            public bool Dissolving;
         }
         UnitView CreateUnitView(PrototypeUnit unit)
         {
@@ -364,6 +387,25 @@ namespace Order.Presentation
                     var along=new Vector2(-(cz-edge.y),cx-edge.x).normalized*.35f*Mathf.Sin(time*1.7f+unit.Id*.7f);
                     weld=new Vector3(into.x+along.x,Match.Map.Height(site.X,site.Z)+Mathf.Max(.18f,top*.9f),into.y+along.y);
                     direction=new Vector3(cx-unit.X,0,cz-unit.Z);
+                }
+                // A repairing worker welds its target the same way: a building along its side, machinery at its middle.
+                else if(!mining&&unit.Welding)
+                {
+                    welding=true;var mend=unit.Repairing;
+                    if(mend!=null)
+                    {
+                        float cx=mend.X+mend.Width*.5f,cz=mend.Z+mend.Width*.5f;
+                        var edge=new Vector2(Mathf.Clamp(unit.X,mend.X,mend.X+mend.Width),Mathf.Clamp(unit.Z,mend.Z,mend.Z+mend.Width));
+                        var along=new Vector2(-(cz-edge.y),cx-edge.x).normalized*.4f*Mathf.Sin(time*1.7f+unit.Id*.7f);
+                        weld=new Vector3(edge.x+along.x,Match.Map.Height(mend.X,mend.Z)+mend.Stats.Height*(.35f+.2f*Mathf.Sin(time*2.3f+unit.Id)),edge.y+along.y);
+                        direction=new Vector3(cx-unit.X,0,cz-unit.Z);
+                    }
+                    else if(unit.RepairingUnit!=null)
+                    {
+                        var other=unit.RepairingUnit;
+                        weld=unitViews.TryGetValue(other.Id,out var otherView)?Center(other,otherView):new Vector3(other.X,Match.HeightAt(other.X,other.Z)+.4f,other.Z);
+                        direction=new Vector3(other.X-unit.X,0,other.Z-unit.Z);
+                    }
                 }
                 // A moving unit faces its next waypoint, so shoves do not twist it; a shoved idle unit keeps its facing.
                 if(unit.Leaping){/* In flight a leaper faces the way it flies: this frame's movement. */}
@@ -430,6 +472,7 @@ namespace Order.Presentation
                 }
                 if(seen&&(unit.Health<unit.Stats.Health||selection.Contains(unit)||hovered.Contains(unit)))
                     combat.Bar(Top(unit,view)+Vector3.up*.22f,Mathf.Max(.62f,unit.Stats.Radius*2.3f),unit.Health/(float)unit.Stats.Health);
+                Machine(unit,view,seen);
             }
             foreach(var (b,view) in buildingViews)
             {
@@ -437,6 +480,12 @@ namespace Order.Presentation
                 if(!view.Model.activeSelf||(b.Owner!=PrototypeMatch.Player&&!Match.SeenBy(PrototypeMatch.Player,b)))continue;
                 if(b.Health<stats.Health||selectedBuilding==b)
                     combat.Bar(new Vector3(b.X+b.Width*.5f,Match.Map.Height(b.X,b.Z)+stats.Height+.45f,b.Z+b.Width*.5f),b.Width*.8f,b.Health/(float)stats.Health);
+                // A machine building mending in the network glints here and there over its body.
+                if(b.Mending&&UnityEngine.Random.value<Time.deltaTime*3*b.Width)
+                {
+                    var r=UnityEngine.Random.insideUnitCircle*b.Width*.45f;
+                    combat.Flash(new Vector3(b.X+b.Width*.5f+r.x,Match.Map.Height(b.X,b.Z)+stats.Height*UnityEngine.Random.Range(.2f,.95f),b.Z+b.Width*.5f+r.y),NaniteGlow*1.8f,.14f,.5f,2);
+                }
             }
             combat.EndBars();
             if(unitViews.Count>Match.Units.Count)
@@ -445,6 +494,25 @@ namespace Order.Presentation
                     if(!Match.Units.Exists(u=>u.Id==id)){var view=unitViews[id];if(view.Shadow!=null)Destroy(view.Shadow.gameObject);Destroy(view.Root);unitViews.Remove(id);}
                 selection.Prune(Match.Units);
             }
+        }
+        // A machine being taken apart dissolves from the feet up under a cold glowing edge (the same cut as a rising machine
+        // building); one mending inside the network glints now and then as its nanites close the damage.
+        static readonly Color NaniteGlow=new Color(.62f,.86f,1);
+        void Machine(PrototypeUnit unit,UnitView view,bool seen)
+        {
+            if(unit.Disassembling||view.Dissolving)
+            {
+                view.Renderers??=view.Root.GetComponentsInChildren<MeshRenderer>(true);
+                float bottom=view.Root.transform.position.y-.05f,top=bottom+(view.Model.Height+view.Model.Hover)*view.Model.Scale+.25f;
+                if(unit.Disassembling){revealBlock.SetFloat("_RevealBelow",Mathf.Lerp(bottom,top,unit.Disassembly));revealBlock.SetColor("_RevealColor",NaniteGlow*2.2f);}
+                else revealBlock.Clear();
+                foreach(var r in view.Renderers)if(r!=null)r.SetPropertyBlock(revealBlock);
+                revealBlock.Clear();view.Dissolving=unit.Disassembling;
+            }
+            if(!seen||!unit.Mending||(view.Mend-=Time.deltaTime)>0)return;
+            view.Mend=.35f+.3f*Mathf.PerlinNoise(Time.time*2,unit.Id);
+            var at=Center(unit,view)+new Vector3(Mathf.Sin(Time.time*7+unit.Id),Mathf.Cos(Time.time*5),Mathf.Cos(Time.time*6+unit.Id))*unit.Stats.Radius*.7f;
+            combat.Flash(at,NaniteGlow*1.8f,.1f,.45f,2);
         }
         // A nanite worker wraps its deposit: glowing threads spiral from its arms round the deposit and climb it as the
         // wrap grows, then keep slowly turning. Its cocoon is a faint shell round the body that flares when it takes a
@@ -684,7 +752,11 @@ namespace Order.Presentation
             if(ruins.Count>0){ruins.Clear();SyncBuildings();hud?.Refresh();}
             foreach(var unit in deaths)
                 if(unitViews.TryGetValue(unit.Id,out var view)&&Match.SeenBy(PrototypeMatch.Player,unit))
+                {
+                    // A machine taken apart leaves no wreck: a last cold flash where its nanites flow away.
+                    if(unit.Disassembling){combat.Flash(Center(unit,view),new Color(.62f,.86f,1)*2.6f,Mathf.Max(.5f,unit.Stats.Radius*2),.5f,2.2f);continue;}
                     combat.Explosion(Center(unit,view),Match.HeightAt(unit.X,unit.Z),unit.Stats.Flying?1.3f:Mathf.Max(1,unit.Stats.Radius*2.6f));
+                }
             deaths.Clear();
         }
         // A unit is inside the box when any of its feet, middle or top is.
@@ -818,6 +890,7 @@ namespace Order.Presentation
             :Mode==MatchMode.Harvest?"Добыча: ЛКМ — разведанная залежь · ПКМ / Esc — отмена"
             :Mode==MatchMode.Attack?"Атака: ЛКМ — враг или точка (атака с движением) · ПКМ / Esc — отмена"
             :Mode==MatchMode.Rally?"Точка сбора: ЛКМ — место или залежь на карте или миникарте · ПКМ / Esc — отмена"
+            :Mode==MatchMode.Repair?"Ремонт: ЛКМ — своё повреждённое здание или техника · ПКМ / Esc — отмена"
             :Mode==MatchMode.Ping?"Метка: ЛКМ — место на карте или миникарте · Alt+ЛКМ — всегда":"";
         // Zooming in lowers the camera toward the horizon, as in StarCraft; it follows the terrain height smoothly.
         // The focus sits in the middle of the view left free by the HUD deck, not in the middle of the screen.
@@ -1028,10 +1101,63 @@ namespace Order.Presentation
             if(mode==MatchMode.Build&&Array.IndexOf(Match.Roster(PrototypeMatch.Player).Buildable,kind)<0)mode=MatchMode.None;
             if(mode==MatchMode.Attack&&!HasFighter()){Match.Message="Выбранные юниты не атакуют.";mode=MatchMode.None;}
             if(mode==MatchMode.Rally&&(selectedBuilding==null||selectedBuilding.Stats.Trains.Length==0))mode=MatchMode.None;
-            if((mode==MatchMode.Move&&!selection.Own)||(mode==MatchMode.Harvest&&!HasHarvester()))SelectWorker();
+            if((mode==MatchMode.Move&&!selection.Own)||(mode==MatchMode.Harvest&&!HasHarvester())||(mode==MatchMode.Repair&&Repairers(null).Count==0))SelectWorker();
+            if(mode==MatchMode.Repair&&Repairers(null).Count==0){Match.Message="Чинить могут только рабочие людей.";mode=MatchMode.None;}
             Mode=mode;buildKind=mode==MatchMode.Build?kind:-1;ModeHint=Hint();hud?.Refresh();
         }
         bool HasHarvester(){foreach(var u in selection.Orderable)if(u.Stats.HarvestAmount>0)return true;return false;}
+        // The selected workers of a side that repairs, but not the machinery they are to mend.
+        List<PrototypeUnit> Repairers(PrototypeUnit target)
+        {
+            var workers=new List<PrototypeUnit>();
+            foreach(var u in selection.Orderable)if(u.Kind==UnitKind.Worker&&u!=target&&Match.Roster(u.Owner).Repairs)workers.Add(u);
+            return workers;
+        }
+        // Every selected worker mends the target, as SCVs do; the rest of the selection walks up to it.
+        public bool RepairSelection(PrototypeBuilding building,PrototypeUnit unit)
+        {
+            var workers=Repairers(unit);
+            if(workers.Count==0){Match.Message="Чинить могут только рабочие людей.";hud?.Refresh();return false;}
+            int started=0;string reason=null;
+            foreach(var w in workers){if(building!=null?Match.Repair(w,building):Match.Repair(w,unit))started++;else reason??=Match.Message;}
+            if(started==0){Match.Message=reason;hud?.Refresh();return false;}
+            float cx=building!=null?building.X+building.Width*.5f:unit.X,cz=building!=null?building.Z+building.Width*.5f:unit.Z;
+            var rest=new List<PrototypeUnit>(selection.Orderable);rest.RemoveAll(u=>workers.Contains(u)||u==unit);
+            var message=$"{(started>1?$"Рабочие ×{started}":workers[0].Stats.Name)}: ремонт — {(building!=null?building.Stats.Name:unit.Stats.Name)}.";
+            if(rest.Count>0)Match.MoveGroup(rest,cx,cz);
+            Match.Message=message;Mark(new Vector2(cx,cz),true);hud?.Refresh();
+            return true;
+        }
+        // Right click on an own extractor means its rift: the ray past the model would hit the ground behind it.
+        Vector2 ExtractorPoint(Vector2 screen,Vector2 point)
+        {
+            var b=BuildingAt(screen);
+            return b!=null&&b.Owner==PrototypeMatch.Player&&b.Stats.Extracts?new Vector2(b.X+b.Width*.5f,b.Z+b.Width*.5f):point;
+        }
+        // The own building or machinery under the cursor that needs repair; with `damaged` only one that is damaged.
+        bool RepairTargetAt(Vector2 screen,bool damaged,out PrototypeBuilding building,out PrototypeUnit unit)
+        {
+            unit=UnitAt(screen);building=null;
+            if(unit!=null&&(unit.Owner!=PrototypeMatch.Player||!unit.Stats.Mechanical||(damaged&&unit.Health>=unit.Stats.Health)))unit=null;
+            if(unit==null)
+            {
+                building=BuildingAt(screen);
+                if(building!=null&&(building.Owner!=PrototypeMatch.Player||building.Ready<1||(damaged&&building.Health>=building.Stats.Health)))building=null;
+            }
+            return unit!=null||building!=null;
+        }
+        public void DisassembleSelection()
+        {
+            int started=0,metal=0,plasma=0;string reason=null;
+            foreach(var u in new List<PrototypeUnit>(selection.Orderable))
+            {
+                var (m,p)=Match.DisassemblyReturn(u);
+                if(Match.Disassemble(u)){started++;metal+=m;plasma+=p;}else reason??=Match.Message;
+            }
+            if(started>1)Match.Message=$"Разборка: {started} юнитов, вернётся металл {metal}"+(plasma>0?$", плазма {plasma}.":".");
+            else if(started==0&&reason!=null)Match.Message=reason;
+            SetMode(MatchMode.None);
+        }
         bool HasFighter(){foreach(var u in selection.Orderable)if(u.Stats.Damage>0)return true;return false;}
         public void SelectWorker()
         {
@@ -1170,6 +1296,14 @@ namespace Order.Presentation
             if(Mode==MatchMode.Ping){AddPin(point);return;}
             if(Mode==MatchMode.Build){bool queue=Queueing();if(Build((int)point.x,(int)point.y,buildKind,queue)&&!queue)SetMode(MatchMode.None);return;}
             if(Mode==MatchMode.Attack){bool queue=Queueing();AttackMoveSelection(point,queue);if(!queue)SetMode(MatchMode.None);return;}
+            // From the minimap only a building can be pointed at.
+            if(Mode==MatchMode.Repair)
+            {
+                var target=Match.Buildings.Find(b=>b.Owner==PrototypeMatch.Player&&b.Ready>=1&&point.x>=b.X&&point.x<b.X+b.Width&&point.y>=b.Z&&point.y<b.Z+b.Width);
+                if(target==null){Match.Message="Укажите своё здание.";hud?.Refresh();return;}
+                if(RepairSelection(target,null))SetMode(MatchMode.None);
+                return;
+            }
             // With a building selected, a plain order from the minimap sets its rally point.
             if(Mode==MatchMode.Rally||(Mode==MatchMode.None&&!selection.Own&&selectedBuilding!=null&&selectedBuilding.Owner==PrototypeMatch.Player)){SetRallyPoint(point);SetMode(MatchMode.None);return;}
             if(Mode==MatchMode.Harvest)

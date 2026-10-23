@@ -152,8 +152,19 @@ namespace Order.Simulation
         public int SiteX { get; internal set; }
         public int SiteZ { get; internal set; }
         internal float siteTimer;
+        // Repair (humans): the building or machinery this worker mends, whether it is at work on it right now, and the
+        // health and price owed in fractions between steps. See PrototypeMatch.Repair.cs.
+        public PrototypeBuilding Repairing { get; internal set; }
+        public PrototypeUnit RepairingUnit { get; internal set; }
+        public bool Welding { get; internal set; }
+        internal float repairHealth, repairMetal, repairPlasma, repairTimer;
+        // Machines: whether it mends inside the network right now, and how far it is taken apart (0 while it is not).
+        public bool Mending { get; internal set; }
+        public float Disassembly { get; internal set; }
+        public bool Disassembling { get; internal set; }
+        internal float mended;
         // Nanite mining: how far the worker has wrapped its deposit (0–1) and the cocoon it wears while wrapped; seconds
-        // since it was last hit, for the cocoon to grow back.
+        // since it was last hit, for the cocoon to grow back and for machines to mend.
         public float Wrap{get;internal set;}
         public int Cocoon{get;internal set;}
         internal float sinceHit=float.MaxValue,cocoonGrowth;
@@ -199,6 +210,9 @@ namespace Order.Simulation
         public bool SelfBuilt{get;internal set;}
         // Machines: whether the network covers it (a core always is); humans always are. See PrototypeMatch.Network.cs.
         public bool Powered{get;internal set;}=true;
+        // Seconds since it was last hit, and the health a machine building mends in fractions between steps.
+        internal float sinceHit=float.MaxValue,mended;
+        public bool Mending{get;internal set;}
         // The upgrade a research building is researching, and for how long it has been at it.
         internal Upgrade? research;
         public Upgrade? Researching=>research;

@@ -142,8 +142,11 @@ namespace Order.Simulation
             }
             SetRoute(unit, route);
             bool harvest = deposit != null && reached && unit.Stats.HarvestAmount > 0;
+            // A rift without the side's extractor is only walked up to.
+            var closed = harvest ? MiningBlocked(unit.Owner, deposit) : null;
+            if (closed != null) harvest = false;
             unit.HarvestTarget = harvest ? deposit : null;
-            Message = harvest ? "Приказ: добыча ресурса." : reached && !beside ? "Приказ: движение." : Unreachable;
+            Message = harvest ? "Приказ: добыча ресурса." : closed ?? (reached && !beside ? "Приказ: движение." : Unreachable);
             return true;
         }
         // The free cell nearest a blocked one; of the equally near, the one on the side of the unit or group.
@@ -403,7 +406,11 @@ namespace Order.Simulation
             }
             foreach (var u in Units) { if (!u.leaping) UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
             TickConstruction(dt);
+            TickRepair(dt);
+            // Before mining: it counts the time since the last hit, which the nanite cocoon waits for too.
+            TickMending(dt);
             TickHarvest(dt);
+            TickDisassembly(dt);
             RemoveDead();
             RunQueues();
         }
@@ -549,7 +556,7 @@ namespace Order.Simulation
             }
         }
         static bool Firm(PrototypeUnit u, PrototypeUnit other) =>
-            !u.Moving && (u.Order == UnitOrder.Hold || u.Constructing != null || u.Owner != other.Owner || (u.engaged && (u.Target != null || u.TargetBuilding != null)));
+            !u.Moving && (u.Order == UnitOrder.Hold || u.Constructing != null || u.Welding || u.Owner != other.Owner || (u.engaged && (u.Target != null || u.TargetBuilding != null)));
         // Only the other unit gives way; a mover pressing into a firm unit also slips sideways, so it goes round it.
         // (nx, nz) points from the firm unit to the one that gives way. A ground unit slips to the side that is free of walls and
         // standing units, so a line of units hitting a wall is passed on the open side instead of being pressed into the crowd.

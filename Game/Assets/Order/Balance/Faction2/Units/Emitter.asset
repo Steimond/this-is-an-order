@@ -24,11 +24,13 @@ MonoBehaviour:
   CocoonRegen: 0
   Supply: 1
   Flying: 0
+  Mechanical: 1
   Damage: 7
   AttackRange: 5.5
   AttackCooldown: 0.85
   HitsGround: 1
   HitsAir: 1
+  Leap: 0
   Metal: 50
   Plasma: 0
   TrainSeconds: 18

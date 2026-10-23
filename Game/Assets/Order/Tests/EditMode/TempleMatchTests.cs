@@ -85,6 +85,8 @@ namespace Order.Tests.EditMode
         [Test] public void PlasmaCannotBeHarvestedPastRemainingAmount()
         {
             var match=new PrototypeMatch();var plasma=match.Map.ResourceAt(5,10);plasma.Remaining=3;
+            // Humans mine plasma through an extractor on the rift.
+            Sites.Place(match,5,10,match.Roster(PrototypeMatch.Player).Extractor,finish:true);
             Assert.That(match.Move(match.Units[0],5,10),Is.True);for(int i=0;i<100;i++)match.Tick(.1f);
             Assert.That(match.Plasma,Is.EqualTo(103));Assert.That(plasma.Remaining,Is.Zero);
         }

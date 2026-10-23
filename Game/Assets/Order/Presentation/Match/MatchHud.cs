@@ -15,7 +15,7 @@ using UnityEngine.UIElements;
 
 namespace Order.Presentation
 {
-    public enum MatchMode { None, Build, Move, Harvest, Ping, Attack, Rally }
+    public enum MatchMode { None, Build, Move, Harvest, Ping, Attack, Rally, Repair }
 
     // What the HUD needs from the running match view.
     public interface IMatchHost
@@ -39,6 +39,10 @@ namespace Order.Presentation
         bool MoveSelection(Vector2 point);
         bool AttackMoveSelection(Vector2 point);
         void HoldSelection();
+        // Machines: the selected own units are taken apart for part of their price.
+        void DisassembleSelection();
+        // Humans: the selected workers mend the building or machinery; false when none of them can.
+        bool RepairSelection(PrototypeBuilding building, PrototypeUnit unit);
         bool Train(UnitKind kind);
         void CancelTraining(int index);
         void SetRallyPoint(Vector2 point);
@@ -496,8 +500,7 @@ namespace Order.Presentation
             {
                 var building = host.SelectedBuilding;
                 var stats = building.Stats;
-                selectionIcon.Kind = building.Kind == 0 ? HudIconKind.Supply : building.Kind == 1 ? HudIconKind.Factory : building.Kind == FactionBalance.Main ? HudIconKind.Headquarters
-                    : stats.Researches ? HudIconKind.Upgrade : HudIconKind.Relay;
+                selectionIcon.Kind = BuildingIcon(building.Kind, stats);
                 selectionName.text = stats.Name.ToUpperInvariant();
                 var ready = building.Ready >= 1;
                 var training = ready && building.Queue.Count > 0 ? match.Roster(building.Owner).Unit(building.Queue[0]) : null;
@@ -508,7 +511,10 @@ namespace Order.Presentation
                 var own = building.Owner == PrototypeMatch.Player;
                 selectionStatus.text = (own ? "" : "ПРОТИВНИК · ") + (!building.Powered ? "НЕТ СИГНАЛА СЕТИ" : !ready ? rising ? "СТРОИТЕЛЬСТВО" : builder != null ? "РАБОЧИЙ ИДЁТ К СТРОЙКЕ" : "СТРОЙКА ОСТАНОВЛЕНА"
                     : building.Researching.HasValue ? "ИССЛЕДОВАНИЕ · " + PrototypeMatch.UpgradeName(building.Researching.Value).ToUpperInvariant() + " " + (match.Level(building.Owner, building.Researching.Value) + 1)
-                    : training == null ? "ГОТОВО" : building.SupplyBlocked ? "ЖДЁТ СНАБЖЕНИЯ" : "ОБУЧЕНИЕ · " + training.Name.ToUpperInvariant());
+                    : training != null ? building.SupplyBlocked ? "ЖДЁТ СНАБЖЕНИЯ" : "ОБУЧЕНИЕ · " + training.Name.ToUpperInvariant()
+                    : building.Mending ? "ВОССТАНАВЛИВАЕТСЯ В СЕТИ"
+                    : match.Units.Exists(u => u.Repairing == building && u.Welding) ? "РЕМОНТ"
+                    : stats.Extracts ? (Rift(match, building)?.Remaining > 0 ? "ДОБЫЧА ПЛАЗМЫ" : "РАЗЛОМ ИСТОЩЁН") : "ГОТОВО");
                 health.Set(building.Health, stats.Health);
                 var progressCaption = progress.Q<Label>(className: "hud-bar__caption");
                 if (!ready)
@@ -530,8 +536,15 @@ namespace Order.Presentation
                         : $"{building.Training / training.TrainSeconds * 100:0}%  ·  {training.TrainSeconds - building.Training:0.0} с");
                 }
                 if (building.Owner == PrototypeMatch.Player && stats.Trains.Length > 0) { queue = building; RefreshQueue(building); }
-                var coverage = stats.Coverage > 0 ? $"  ·  Покрытие {stats.Coverage:0}" + (stats.Relays > 0 ? $", ретрансляторов до {stats.Relays}" : "") : "";
-                selectionStats.text = $"Снабжение +{stats.Supply}{coverage}  ·  Обзор {stats.Vision}  ·  След {stats.Width}×{stats.Width}  ·  {MapGrid.Name(building.X + stats.Width / 2f, building.Z + stats.Width / 2f, TempleMap.Size)}";
+                // Only what the building has: an extractor shows its rift, a supply building its supply, a network node its coverage.
+                var facts = new List<string>();
+                var rift = stats.Extracts ? Rift(match, building) : null;
+                if (rift != null) { facts.Add($"Запас разлома {rift.Remaining}"); facts.Add($"Рабочих {match.Units.Count(u => u.HarvestTarget == rift)}"); }
+                if (stats.Supply > 0) facts.Add($"Снабжение +{stats.Supply}");
+                if (stats.Coverage > 0) facts.Add($"Покрытие {stats.Coverage:0}" + (stats.Relays > 0 ? $", ретрансляторов до {stats.Relays}" : ""));
+                facts.Add($"Обзор {stats.Vision}"); facts.Add($"След {stats.Width}×{stats.Width}");
+                facts.Add(MapGrid.Name(building.X + stats.Width / 2f, building.Z + stats.Width / 2f, TempleMap.Size));
+                selectionStats.text = string.Join("  ·  ", facts);
                 UpgradeSlot(HudIconKind.Armor, "БРОНЯ", 0);
             }
             else if (host.SelectedDeposit != null)
@@ -592,12 +605,24 @@ namespace Order.Presentation
         }
         // Hotkeys of the training buttons: the first letter of the unit's English name, as on StarCraft cards.
         // Hotkeys of the training buttons: the first letter of the unit's English name, as on StarCraft cards (J for the leaper).
+        private static HudIconKind BuildingIcon(int kind, BuildingStats stats) => kind == 0 ? HudIconKind.Supply : kind == 1 ? HudIconKind.Factory : kind == FactionBalance.Main ? HudIconKind.Headquarters
+            : stats.Researches ? HudIconKind.Upgrade : stats.Extracts ? HudIconKind.Extractor : HudIconKind.Relay;
         private static Key TrainKey(UnitKind kind) => kind == UnitKind.Worker ? Key.E : kind == UnitKind.Melee ? Key.A : kind == UnitKind.Ranged ? Key.R : kind == UnitKind.Leaper ? Key.J : Key.G;
+
+        // The rift under an extractor.
+        private static ResourceDeposit Rift(PrototypeMatch match, PrototypeBuilding b) => match.Map.Resources.Find(r => r.Plasma && r.X >= b.X && r.X < b.X + b.Width && r.Z >= b.Z && r.Z < b.Z + b.Width);
 
         private static string State(PrototypeUnit unit, PrototypeMatch match)
         {
             var deposit = unit.HarvestTarget;
             var site = unit.Constructing;
+            if (unit.Disassembling) return $"РАЗБОРКА · {unit.Disassembly * 100:0}%";
+            if (unit.Repairing != null || unit.RepairingUnit != null)
+            {
+                var name = (unit.Repairing?.Stats.Name ?? unit.RepairingUnit.Stats.Name).ToUpperInvariant();
+                int health = unit.Repairing?.Health ?? unit.RepairingUnit.Health, max = unit.Repairing?.Stats.Health ?? unit.RepairingUnit.Stats.Health;
+                return unit.Welding ? $"РЕМОНТ · {name} · {health * 100 / max}%" : "ИДЁТ К РЕМОНТУ · " + name;
+            }
             if (site != null)
             {
                 var name = site.Stats.Name.ToUpperInvariant();
@@ -611,7 +636,7 @@ namespace Order.Presentation
             if (unit.Moving) return deposit != null ? "НАПРАВЛЯЕТСЯ К ЗАЛЕЖИ" : "ДВИЖЕНИЕ";
             if (deposit != null && unit.Wrap > 0 && unit.Wrap < 1) return $"ОБВИВАЕТ ЗАЛЕЖЬ · {unit.Wrap * 100:0}%";
             if (deposit != null && !unit.Mining && deposit.Remaining > 0) return "ЖДЁТ ОЧЕРЕДИ У ЗАЛЕЖИ";
-            return deposit != null && deposit.Remaining > 0 ? "ДОБЫЧА · " + (deposit.Plasma ? "ПЛАЗМА" : "МЕТАЛЛ") : "ОЖИДАЕТ ПРИКАЗА";
+            return deposit != null && deposit.Remaining > 0 ? "ДОБЫЧА · " + (deposit.Plasma ? "ПЛАЗМА" : "МЕТАЛЛ") : unit.Mending ? "ВОССТАНАВЛИВАЕТСЯ В СЕТИ" : "ОЖИДАЕТ ПРИКАЗА";
         }
 
         // Tiles are reused; each keeps its unit in userData. Click: only this unit; Shift: drop it; Ctrl: keep only its kind.
@@ -757,6 +782,10 @@ namespace Order.Presentation
                     actions[5] = new HudAction { Title = "Строительство", Hotkey = "B", Key = Key.B, Icon = HudIconKind.Build,
                         Description = "Открыть список построек. Рабочий идёт к месту и строит сам; ушёл — стройка ждёт. ПКМ рабочим по недостроенному зданию — продолжить.",
                         Run = () => buildPage = true };
+                    if (match.Roster(unit.Owner).Repairs)
+                        actions[3] = new HudAction { Title = "Ремонт", Hotkey = "R", Key = Key.R, Icon = HudIconKind.Repair, Active = host.Mode == MatchMode.Repair,
+                            Description = $"ЛКМ по своему повреждённому зданию или технике (рабочий, винтокрыл). Полный ремонт стоит {PrototypeMatch.RepairShare * 100:0}% цены и идёт, как стройка, но не меньше {PrototypeMatch.MinRepairSeconds:0} с. Также: ПКМ рабочим по цели.",
+                            Run = () => host.SetMode(MatchMode.Repair) };
                 }
                 else
                 {
@@ -765,6 +794,14 @@ namespace Order.Presentation
                         Run = () => host.SetMode(MatchMode.Attack) };
                     actions[3] = new HudAction { Title = "Держать позицию", Hotkey = "H", Key = Key.H, Icon = HudIconKind.Hold,
                         Description = "Стоять на месте и стрелять только по целям в радиусе атаки. Свои юниты их не сдвигают.", Run = host.HoldSelection };
+                }
+                // Machines take their units apart inside the network.
+                if (match.Roster(unit.Owner).Mends)
+                {
+                    var (metal, plasma) = match.DisassemblyReturn(unit);
+                    actions[4] = new HudAction { Title = "Разобрать", Hotkey = "D", Key = Key.D, Icon = HudIconKind.Disassemble,
+                        Description = $"Только в покрытии сети: за {PrototypeMatch.DisassemblySeconds:0} с выделенные юниты распадаются на наниты, и возвращается половина их цены за вычетом доли потерянной прочности ({unit.Stats.Name.ToLowerInvariant()} сейчас: металл {metal}{(plasma > 0 ? $", плазма {plasma}" : "")}). Любой приказ останавливает разборку.",
+                        Locked = match.DisassemblyBlocked(unit), Run = host.DisassembleSelection };
                 }
             }
             else if (worker)
@@ -777,12 +814,13 @@ namespace Order.Presentation
                     var relay = roster.Network && building == FactionBalance.Relay;
                     var lab = stats.Researches;
                     var main = building == FactionBalance.Main;
-                    var key = building == 0 ? Key.S : building == 1 ? Key.F : main ? Key.C : lab ? Key.U : Key.R;
+                    var key = building == 0 ? Key.S : building == 1 ? Key.F : main ? Key.C : lab ? Key.U : stats.Extracts ? Key.E : Key.R;
                     var network = roster.Network ? " Только в покрытии сети." : "";
                     actions[slot] = new HudAction { Title = stats.Name, Hotkey = key.ToString(), Key = key,
-                        Icon = building == 0 ? HudIconKind.Supply : building == 1 ? HudIconKind.Factory : main ? HudIconKind.Headquarters : lab ? HudIconKind.Upgrade : HudIconKind.Relay, Metal = stats.Metal, Plasma = stats.Plasma, Seconds = stats.BuildSeconds,
+                        Icon = BuildingIcon(building, stats), Metal = stats.Metal, Plasma = stats.Plasma, Seconds = stats.BuildSeconds,
                         Active = host.Mode == MatchMode.Build && host.BuildKind == building,
                         Description = relay ? $"Продлевает покрытие сети на {stats.Coverage:0} клеток, ставится в покрытии. Мощности не даёт. До {roster.Buildings[FactionBalance.Main].Relays} на ядро, осталось {match.RelaysLeft(PrototypeMatch.Player)}."
+                            : stats.Extracts ? "Ставится на разлом плазмы: без него рабочие плазму не добывают. Разлом под экстрактором добывает только его сторона."
                             : lab ? $"Исследует улучшения оружия и брони для всех юнитов стороны, по три уровня. След {stats.Width}×{stats.Width}.{network}"
                             : main ? $"Новая база: обучает рабочих{(roster.NaniteMining ? "" : " и принимает груз")}, снабжение +{stats.Supply}{(roster.Network ? $", своя сеть на {stats.Coverage:0} клеток" : "")}. Не ближе двух клеток к залежам."
                             : (building == 0 ? $"Снабжение +{stats.Supply}. След {stats.Width}×{stats.Width}." : $"Производственное здание. След {stats.Width}×{stats.Width}.") + network,
@@ -1094,12 +1132,26 @@ namespace Order.Presentation
             // int.MaxValue: a building the faction does not have.
             var build = !Is(@"\b(?:построй|строй|возведи|поставь)\b") ? -1 : Is(@"\b(?:ретранслятор\w*|антенн\w*)") ? (roster.Network ? FactionBalance.Relay : int.MaxValue)
                 : Is(@"\b(?:мастерск\w*|прошивк\w*)") ? roster.Research
+                : Is(@"\b(?:экстрактор\w*|вышк\w*)") ? (roster.Extractor >= 0 ? roster.Extractor : int.MaxValue)
                 : Is(@"\b(?:командн\w*|ядр\w*|баз[уаы])\b") ? FactionBalance.Main
                 : Is(@"\b(?:цех\w*|сборочн\w*)") ? 1 : Is(@"\b(?:узел\w*|снабжени\w*|склад\w*|вычислительн\w*)") ? 0 : -1;
             if (build >= 0 && Array.IndexOf(roster.Buildable, build) < 0) { ok = false; reply = "Ваша фракция такое не строит."; return true; }
             if (build >= 0)
             {
                 var stats = match.Roster(PrototypeMatch.Player).Buildings[build];
+                if (stats.Extracts)
+                {
+                    // An extractor needs no exact place: the free rift nearest the named square, or the main building.
+                    var hq = match.Buildings.FirstOrDefault(b => b.Owner == PrototypeMatch.Player && b.Kind == FactionBalance.Main);
+                    float fx = hasPoint ? x : hq != null ? hq.X + hq.Width * .5f : host.CameraFocus.x, fz = hasPoint ? z : hq != null ? hq.Z + hq.Width * .5f : host.CameraFocus.y;
+                    var rift = match.Map.Resources.Where(r => r.Plasma && r.Remaining > 0 && match.Explored[r.X, r.Z] && match.ExtractorOn(r) == null)
+                        .OrderBy(r => (r.X + .5f - fx) * (r.X + .5f - fx) + (r.Z + .5f - fz) * (r.Z + .5f - fz)).FirstOrDefault();
+                    if (rift == null) { ok = false; reply = "Нет свободного разведанного разлома плазмы."; return true; }
+                    ok = host.Build(rift.X, rift.Z, build);
+                    var at = MapGrid.Name(rift.X + .5f, rift.Z + .5f, TempleMap.Size);
+                    reply = ok ? $"{stats.Name}: рабочий идёт строить в {at}." : $"Не могу строить в {at}: {match.Message}";
+                    return true;
+                }
                 if (!hasPoint) { host.SetMode(MatchMode.Build, build); reply = $"{stats.Name}: укажите место. Esc — отмена."; return true; }
                 var ox = Mathf.RoundToInt(x - stats.Width / 2f); var oz = Mathf.RoundToInt(z - stats.Width / 2f);
                 ok = host.Build(ox, oz, build);
@@ -1112,12 +1164,42 @@ namespace Order.Presentation
                 var harvester = host.Selection.Orderable.FirstOrDefault(u => u.Stats.HarvestAmount > 0);
                 if (harvester == null) { host.SelectWorker(); harvester = host.Selection.Units.FirstOrDefault(); }
                 if (harvester == null) { ok = false; reply = "Нет рабочих."; return true; }
+                // Deposits the side can mine come first: a human rift needs its own finished extractor.
                 var deposit = hasPoint ? match.Map.ResourceAt((int)x, (int)z) : match.Map.Resources
                     .Where(r => r.Plasma == wantPlasma && r.Remaining > 0 && match.Explored[r.X, r.Z])
-                    .OrderBy(r => (r.X - harvester.X) * (r.X - harvester.X) + (r.Z - harvester.Z) * (r.Z - harvester.Z)).FirstOrDefault();
+                    .OrderBy(r => match.MiningBlocked(harvester.Owner, r) == null ? 0 : 1)
+                    .ThenBy(r => (r.X - harvester.X) * (r.X - harvester.X) + (r.Z - harvester.Z) * (r.Z - harvester.Z)).FirstOrDefault();
                 if (deposit == null) { ok = false; reply = wantPlasma ? "Нет разведанной плазмы." : "Нет разведанного металла."; return true; }
-                ok = match.Move(harvester, deposit.X + .5f, deposit.Z + .5f);
+                ok = match.Move(harvester, deposit.X + .5f, deposit.Z + .5f) && harvester.HarvestTarget == deposit;
+                if (!ok) { reply = match.Message; return true; }
                 reply = ok ? $"{harvester.Stats.Name}: добыча {(deposit.Plasma ? "плазмы" : "металла")} в {MapGrid.Name(deposit.X + .5f, deposit.Z + .5f, TempleMap.Size)}." : match.Message;
+                return true;
+            }
+            if (Is(@"^(?:почини\w*|чини\w*|отремонтируй\w*|ремонт\w*)\b"))
+            {
+                // The selected workers mend the most damaged of the own buildings and machinery nearest them.
+                var workers = host.Selection.Orderable.Where(u => u.Kind == UnitKind.Worker).ToList();
+                if (workers.Count == 0) { host.SelectWorker(); workers = host.Selection.Orderable.Where(u => u.Kind == UnitKind.Worker).ToList(); }
+                if (workers.Count == 0) { ok = false; reply = "Нет рабочих."; return true; }
+                if (!match.Roster(PrototypeMatch.Player).Repairs) { ok = false; reply = "Машины чинятся сами в покрытии сети."; return true; }
+                var from = workers[0];
+                float Away(float px, float pz) => (px - from.X) * (px - from.X) + (pz - from.Z) * (pz - from.Z);
+                var building = match.Buildings.Where(b => b.Owner == PrototypeMatch.Player && b.Ready >= 1 && b.Health < b.Stats.Health)
+                    .OrderBy(b => Away(b.X + b.Width * .5f, b.Z + b.Width * .5f)).FirstOrDefault();
+                var machine = match.Units.Where(u => u.Owner == PrototypeMatch.Player && u.Stats.Mechanical && u.Health < u.Stats.Health && !workers.Contains(u))
+                    .OrderBy(u => Away(u.X, u.Z)).FirstOrDefault();
+                if (building == null && machine == null) { ok = false; reply = "Чинить нечего: всё своё цело."; return true; }
+                bool toBuilding = building != null && (machine == null || Away(building.X + building.Width * .5f, building.Z + building.Width * .5f) <= Away(machine.X, machine.Z));
+                ok = host.RepairSelection(toBuilding ? building : null, toBuilding ? null : machine);
+                reply = match.Message;
+                return true;
+            }
+            if (Is(@"^(?:разбери\w*|разобрать|утилизируй\w*|переработай\w*)\b"))
+            {
+                ok = host.Selection.Own && host.Selection.Count > 0;
+                if (!ok) { reply = "Выберите своих юнитов, которых разобрать."; return true; }
+                host.DisassembleSelection();
+                reply = match.Message;
                 return true;
             }
             var researchMatch = Regex.Match(t, @"^(?:исследуй|улучши|прокачай|апгрейд)\s+(оружи\w*|брон\w*)$", RegexOptions.CultureInvariant);

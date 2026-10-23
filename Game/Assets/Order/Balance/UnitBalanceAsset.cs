@@ -18,6 +18,7 @@ namespace Order.Balance
         [Tooltip("Сколько прочности кокон восстанавливает в секунду, когда рабочего давно не били.")] [Min(0)] public float CocoonRegen;
         [Min(0)] public int Supply=1;
         [Tooltip("Летает над скалами и зданиями.")] public bool Flying;
+        [Tooltip("Техника: рабочие людей её чинят. У машин техника — все юниты.")] public bool Mechanical;
         [Header("Атака")]
         [Tooltip("0 — юнит не атакует.")] [Min(0)] public int Damage;
         [Tooltip("Дальность от края юнита до края цели.")] [Min(0)] public float AttackRange;
@@ -32,6 +33,6 @@ namespace Order.Balance
             Vision=Mathf.Clamp(Vision,1,64),HarvestAmount=Mathf.Max(0,HarvestAmount),HarvestInterval=Mathf.Max(.1f,HarvestInterval),Supply=Mathf.Max(0,Supply),Flying=Flying,
             Damage=Mathf.Max(0,Damage),AttackRange=Mathf.Max(0,AttackRange),AttackCooldown=Mathf.Max(.1f,AttackCooldown),HitsGround=HitsGround,HitsAir=HitsAir,
             Metal=Mathf.Max(0,Metal),Plasma=Mathf.Max(0,Plasma),TrainSeconds=Mathf.Max(.1f,TrainSeconds),
-            WrapSeconds=Mathf.Max(0,WrapSeconds),Cocoon=Mathf.Max(0,Cocoon),CocoonRegen=Mathf.Max(0,CocoonRegen),Leap=Leap};
+            WrapSeconds=Mathf.Max(0,WrapSeconds),Cocoon=Mathf.Max(0,Cocoon),CocoonRegen=Mathf.Max(0,CocoonRegen),Leap=Leap,Mechanical=Mechanical};
     }
 }

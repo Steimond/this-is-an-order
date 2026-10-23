@@ -9,7 +9,8 @@ namespace Order.Simulation
     //   nearest finished command node and goes back for more;
     // - a busy deposit sends the worker to a free one of the same kind next to it, otherwise it waits its turn;
     // - a depleted deposit sends it to the nearest other one of the same kind within reach;
-    // - workers in the mining cycle pass through other units (see Ghost in Movement).
+    // - workers in the mining cycle pass through other units (see Ghost in Movement);
+    // - plasma is mined through an extractor standing on the rift, and only by its owner (see MiningBlocked).
     public sealed partial class PrototypeMatch
     {
         const float DropReach = .7f, NeighbourReach = 3.2f, SwitchReach = 9;
@@ -42,6 +43,9 @@ namespace Order.Simulation
                 if (u.route.Count > 0) { Release(u); u.Mining = false; continue; }
                 if (deposit.Remaining <= 0) { Release(u); u.Mining = false; GatherFrom(u, Nearby(deposit, u, SwitchReach, false)); continue; }
                 if (!NextTo(u, deposit)) { Release(u); u.Mining = false; GatherFrom(u, deposit); continue; }
+                // The extractor it mined through is gone, or the rift was taken.
+                var closed = MiningBlocked(u.Owner, deposit);
+                if (closed != null) { StopHarvest(u); if (u.Owner == Player) Message = closed; continue; }
                 if (miners.TryGetValue(deposit, out var other) && other != u && Holds(other, deposit))
                 {
                     // Busy: try a free neighbour, otherwise wait here.
@@ -70,12 +74,13 @@ namespace Order.Simulation
         void Weave(PrototypeUnit u, float dt)
         {
             var deposit = u.HarvestTarget; var stats = u.Stats;
-            u.sinceHit += dt;
             bool there = deposit != null && u.route.Count == 0 && deposit.Remaining > 0 && NextTo(u, deposit);
             if (!there) { Release(u); u.Mining = false; u.Wrap = 0; u.Cocoon = 0; u.cocoonGrowth = 0; }
             if (deposit == null || u.route.Count > 0) return;
             if (deposit.Remaining <= 0) { GatherFrom(u, Nearby(deposit, u, SwitchReach, true)); return; }
             if (!NextTo(u, deposit)) { GatherFrom(u, deposit); return; }
+            var closed = MiningBlocked(u.Owner, deposit);
+            if (closed != null) { StopHarvest(u); if (u.Owner == Player) Message = closed; return; }
             if (miners.TryGetValue(deposit, out var other) && other != u && Holds(other, deposit))
             {
                 var free = Nearby(deposit, u, SwitchReach, true);
@@ -108,6 +113,20 @@ namespace Order.Simulation
             if (deposit.Remaining == 0) NavigationChanged(deposit.X, deposit.Z, 1);
             if (deposit.Plasma) plasmaStock[u.Owner] += amount; else metalStock[u.Owner] += amount;
             if (u.Owner == Player) { if (deposit.Plasma) PlasmaHarvested += amount; else MetalHarvested += amount; }
+        }
+        // The extractor standing on the rift, if any.
+        public PrototypeBuilding ExtractorOn(ResourceDeposit d)
+        {
+            foreach (var b in Buildings) if (b.Stats.Extracts && b.Health > 0 && d.X >= b.X && d.X < b.X + b.Width && d.Z >= b.Z && d.Z < b.Z + b.Width) return b;
+            return null;
+        }
+        // Why the side cannot mine the deposit, or null. As with refineries in StarCraft, a rift under an extractor is the
+        // extractor owner's alone, once it is finished; a side that has extractors (the humans) mines plasma only through one.
+        public string MiningBlocked(int side, ResourceDeposit d)
+        {
+            var extractor = ExtractorOn(d);
+            if (extractor != null) return extractor.Owner != side ? "Разлом занят экстрактором противника." : extractor.Ready < 1 ? "Экстрактор ещё строится." : null;
+            return d.Plasma && Roster(side).Extractor >= 0 ? $"Сначала постройте на разломе: {Roster(side).Buildings[Roster(side).Extractor].Name.ToLowerInvariant()}." : null;
         }
         bool Holds(PrototypeUnit u, ResourceDeposit deposit) => u.Alive && u.HarvestTarget == deposit && u.Carrying == 0 && u.route.Count == 0 && Units.Contains(u);
         void Release(PrototypeUnit u)
@@ -156,7 +175,7 @@ namespace Order.Simulation
             ResourceDeposit best = null; float bestDistance = reach * reach;
             foreach (var r in Map.Resources)
             {
-                if (r == from || r.Plasma != from.Plasma || r.Remaining <= 0 || (u.Owner == Player && !Explored[r.X, r.Z])) continue;
+                if (r == from || r.Plasma != from.Plasma || r.Remaining <= 0 || (u.Owner == Player && !Explored[r.X, r.Z]) || MiningBlocked(u.Owner, r) != null) continue;
                 if (free && miners.TryGetValue(r, out var other) && Holds(other, r)) continue;
                 float dx = r.X - from.X, dz = r.Z - from.Z, d = dx * dx + dz * dz;
                 if (d <= bestDistance) { bestDistance = d; best = r; }

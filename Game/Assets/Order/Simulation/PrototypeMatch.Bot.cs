@@ -5,8 +5,10 @@ using Order.Content;
 namespace Order.Simulation
 {
     // Enemy bot of the test ground, an easy StarCraft-like opponent. Once a second it:
-    // - keeps its workers mining and trains more: humans up to a dozen (ten more per extra base), two on plasma once it has
-    //   eight; machines one on each deposit round its bases, one on plasma once it has five;
+    // - keeps its workers mining and trains more: humans up to a dozen (ten more per extra base), two on each of its
+    //   extractors once it has eight; machines one on each deposit round its bases, one on plasma once it has five;
+    // - humans put an extractor on the rift by each base from eight workers, and mend damaged buildings once the
+    //   enemy has left;
     // - from the sixth minute takes a second base: the free base spot nearest its first one;
     // - adds a supply node before supply runs out and, after its first wave, a second factory once it has metal to spare
     //   and a research building, where it upgrades weapons and armour in turn;
@@ -65,7 +67,9 @@ namespace Order.Simulation
             // from five.
             bool nanites = Roster(Enemy).NaniteMining;
             int wanted = nanites ? DepositsNear(bases) : BotWorkers + 10 * (bases.Count - 1);
-            int onPlasma = workers.FindAll(w => w.HarvestTarget != null && w.HarvestTarget.Plasma).Count, wantPlasma = nanites ? (workers.Count >= 5 ? bases.Count : 0) : workers.Count >= 8 ? 2 * bases.Count : 0;
+            // Humans put two on each finished extractor by their bases.
+            int extractors = Buildings.FindAll(b => b.Owner == Enemy && b.Stats.Extracts && b.Ready >= 1).Count;
+            int onPlasma = workers.FindAll(w => w.HarvestTarget != null && w.HarvestTarget.Plasma).Count, wantPlasma = nanites ? (workers.Count >= 5 ? bases.Count : 0) : workers.Count >= 8 ? 2 * Math.Min(extractors, bases.Count) : 0;
             foreach (var w in workers)
             {
                 if (w.HarvestTarget != null || w.Moving || Busy(w)) continue;
@@ -120,7 +124,7 @@ namespace Order.Simulation
             ResourceDeposit best = null; float bestScore = float.MaxValue;
             foreach (var r in Map.Resources)
             {
-                if (r.Plasma != plasma || r.Remaining <= 0) continue;
+                if (r.Plasma != plasma || r.Remaining <= 0 || MiningBlocked(Enemy, r) != null) continue;
                 float d = Reach(bases, r);
                 if (d > 10) continue;
                 int on = 0; foreach (var w in workers) if (w.HarvestTarget == r) on++;
@@ -143,11 +147,22 @@ namespace Order.Simulation
                 if (worker != null) Resume(worker, b);
                 return;
             }
+            // Humans mend a damaged building once no enemy is near it, one worker to each.
+            if (Roster(Enemy).Repairs)
+                foreach (var b in Buildings)
+                {
+                    if (b.Owner != Enemy || b.Ready < 1 || b.Health >= b.Stats.Health || Units.Exists(u => u.Repairing == b)) continue;
+                    if (Units.Exists(u => u.Owner != Enemy && u.Alive && Gap(u, b) < DefenseRadius)) continue;
+                    var worker = BotBuilder(b.X + b.Width * .5f, b.Z + b.Width * .5f);
+                    if (worker != null) Repair(worker, b);
+                    break;
+                }
             // One building at a time, apart from a new base, which takes long: supply goes on meanwhile.
             bool raising = Buildings.Exists(b => b.Owner == Enemy && b.Ready < 1 && b.Kind != FactionBalance.Main)
                 || Units.Exists(u => u.Owner == Enemy && u.SiteKind >= 0 && u.SiteKind != FactionBalance.Main);
             if (raising) return;
             if (Supply(Enemy) + 6 >= Limit(Enemy) && Limit(Enemy) < 200) { if (BotPlace(hq, 0)) return; }
+            if (BotExtractor()) return;
             if (BotExpand(hq)) return;
             int factories = Buildings.FindAll(b => b.Owner == Enemy && Trains(b, UnitKind.Ranged)).Count;
             if (factories < 2 && Waves >= 1 && metalStock[Enemy] >= 400) { if (BotPlace(hq, 1)) return; }
@@ -197,6 +212,20 @@ namespace Order.Simulation
             if (best == float.MaxValue) return false;
             var builder = BotBuilder(bestX + w * .5f, bestZ + w * .5f);
             return builder != null && Build(builder, bestX, bestZ, kind);
+        }
+        // A side that mines plasma through extractors puts one on the rift by each finished base once it has eight workers.
+        bool BotExtractor()
+        {
+            int kind = Roster(Enemy).Extractor;
+            if (kind < 0 || Units.FindAll(u => u.Owner == Enemy && u.Kind == UnitKind.Worker).Count < 8) return false;
+            var bases = Buildings.FindAll(b => b.Owner == Enemy && b.Kind == FactionBalance.Main && b.Ready >= 1);
+            foreach (var r in Map.Resources)
+            {
+                if (!r.Plasma || r.Remaining <= 0 || Reach(bases, r) > 10 || ExtractorOn(r) != null || !CanBuild(r.X, r.Z, kind, out _, Enemy)) continue;
+                var builder = BotBuilder(r.X + .5f, r.Z + .5f);
+                return builder != null && Build(builder, r.X, r.Z, kind);
+            }
+            return false;
         }
         // The worker nearest the spot that is not building: a metal miner with empty hands if there is one.
         PrototypeUnit BotBuilder(float x, float z)

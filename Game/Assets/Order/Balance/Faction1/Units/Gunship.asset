@@ -19,13 +19,18 @@ MonoBehaviour:
   Vision: 11
   HarvestAmount: 0
   HarvestInterval: 1
+  WrapSeconds: 0
+  Cocoon: 0
+  CocoonRegen: 0
   Supply: 2
   Flying: 1
+  Mechanical: 1
   Damage: 9
   AttackRange: 4.5
   AttackCooldown: 1.2
   HitsGround: 1
   HitsAir: 0
+  Leap: 0
   Metal: 150
   Plasma: 100
   TrainSeconds: 32

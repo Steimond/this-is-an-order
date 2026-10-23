@@ -64,8 +64,10 @@ namespace Order.Tests.EditMode
             Assert.That(worker.Cocoon,Is.Zero);Assert.That(worker.Health,Is.LessThan(stats.Health),"Then the worker itself is hit");
             raider.Health=0;int health=worker.Health;
             Run(match,2);Assert.That(worker.Cocoon,Is.Zero,"Nothing grows back for a few seconds after the last blow");
-            Run(match,7);
-            Assert.That(worker.Cocoon,Is.EqualTo(stats.Cocoon));Assert.That(worker.Health,Is.EqualTo(health),"Only the cocoon grows back");
+            Run(match,2.4f);
+            Assert.That(worker.Cocoon,Is.GreaterThan(0));Assert.That(worker.Health,Is.EqualTo(health),"The cocoon grows back first");
+            Run(match,4.6f);
+            Assert.That(worker.Cocoon,Is.EqualTo(stats.Cocoon));Assert.That(worker.Health,Is.GreaterThan(health),"Inside the network the worker itself mends later");
         }
         [Test] public void LeavingTheDepositDissolvesTheCocoonAndTheWrapOutlivesItsWorker()
         {

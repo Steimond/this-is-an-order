@@ -22,6 +22,8 @@ namespace Order.Content
         // Attack range is measured between the edges of the two units. A leaper attacks by jumping through its target:
         // AttackRange is the reach of the jump and AttackCooldown the time between jumps (PrototypeMatch.Leap.cs).
         public bool Flying, HitsGround=true, HitsAir, Leap;
+        // Machinery: human workers repair it (their drone and the gunship); every machine unit is machinery.
+        public bool Mechanical;
     }
     public sealed class BuildingStats
     {
@@ -35,21 +37,26 @@ namespace Order.Content
         public int Relays;
         // Researches the weapon and armour upgrades of its side.
         public bool Researches;
+        // Stands on a plasma rift: a side that has such a building mines plasma only through it.
+        public bool Extracts;
     }
     // A faction's roster and the way it gathers and builds (SETTING.md). Buildings: 0 supply, 1 production, 2 main,
-    // 3 relay (machines only).
+    // then the humans' workshop and extractor, the machines' relay and firmware node.
     public sealed class FactionBalance
     {
         // Relay is the machines' index 3; the humans have their workshop there.
         public const int Main = 2, Relay = 3;
-        // The building that researches upgrades (-1: none).
-        public int Research=-1;
+        // The building that researches upgrades, and the one a rift needs before the side can mine its plasma (-1: none).
+        public int Research=-1, Extractor=-1;
         public UnitStats[] Units;
         public BuildingStats[] Buildings;
         // Machines wrap a deposit with nanites instead of hauling loads, and their buildings rise by themselves once the
         // worker has thrown the construction grenade; humans haul and build by hand. Machine buildings other than the
         // core stand and work only inside the coverage of the side's network.
         public bool NaniteMining, SelfBuilding, Network;
+        // Humans: workers repair buildings and machinery. Machines: inside the network their units and buildings mend
+        // themselves, and a unit can be taken apart for part of its price (PrototypeMatch.Repair.cs).
+        public bool Repairs, Mends;
         // What a worker can build, in command card order; the main building starts a new base.
         public int[] Buildable={0,1,Main,3};
         public UnitStats Worker=>Units[(int)UnitKind.Worker];
@@ -59,28 +66,29 @@ namespace Order.Content
     public sealed class MatchBalance
     {
         // Names are temporary, like the faction names. Melee units hit only ground, riflemen hit ground and air.
-        public FactionBalance Expedition=new FactionBalance{Research=3,
+        public FactionBalance Expedition=new FactionBalance{Research=3,Extractor=4,Repairs=true,Buildable=new[]{0,1,FactionBalance.Main,3,4},
             Units=new[]{
-                new UnitStats(),
+                new UnitStats{Mechanical=true},
                 new UnitStats{Name="Штурмовик",Speed=4.2f,Radius=.38f,Health=120,Vision=8,HarvestAmount=0,Supply=2,Damage=12,AttackRange=.3f,AttackCooldown=1.1f,Metal=100,Plasma=25,TrainSeconds=22},
                 new UnitStats{Name="Стрелок",Speed=4.4f,Radius=.3f,Health=60,Vision=9,HarvestAmount=0,Supply=1,Damage=7,AttackRange=5.5f,AttackCooldown=.85f,HitsAir=true,Metal=50,TrainSeconds=18},
-                new UnitStats{Name="Винтокрыл",Speed=6,Radius=.45f,Health=110,Vision=11,HarvestAmount=0,Supply=2,Damage=9,AttackRange=4.5f,AttackCooldown=1.2f,Flying=true,Metal=150,Plasma=100,TrainSeconds=32}},
+                new UnitStats{Name="Винтокрыл",Speed=6,Radius=.45f,Health=110,Vision=11,HarvestAmount=0,Supply=2,Damage=9,AttackRange=4.5f,AttackCooldown=1.2f,Flying=true,Metal=150,Plasma=100,TrainSeconds=32,Mechanical=true}},
             Buildings=new[]{
                 new BuildingStats{Name="Узел снабжения",Width=2,Metal=100,Supply=8,Height=1.4f},
                 new BuildingStats{Name="Цех",Width=3,Metal=150,Plasma=50,Height=2.2f,BuildSeconds=8,Health=1000,Trains=new[]{UnitKind.Melee,UnitKind.Ranged,UnitKind.Air}},
                 new BuildingStats{Name="Командный узел",Width=3,Metal=400,Supply=10,Height=2.6f,BuildSeconds=50,Health=1500,Trains=new[]{UnitKind.Worker}},
-                new BuildingStats{Name="Мастерская",Width=2,Metal=125,Height=1.6f,BuildSeconds=20,Health=750,Researches=true}}};
+                new BuildingStats{Name="Мастерская",Width=2,Metal=125,Height=1.6f,BuildSeconds=20,Health=750,Researches=true},
+                new BuildingStats{Name="Экстрактор",Width=1,Metal=75,Height=1.5f,BuildSeconds=12,Health=500,Vision=5,Extracts=true}}};
         // Machines: a worker brings about twice a human worker's income (150 against 80 metal a minute), so its cocoon
         // roughly doubles its health on the deposit, and it is assembled faster for more metal (SETTING.md). Spiders are a
         // cheap fast swarm, weak one by one; the leaper jumps through one target at a time. The emitter and the glider copy
         // the humans' rifleman and gunship until the machines get their own.
-        public FactionBalance Resonance=new FactionBalance{NaniteMining=true,SelfBuilding=true,Network=true,Buildable=new[]{0,1,FactionBalance.Relay,FactionBalance.Main,4},Research=4,
+        public FactionBalance Resonance=new FactionBalance{NaniteMining=true,SelfBuilding=true,Network=true,Mends=true,Buildable=new[]{0,1,FactionBalance.Relay,FactionBalance.Main,4},Research=4,
             Units=new[]{
-                new UnitStats{Name="Ткач",HarvestAmount=20,HarvestInterval=8,WrapSeconds=2,Cocoon=40,CocoonRegen=8,Metal=75,TrainSeconds=8},
-                new UnitStats{Name="Паучок",Speed=6,Radius=.22f,Health=35,Vision=7,HarvestAmount=0,Supply=1,Damage=5,AttackRange=.2f,AttackCooldown=.6f,Metal=40,TrainSeconds=12},
-                new UnitStats{Name="Излучатель",Speed=4.4f,Radius=.3f,Health=60,Vision=9,HarvestAmount=0,Supply=1,Damage=7,AttackRange=5.5f,AttackCooldown=.85f,HitsAir=true,Metal=50,TrainSeconds=18},
-                new UnitStats{Name="Планёр",Speed=6,Radius=.45f,Health=110,Vision=11,HarvestAmount=0,Supply=2,Damage=9,AttackRange=4.5f,AttackCooldown=1.2f,Flying=true,Metal=150,Plasma=100,TrainSeconds=32},
-                new UnitStats{Name="Прыгун",Speed=4.6f,Radius=.32f,Health=90,Vision=8,HarvestAmount=0,Supply=2,Damage=30,AttackRange=4.5f,AttackCooldown=4,Leap=true,Metal=100,Plasma=50,TrainSeconds=24}},
+                new UnitStats{Name="Ткач",HarvestAmount=20,HarvestInterval=8,WrapSeconds=2,Cocoon=40,CocoonRegen=8,Metal=75,TrainSeconds=8,Mechanical=true},
+                new UnitStats{Name="Паучок",Speed=6,Radius=.22f,Health=35,Vision=7,HarvestAmount=0,Supply=1,Damage=5,AttackRange=.2f,AttackCooldown=.6f,Metal=40,TrainSeconds=12,Mechanical=true},
+                new UnitStats{Name="Излучатель",Speed=4.4f,Radius=.3f,Health=60,Vision=9,HarvestAmount=0,Supply=1,Damage=7,AttackRange=5.5f,AttackCooldown=.85f,HitsAir=true,Metal=50,TrainSeconds=18,Mechanical=true},
+                new UnitStats{Name="Планёр",Speed=6,Radius=.45f,Health=110,Vision=11,HarvestAmount=0,Supply=2,Damage=9,AttackRange=4.5f,AttackCooldown=1.2f,Flying=true,Metal=150,Plasma=100,TrainSeconds=32,Mechanical=true},
+                new UnitStats{Name="Прыгун",Speed=4.6f,Radius=.32f,Health=90,Vision=8,HarvestAmount=0,Supply=2,Damage=30,AttackRange=4.5f,AttackCooldown=4,Leap=true,Metal=100,Plasma=50,TrainSeconds=24,Mechanical=true}},
             Buildings=new[]{
                 new BuildingStats{Name="Вычислительный узел",Width=2,Metal=100,Supply=8,Height=1.4f},
                 new BuildingStats{Name="Сборочный узел",Width=3,Metal=150,Plasma=50,Height=2.2f,BuildSeconds=8,Health=1000,Trains=new[]{UnitKind.Melee,UnitKind.Leaper,UnitKind.Ranged,UnitKind.Air}},
