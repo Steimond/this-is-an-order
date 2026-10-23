@@ -53,7 +53,7 @@ namespace Order.Presentation
     public enum HudIconKind
     {
         Gear, Power, Mic, ChevronLeft, ChevronRight, Close, Lock, Back, Check, Grid,
-        Worker, Headquarters, Supply, Factory, Mineral, Gas, Move, Stop, Harvest, Pin, Base, Target, Armor, Menu, ClearPins, Train, Build,
+        Worker, Headquarters, Supply, Factory, Metal, Plasma, Move, Stop, Harvest, Pin, Base, Target, Armor, Menu, ClearPins, Train, Build,
         Assault, Rifleman, Gunship, Hold
     }
 
@@ -128,16 +128,17 @@ namespace Order.Presentation
                     Shape(p, P, .12f, .84f, .88f, .84f);
                     Shape(p, P, .16f, .84f, .16f, .46f, .34f, .58f, .34f, .46f, .52f, .58f, .52f, .46f, .7f, .58f, .7f, .2f, .84f, .2f, .84f, .84f);
                     break;
-                case HudIconKind.Mineral:
-                    Shape(p, P, .5f, .12f, .68f, .46f, .5f, .88f, .32f, .46f, .5f, .12f);
-                    Shape(p, P, .5f, .12f, .5f, .88f);
-                    Shape(p, P, .26f, .4f, .16f, .62f, .28f, .8f);
-                    Shape(p, P, .74f, .4f, .84f, .62f, .72f, .8f);
+                case HudIconKind.Metal:
+                    // An ingot: the front face, the top face and a glint.
+                    Shape(p, P, .12f, .8f, .88f, .8f, .76f, .52f, .24f, .52f, .12f, .8f);
+                    Shape(p, P, .24f, .52f, .36f, .32f, .64f, .32f, .76f, .52f);
+                    Shape(p, P, .3f, .68f, .52f, .68f);
                     break;
-                case HudIconKind.Gas:
-                    Shape(p, P, .3f, .38f, .3f, .84f, .7f, .84f, .7f, .38f, .3f, .38f);
-                    Shape(p, P, .3f, .56f, .7f, .56f);
-                    p.MoveTo(P(.36f, .26f)); p.BezierCurveTo(P(.42f, .12f), P(.52f, .3f), P(.6f, .14f));
+                case HudIconKind.Plasma:
+                    // A tongue of plasma with a hot core.
+                    p.MoveTo(P(.5f, .1f)); p.BezierCurveTo(P(.8f, .38f), P(.84f, .64f), P(.66f, .82f));
+                    p.BezierCurveTo(P(.58f, .9f), P(.42f, .9f), P(.34f, .82f)); p.BezierCurveTo(P(.16f, .64f), P(.2f, .38f), P(.5f, .1f));
+                    p.MoveTo(P(.5f, .48f)); p.BezierCurveTo(P(.62f, .6f), P(.6f, .76f), P(.5f, .78f)); p.BezierCurveTo(P(.4f, .76f), P(.38f, .6f), P(.5f, .48f));
                     break;
                 case HudIconKind.Move: Shape(p, P, .18f, .5f, .8f, .5f); Shape(p, P, .58f, .28f, .8f, .5f, .58f, .72f); break;
                 case HudIconKind.Stop:

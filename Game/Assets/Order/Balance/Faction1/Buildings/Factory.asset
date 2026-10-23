@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Order.Balance::Order.Balance.BuildingBalanceAsset
   DisplayName: "\u0426\u0435\u0445"
   Footprint: 3
-  Minerals: 150
-  Gas: 50
+  Metal: 150
+  Plasma: 50
   Supply: 0
   Health: 500
   Vision: 7

@@ -34,6 +34,7 @@ namespace Order.Presentation
         TempleScenery scenery;
         readonly List<Vector2> pins = new List<Vector2>();
         readonly List<GameObject> pinViews = new List<GameObject>();
+        readonly List<GameObject> siteGhosts = new List<GameObject>();
         Texture2D miniTexture;
         Color[] miniBase;
         GameObject worldRoot, footprint, focusRing, ghostModel, rallyFlag;
@@ -58,7 +59,7 @@ namespace Order.Presentation
         readonly Mesh[] buildingMeshes = new Mesh[3];
         Mesh ringMesh, beaconMesh, shadowMesh, selectionMesh, markerMesh, cargoMesh;
         Material buildingMaterial, enemyBuildingMaterial, ghostMaterial, footprintMaterial, selectedMaterial, neutralMaterial, constructionMaterial, beaconMaterial, unitMaterial, enemyMaterial, beamMaterial, shadowMaterial,
-            unitRingMaterial, hoverRingMaterial, enemyRingMaterial, enemyHoverMaterial, markerMaterial, crystalMaterial, gasCargoMaterial;
+            unitRingMaterial, hoverRingMaterial, enemyRingMaterial, enemyHoverMaterial, markerMaterial, oreMaterial, plasmaCargoMaterial;
         // Enemy team colour on models and the minimap.
         public static readonly Color EnemyColor = new Color(.92f, .16f, .12f);
         CombatEffects combat;
@@ -112,24 +113,25 @@ namespace Order.Presentation
             ghostMaterial=scenery.Prop("Placement ghost",m=>{m.SetFloat("_Opacity",.38f);m.SetFloat("_ZWrite",0);m.SetFloat("_Fog",0);m.renderQueue=3000;});
             unitMaterial=scenery.Prop("Units",m=>{m.SetFloat("_Fog",0);m.SetFloat("_Gloss",.45f);});
             enemyMaterial=scenery.Prop("Enemy units",m=>{m.SetFloat("_Fog",0);m.SetFloat("_Gloss",.45f);m.SetColor("_TeamColor",EnemyColor);m.SetFloat("_TeamOverride",1);});
-            crystalMaterial=scenery.Prop("Crystals",m=>{m.SetFloat("_Rim",1.1f);m.SetFloat("_Gloss",.9f);m.SetFloat("_Emission",2.2f);});
-            gasCargoMaterial=scenery.Prop("Gas cargo",m=>{m.SetColor("_BaseColor",new Color(.5f,1,.55f));m.SetFloat("_Emission",3);m.SetFloat("_Fog",0);});
-            var ventMaterial=scenery.Prop("Gas vents");
+            // Polished ore: glossy with a strong rim, glowing only along its seams.
+            oreMaterial=scenery.Prop("Metal ore",m=>{m.SetFloat("_Rim",.8f);m.SetFloat("_Gloss",1);m.SetFloat("_Emission",1.6f);});
+            plasmaCargoMaterial=scenery.Prop("Plasma cargo",m=>{m.SetColor("_BaseColor",new Color(1,.4f,.92f));m.SetFloat("_Emission",3);m.SetFloat("_Fog",0);});
+            var riftMaterial=scenery.Prop("Plasma rifts");
             footprintMaterial=scenery.Glow("Placement footprint",Color.green,false,m=>m.SetFloat("_Grid",1));
             selectedMaterial=scenery.Glow("Selection",new Color(.3f,1,.42f)*1.5f);
             neutralMaterial=scenery.Glow("Selection neutral",new Color(1,.92f,.6f)*1.2f);
             constructionMaterial=scenery.Glow("Construction",new Color(1,.62f,.22f)*1.4f);
             beaconMaterial=scenery.Glow("Beacon",new Color(1,.42f,.24f)*2,true,m=>m.SetFloat("_FadeHeight",7));
             ringMesh=scenery.Own(MatchModels.Ring(.84f));beaconMesh=scenery.Own(MatchModels.Beacon());
-            var minerals=new Mesh[4];for(int i=0;i<minerals.Length;i++)minerals[i]=scenery.Own(MatchModels.Minerals(17+i*31));
-            cargoMesh=minerals[0];
-            var vent=scenery.Own(MatchModels.Vent(5));
+            var veins=new Mesh[4];for(int i=0;i<veins.Length;i++)veins[i]=scenery.Own(MatchModels.MetalVein(17+i*31));
+            cargoMesh=veins[0];
+            var rift=scenery.Own(MatchModels.PlasmaRift(5));
             for(int i=0;i<Match.Map.Resources.Count;i++)
             {
                 var r=Match.Map.Resources[i];
-                var go=scenery.Model(r.Gas?"Gas vent":"Mineral crystals",r.Gas?vent:minerals[i%minerals.Length],r.Gas?ventMaterial:crystalMaterial,worldRoot.transform);
+                var go=scenery.Model(r.Plasma?"Plasma rift":"Metal vein",r.Plasma?rift:veins[i%veins.Length],r.Plasma?riftMaterial:oreMaterial,worldRoot.transform);
                 go.transform.position=new Vector3(r.X+.5f,Match.Map.Height(r.X,r.Z),r.Z+.5f);go.transform.rotation=Quaternion.Euler(0,i*67%360,0);
-                if(r.Gas)scenery.Steam(go.transform,new Vector3(0,.2f,0));
+                if(r.Plasma)scenery.PlasmaWisps(go.transform,new Vector3(0,.2f,0));
                 depositViews.Add(go);
             }
             beamMaterial=scenery.Glow("Mining beam",new Color(.45f,.9f,1)*3);
@@ -199,12 +201,17 @@ namespace Order.Presentation
                     {
                         if(Mode!=MatchMode.None)SetMode(MatchMode.None);
                         else if(!selection.Own&&selectedBuilding!=null&&selectedBuilding.Owner==PrototypeMatch.Player)SetRallyPoint(point);
-                        else{bool queue=Queueing();var enemy=EnemyAt(p);var structure=enemy==null?EnemyBuildingAt(p):null;if(enemy!=null&&selection.Own)AttackSelection(enemy,queue);else if(structure!=null&&selection.Own)AttackSelection(structure,queue);else MoveSelection(point,queue);}
+                        else
+                        {
+                            bool queue=Queueing();var enemy=EnemyAt(p);var structure=enemy==null?EnemyBuildingAt(p):null;var site=enemy==null&&structure==null&&!queue?SiteAt(p):null;
+                            if(enemy!=null&&selection.Own)AttackSelection(enemy,queue);else if(structure!=null&&selection.Own)AttackSelection(structure,queue);
+                            else if(site==null||!ResumeSelection(site))MoveSelection(point,queue);
+                        }
                     }
                     if(mouse.leftButton.wasPressedThisFrame)
                     {
                         if(keys!=null&&keys.altKey.isPressed)AddPin(point);
-                        else if(Mode==MatchMode.Build){if(Match.Build(hoverX,hoverZ,buildKind))SetMode(MatchMode.None);}
+                        else if(Mode==MatchMode.Build){if(Build(hoverX,hoverZ,buildKind))SetMode(MatchMode.None);}
                         else if(Mode==MatchMode.Attack)
                         {
                             // With Shift the order is queued and the attack mode stays on for the next target, as in StarCraft.
@@ -260,6 +267,7 @@ namespace Order.Presentation
                 ghostModel.SetActive(true);ghostModel.transform.position=footprint.transform.position;
             }
             else{if(ghostModel!=null)ghostModel.SetActive(false);ModeHint=Hint();}
+            ShowPlannedSites();
             for(int i=0;i<pinViews.Count;i++)pinViews[i].transform.localScale=new Vector3(1,1+.08f*Mathf.Sin(Time.time*4+i),1);
             AnimateBuildings();
             scenery.Tick(Time.deltaTime);
@@ -272,10 +280,10 @@ namespace Order.Presentation
             public Transform[] Legs, Rotors;
             public UnitModel Model;
             public LineRenderer Beam;
-            // A chunk of minerals or a gas capsule carried home.
+            // A chunk of ore or a plasma capsule carried home.
             public GameObject Cargo;
-            // Kick runs from 1 to 0 after a strike: a melee lunge or a recoil.
-            public float Phase, Height, Kick;
+            // Kick runs from 1 to 0 after a strike: a melee lunge or a recoil; Sparks counts down to the next welding spark.
+            public float Phase, Height, Kick, Sparks;
         }
         UnitView CreateUnitView(PrototypeUnit unit)
         {
@@ -324,11 +332,24 @@ namespace Order.Presentation
                 var target=unit.HarvestTarget;bool mining=unit.Mining&&target!=null&&target.Remaining>0;
                 var deposit=mining?new Vector3(target.X+.5f,Match.Map.Height(target.X,target.Z),target.Z+.5f):Vector3.zero;
                 if(mining){direction=deposit-position;direction.y=0;}
+                // A building worker faces its building and welds it with the same beam: into the footprint, at the top of
+                // the part that has risen so far, the end wandering along it like a welding torch.
+                var site=unit.Constructing;bool welding=!mining&&site!=null&&!unit.Moving&&PrototypeMatch.Gap(unit,site)<=PrototypeMatch.BuildReach;
+                var weld=Vector3.zero;
+                if(welding)
+                {
+                    float top=Match.Balance.Buildings[site.Kind].Height*site.Ready,cx=site.X+site.Width*.5f,cz=site.Z+site.Width*.5f;
+                    var edge=new Vector2(Mathf.Clamp(unit.X,site.X,site.X+site.Width),Mathf.Clamp(unit.Z,site.Z,site.Z+site.Width));
+                    var into=Vector2.Lerp(edge,new Vector2(cx,cz),.3f+.12f*Mathf.Sin(time*2.3f+unit.Id));
+                    var along=new Vector2(-(cz-edge.y),cx-edge.x).normalized*.35f*Mathf.Sin(time*1.7f+unit.Id*.7f);
+                    weld=new Vector3(into.x+along.x,Match.Map.Height(site.X,site.Z)+Mathf.Max(.18f,top*.9f),into.y+along.y);
+                    direction=new Vector3(cx-unit.X,0,cz-unit.Z);
+                }
                 // A moving unit faces its next waypoint, so shoves do not twist it; a shoved idle unit keeps its facing.
                 if(unit.Moving&&!mining)foreach(var next in unit.Route){direction=new Vector3(next.X-unit.X,0,next.Z-unit.Z);break;}
                 else if(unit.Target!=null)direction=new Vector3(unit.Target.X-unit.X,0,unit.Target.Z-unit.Z);
                 else if(unit.TargetBuilding!=null){var b=unit.TargetBuilding;direction=new Vector3(Mathf.Clamp(unit.X,b.X,b.X+b.Width)-unit.X,0,Mathf.Clamp(unit.Z,b.Z,b.Z+b.Width)-unit.Z);}
-                else if(!mining)direction=Vector3.zero;
+                else if(!mining&&!welding)direction=Vector3.zero;
                 if(direction.sqrMagnitude>.0001f)root.rotation=Quaternion.Slerp(root.rotation,Quaternion.LookRotation(direction),dt*10);
                 root.position=position;
                 // A shoved idle unit shuffles its legs too.
@@ -358,29 +379,32 @@ namespace Order.Presentation
                 }
                 for(int i=0;i<view.Rotors.Length;i++)view.Rotors[i].localRotation=Quaternion.Euler(0,time*1300*(i%2==0?1:-1)+i*40,0);
                 if(view.Shadow!=null)view.Shadow.position=new Vector3(unit.X,ground+.06f,unit.Z);
-                if(mining&&view.Beam==null)
+                bool beam=mining||welding;
+                if(beam&&view.Beam==null)
                 {
                     view.Beam=new GameObject("Mining beam",typeof(LineRenderer)).GetComponent<LineRenderer>();view.Beam.transform.SetParent(view.Root.transform);
                     view.Beam.sharedMaterial=beamMaterial;view.Beam.positionCount=2;view.Beam.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
                 }
-                if(view.Beam!=null)view.Beam.enabled=mining;
-                if(mining)
+                if(view.Beam!=null)view.Beam.enabled=beam;
+                if(beam)
                 {
-                    var jitter=new Vector3(Mathf.Sin(time*23),Mathf.Sin(time*31),Mathf.Cos(time*19))*.03f;
+                    var jitter=new Vector3(Mathf.Sin(time*23),Mathf.Sin(time*31),Mathf.Cos(time*19))*(mining?.03f:.09f);
                     view.Beam.SetPosition(0,view.Body.TransformPoint(new Vector3(0,.45f,.33f)));
-                    view.Beam.SetPosition(1,deposit+Vector3.up*(target.Gas?.25f:.55f)+jitter);
+                    view.Beam.SetPosition(1,mining?deposit+Vector3.up*(target.Plasma?.25f:.55f)+jitter:weld+jitter);
                     view.Beam.widthMultiplier=.05f+.015f*Mathf.Sin(time*40);
                 }
+                // Welding throws short sparks where the beam meets the building.
+                if(welding&&seen&&(view.Sparks-=dt)<=0){view.Sparks=.11f+.06f*Mathf.PerlinNoise(time*3,unit.Id);combat.Flash(weld,new Color(3,2.3f,1.2f),.2f,.09f,1.6f);}
                 bool carrying=unit.Carrying>0;
                 if(carrying&&view.Cargo==null)
                 {
-                    view.Cargo=scenery.Model("Cargo",cargoMesh,crystalMaterial,view.Body,false);
+                    view.Cargo=scenery.Model("Cargo",cargoMesh,oreMaterial,view.Body,false);
                     view.Cargo.transform.localPosition=new Vector3(0,.06f,.3f);view.Cargo.transform.localScale=Vector3.one*.22f;
                 }
                 if(view.Cargo!=null)
                 {
                     if(view.Cargo.activeSelf!=carrying)view.Cargo.SetActive(carrying);
-                    if(carrying)view.Cargo.GetComponent<MeshRenderer>().sharedMaterial=unit.CarriesGas?gasCargoMaterial:crystalMaterial;
+                    if(carrying)view.Cargo.GetComponent<MeshRenderer>().sharedMaterial=unit.CarriesPlasma?plasmaCargoMaterial:oreMaterial;
                 }
                 if(seen&&(unit.Health<unit.Stats.Health||selection.Contains(unit)||hovered.Contains(unit)))
                     combat.Bar(Top(unit,view)+Vector3.up*.22f,Mathf.Max(.62f,unit.Stats.Radius*2.3f),unit.Health/(float)unit.Stats.Health);
@@ -548,6 +572,12 @@ namespace Order.Presentation
         }
         PrototypeUnit EnemyAt(Vector2 screen){var unit=UnitAt(screen);return unit!=null&&unit.Owner!=PrototypeMatch.Player?unit:null;}
         PrototypeBuilding EnemyBuildingAt(Vector2 screen){var b=BuildingAt(screen);return b!=null&&b.Owner!=PrototypeMatch.Player&&Match.SeenBy(PrototypeMatch.Player,b)?b:null;}
+        // An own building under construction under the cursor: its model, or its footprint while it is still low.
+        PrototypeBuilding SiteAt(Vector2 screen)
+        {
+            var b=BuildingAt(screen)??Match.Buildings.Find(s=>hoverX>=s.X&&hoverX<s.X+s.Width&&hoverZ>=s.Z&&hoverZ<s.Z+s.Width);
+            return b!=null&&b.Owner==PrototypeMatch.Player&&b.Ready<1?b:null;
+        }
         // Points on a unit's model: the top (health bar), the middle (where hits land) and the muzzle of a ground unit.
         static Vector3 Top(PrototypeUnit unit,UnitView view)=>unit.Stats.Flying?view.Body.position+Vector3.up*.35f:view.Root.transform.position+Vector3.up*view.Model.Height*view.Model.Scale;
         static Vector3 Center(PrototypeUnit unit,UnitView view)=>unit.Stats.Flying?view.Body.position:view.Root.transform.position+Vector3.up*view.Model.Height*view.Model.Scale*.5f;
@@ -643,7 +673,7 @@ namespace Order.Presentation
         // The next worker with no order after the one selected now; the camera follows it.
         void SelectIdleWorker()
         {
-            var idle=Match.Units.FindAll(u=>u.Owner==PrototypeMatch.Player&&u.Kind==UnitKind.Worker&&!u.Moving&&u.HarvestTarget==null);
+            var idle=Match.Units.FindAll(u=>u.Owner==PrototypeMatch.Player&&u.Kind==UnitKind.Worker&&!u.Moving&&u.HarvestTarget==null&&u.Constructing==null&&u.SiteKind<0);
             if(idle.Count==0){Match.Message="Нет свободных рабочих.";hud?.Refresh();return;}
             int current=selection.Count==1?idle.IndexOf(selection.Units[0]):-1;
             selection.Set(new[]{idle[(current+1)%idle.Count]});selectedBuilding=null;selectedDeposit=null;
@@ -758,8 +788,24 @@ namespace Order.Presentation
                 // The full-sized model rises through the opaque terrain; it never scales up.
                 view.Model.transform.position=new Vector3(b.X+b.Width*.5f,ground-h*(1-b.Ready),b.Z+b.Width*.5f);
                 view.Ring.SetActive(b.Ready<1&&shown);
-                if(b.Ready<1){view.Ring.transform.position=new Vector3(b.X+b.Width*.5f,ground,b.Z+b.Width*.5f);view.Ring.transform.localScale=Vector3.one*b.Width*(.74f+.04f*Mathf.Sin(Time.time*6));}
+                // The ring pulses while a worker builds; a construction that waits for its worker keeps it still.
+                bool rising=b.Builder!=null&&PrototypeMatch.Gap(b.Builder,b)<=PrototypeMatch.BuildReach;
+                if(b.Ready<1){view.Ring.transform.position=new Vector3(b.X+b.Width*.5f,ground,b.Z+b.Width*.5f);view.Ring.transform.localScale=Vector3.one*b.Width*(rising?.74f+.04f*Mathf.Sin(Time.time*6):.7f);}
             }
+        }
+        // Sites the player's workers are walking to show as ghosts of their buildings until the building is placed.
+        void ShowPlannedSites()
+        {
+            int shown=0;
+            foreach(var u in Match.Units)
+            {
+                if(u.Owner!=PrototypeMatch.Player||u.SiteKind<0)continue;
+                if(siteGhosts.Count<=shown)siteGhosts.Add(scenery.Model("Planned site",BuildingMesh(u.SiteKind),ghostMaterial,worldRoot.transform,false));
+                var ghost=siteGhosts[shown++];ghost.SetActive(true);ghost.GetComponent<MeshFilter>().sharedMesh=BuildingMesh(u.SiteKind);
+                int w=Match.Balance.Buildings[u.SiteKind].Width;
+                ghost.transform.position=new Vector3(u.SiteX+w*.5f,Match.Map.Height(u.SiteX,u.SiteZ)+.03f,u.SiteZ+w*.5f);
+            }
+            for(int i=shown;i<siteGhosts.Count;i++)siteGhosts[i].SetActive(false);
         }
         // Views appear for new buildings and disappear with destroyed ones.
         void SyncBuildings()
@@ -793,8 +839,8 @@ namespace Order.Presentation
             for(int i=0;i<depositViews.Count;i++)
             {
                 var r=Match.Map.Resources[i];depositViews[i].SetActive(Match.Explored[r.X,r.Z]&&r.Remaining>0);
-                // Crystals shrink as they are mined out.
-                if(!r.Gas)depositViews[i].transform.localScale=new Vector3(1,Mathf.Lerp(.4f,1,r.Remaining/(float)Mathf.Max(1,Match.Balance.MineralDeposit)),1);
+                // Veins shrink as they are mined out.
+                if(!r.Plasma)depositViews[i].transform.localScale=new Vector3(1,Mathf.Lerp(.4f,1,r.Remaining/(float)Mathf.Max(1,Match.Balance.MetalDeposit)),1);
             }
             SyncBuildings();
             AnimateBuildings();
@@ -883,6 +929,55 @@ namespace Order.Presentation
             hud?.Refresh();
             return any;
         }
+        // Construction, as in StarCraft: the selected worker nearest the site goes to build it; with no worker selected, the
+        // nearest free one does (an idle one first, then a metal miner with empty hands).
+        public int BuildOrders{get;private set;}
+        public bool Build(int x,int z,int kind)
+        {
+            if(kind<0||kind>1)return false;
+            int w=Match.Balance.Buildings[kind].Width;float cx=x+w*.5f,cz=z+w*.5f;
+            PrototypeUnit worker=null;float best=float.MaxValue;
+            foreach(var u in selection.Orderable)
+            {
+                if(u.Kind!=UnitKind.Worker)continue;
+                float d=(u.X-cx)*(u.X-cx)+(u.Z-cz)*(u.Z-cz);
+                if(d<best){best=d;worker=u;}
+            }
+            if(worker==null)foreach(var u in Match.Units)
+            {
+                if(u.Owner!=PrototypeMatch.Player||u.Kind!=UnitKind.Worker||u.Constructing!=null||u.SiteKind>=0)continue;
+                float d=(u.X-cx)*(u.X-cx)+(u.Z-cz)*(u.Z-cz)+(u.HarvestTarget==null&&!u.Moving?0:u.Carrying>0||(u.HarvestTarget!=null&&u.HarvestTarget.Plasma)?20000:10000);
+                if(d<best){best=d;worker=u;}
+            }
+            if(worker==null){Match.Message="Нет рабочих.";hud?.Refresh();return false;}
+            bool ok=Match.Build(worker,x,z,kind);
+            if(ok){BuildOrders++;Mark(new Vector2(cx,cz),true);}
+            hud?.Refresh();return ok;
+        }
+        // Right click on an own building under construction: the nearest selected worker carries on with it, the rest of the
+        // selection walks up to it. False when no selected worker can take it, so the click is a plain move.
+        bool ResumeSelection(PrototypeBuilding site)
+        {
+            if(site.Builder!=null&&!selection.Contains(site.Builder))return false;
+            PrototypeUnit worker=null;float best=float.MaxValue,cx=site.X+site.Width*.5f,cz=site.Z+site.Width*.5f;
+            foreach(var u in selection.Orderable)
+            {
+                if(u.Kind!=UnitKind.Worker)continue;
+                float d=(u.X-cx)*(u.X-cx)+(u.Z-cz)*(u.Z-cz);
+                if(d<best){best=d;worker=u;}
+            }
+            if(worker==null||!Match.Resume(worker,site))return false;
+            var rest=new List<PrototypeUnit>(selection.Orderable);rest.Remove(worker);
+            if(rest.Count>0){var message=Match.Message;Match.MoveGroup(rest,cx,cz);Match.Message=message;}
+            Mark(new Vector2(cx,cz),true);hud?.Refresh();
+            return true;
+        }
+        public bool CancelConstruction()
+        {
+            bool ok=selectedBuilding!=null&&selectedBuilding.Owner==PrototypeMatch.Player&&Match.CancelConstruction(selectedBuilding);
+            if(ok)selectedBuilding=null;
+            hud?.Refresh();return ok;
+        }
         // Production in the selected building; the queue and rally point live in the simulation.
         public bool Train(UnitKind kind){bool ok=selectedBuilding!=null&&Match.Train(selectedBuilding,kind);hud?.Refresh();return ok;}
         public void CancelTraining(int index){if(selectedBuilding!=null)Match.CancelTraining(selectedBuilding,index);hud?.Refresh();}
@@ -919,7 +1014,7 @@ namespace Order.Presentation
         public void OrderTo(Vector2 point)
         {
             if(Mode==MatchMode.Ping){AddPin(point);return;}
-            if(Mode==MatchMode.Build){if(Match.Build((int)point.x,(int)point.y,buildKind))SetMode(MatchMode.None);return;}
+            if(Mode==MatchMode.Build){if(Build((int)point.x,(int)point.y,buildKind))SetMode(MatchMode.None);return;}
             if(Mode==MatchMode.Attack){bool queue=Queueing();AttackMoveSelection(point,queue);if(!queue)SetMode(MatchMode.None);return;}
             // With a building selected, a plain order from the minimap sets its rally point.
             if(Mode==MatchMode.Rally||(Mode==MatchMode.None&&!selection.Own&&selectedBuilding!=null&&selectedBuilding.Owner==PrototypeMatch.Player)){SetRallyPoint(point);SetMode(MatchMode.None);return;}
@@ -987,7 +1082,7 @@ namespace Order.Presentation
             if(worldRoot!=null){worldRoot.SetActive(false);Destroy(worldRoot);worldRoot=null;}
             scenery?.Dispose();scenery=null;
             if(miniTexture!=null){Destroy(miniTexture);miniTexture=null;}
-            buildingViews.Clear();depositViews.Clear();pinViews.Clear();pins.Clear();Match=null;
+            buildingViews.Clear();depositViews.Clear();pinViews.Clear();siteGhosts.Clear();pins.Clear();Match=null;
             combat?.Dispose();combat=null;strikes.Clear();deaths.Clear();buildingStrikes.Clear();ruins.Clear();waypointLines.Clear();waypointDots.Clear();alerts.Clear();
             unitViews.Clear();unitModels.Clear();selectionRings.Clear();hoverRings.Clear();hovered.Clear();markers.Clear();
             selection=new UnitSelection();lastClickUnit=null;lastGroup=-1;pressing=dragging=false;

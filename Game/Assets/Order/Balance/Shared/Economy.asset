@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 967e4221028922a47b5e4da737c465d5, type: 3}
   m_Name: Economy
   m_EditorClassIdentifier: Order.Balance::Order.Balance.EconomyBalanceAsset
-  StartingMinerals: 500
-  StartingGas: 100
-  MineralDeposit: 1500
-  GasDeposit: 2500
+  StartingMetal: 500
+  StartingPlasma: 100
+  MetalDeposit: 1500
+  PlasmaDeposit: 2500

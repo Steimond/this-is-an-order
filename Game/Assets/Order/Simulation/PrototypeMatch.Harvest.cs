@@ -15,8 +15,8 @@ namespace Order.Simulation
         const float DropReach = .7f, NeighbourReach = 3.2f, SwitchReach = 9;
         readonly Dictionary<ResourceDeposit, PrototypeUnit> miners = new Dictionary<ResourceDeposit, PrototypeUnit>();
         // Everything delivered by workers in this match: the income, without refunds or cheats.
-        public int MineralsHarvested { get; private set; }
-        public int GasHarvested { get; private set; }
+        public int MetalHarvested { get; private set; }
+        public int PlasmaHarvested { get; private set; }
 
         void TickHarvest(float dt)
         {
@@ -32,8 +32,8 @@ namespace Order.Simulation
                     var drop = DropOff(u);
                     if (drop == null) { StopHarvest(u); continue; }
                     if (Gap(u, drop) > DropReach) { Haul(u); continue; }
-                    if (u.CarriesGas) gasStock[u.Owner] += u.Carrying; else mineralStock[u.Owner] += u.Carrying;
-                    if (u.Owner == Player) { if (u.CarriesGas) GasHarvested += u.Carrying; else MineralsHarvested += u.Carrying; }
+                    if (u.CarriesPlasma) plasmaStock[u.Owner] += u.Carrying; else metalStock[u.Owner] += u.Carrying;
+                    if (u.Owner == Player) { if (u.CarriesPlasma) PlasmaHarvested += u.Carrying; else MetalHarvested += u.Carrying; }
                     u.Carrying = 0; u.delivering = false;
                     GatherFrom(u, deposit.Remaining > 0 ? deposit : Nearby(deposit, u, SwitchReach, false));
                     continue;
@@ -56,7 +56,7 @@ namespace Order.Simulation
                 deposit.Remaining -= amount;
                 // A depleted deposit no longer blocks movement.
                 if (deposit.Remaining == 0) NavigationChanged(deposit.X, deposit.Z, 1);
-                u.Carrying = amount; u.CarriesGas = deposit.Gas;
+                u.Carrying = amount; u.CarriesPlasma = deposit.Plasma;
                 if (!Haul(u)) StopHarvest(u);
             }
         }
@@ -107,7 +107,7 @@ namespace Order.Simulation
             ResourceDeposit best = null; float bestDistance = reach * reach;
             foreach (var r in Map.Resources)
             {
-                if (r == from || r.Gas != from.Gas || r.Remaining <= 0 || (u.Owner == Player && !Explored[r.X, r.Z])) continue;
+                if (r == from || r.Plasma != from.Plasma || r.Remaining <= 0 || (u.Owner == Player && !Explored[r.X, r.Z])) continue;
                 if (free && miners.TryGetValue(r, out var other) && Holds(other, r)) continue;
                 float dx = r.X - from.X, dz = r.Z - from.Z, d = dx * dx + dz * dz;
                 if (d <= bestDistance) { bestDistance = d; best = r; }

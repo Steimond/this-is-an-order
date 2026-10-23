@@ -402,6 +402,7 @@ namespace Order.Simulation
                 float r = u.Stats.Radius; u.X = Math.Max(r, Math.Min(64 - r, u.X)); u.Z = Math.Max(r, Math.Min(64 - r, u.Z));
             }
             foreach (var u in Units) { UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
+            TickConstruction(dt);
             TickHarvest(dt);
             RemoveDead();
             RunQueues();
@@ -488,7 +489,7 @@ namespace Order.Simulation
         }
         // Overlapping units push each other apart. A moving unit shoves an idle ally out of the way, unless that ally has
         // already arrived at the same point: then the mover stops beside it. Two moving units also side-step, so they pass.
-        // A standing unit that holds position, is shooting, or belongs to the other side is not pushed at all.
+        // A standing unit that holds position, builds, is shooting, or belongs to the other side is not pushed at all.
         void Separate()
         {
             foreach (var u in Units)
@@ -548,7 +549,7 @@ namespace Order.Simulation
             }
         }
         static bool Firm(PrototypeUnit u, PrototypeUnit other) =>
-            !u.Moving && (u.Order == UnitOrder.Hold || u.Owner != other.Owner || (u.engaged && (u.Target != null || u.TargetBuilding != null)));
+            !u.Moving && (u.Order == UnitOrder.Hold || u.Constructing != null || u.Owner != other.Owner || (u.engaged && (u.Target != null || u.TargetBuilding != null)));
         // Only the other unit gives way; a mover pressing into a firm unit also slips sideways, so it goes round it.
         // (nx, nz) points from the firm unit to the one that gives way. A ground unit slips to the side that is free of walls and
         // standing units, so a line of units hitting a wall is passed on the open side instead of being pressed into the crowd.

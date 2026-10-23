@@ -6,32 +6,32 @@ namespace Order.Tests.EditMode
 {
     public sealed class HarvestTests
     {
-        static ResourceDeposit Mineral(PrototypeMatch match,int x)=>match.Map.Resources.Find(r=>!r.Gas&&r.X==x&&r.Z==5);
+        static ResourceDeposit Metal(PrototypeMatch match,int x)=>match.Map.Resources.Find(r=>!r.Plasma&&r.X==x&&r.Z==5);
 
         [Test] public void WorkerCarriesEachLoadToTheCommandNode()
         {
-            var match=new PrototypeMatch();var worker=match.Units[0];var deposit=Mineral(match,11);int start=match.Minerals;
+            var match=new PrototypeMatch();var worker=match.Units[0];var deposit=Metal(match,11);int start=match.Metal;
             Assert.That(match.Move(worker,deposit.X+.5f,deposit.Z+.5f),Is.True);
             bool carried=false,mined=false;int deliveries=0,last=start;
             for(float t=0;t<20;t+=.05f)
             {
                 match.Tick(.05f);
                 mined|=worker.Mining;
-                if(worker.Carrying>0){carried=true;Assert.That(match.Minerals,Is.EqualTo(last),"The load counts only when delivered");}
-                if(match.Minerals!=last){Assert.That(match.Minerals-last,Is.EqualTo(worker.Stats.HarvestAmount));deliveries++;last=match.Minerals;
+                if(worker.Carrying>0){carried=true;Assert.That(match.Metal,Is.EqualTo(last),"The load counts only when delivered");}
+                if(match.Metal!=last){Assert.That(match.Metal-last,Is.EqualTo(worker.Stats.HarvestAmount));deliveries++;last=match.Metal;
                     var hq=match.Buildings[0];Assert.That(PrototypeMatch.Gap(worker,hq),Is.LessThan(.8f),"Delivered at the command node");}
             }
             Assert.That(mined,Is.True);Assert.That(carried,Is.True);
             Assert.That(deliveries,Is.InRange(3,6),"Trips of about four seconds");
-            Assert.That(deposit.Remaining,Is.EqualTo(1500-(match.Minerals-start)-worker.Carrying));
+            Assert.That(deposit.Remaining,Is.EqualTo(1500-(match.Metal-start)-worker.Carrying));
         }
         [Test] public void OneWorkerMinesADepositAtATimeAndOthersMoveToFreeNeighbours()
         {
-            var match=new PrototypeMatch();var hq=match.Buildings[0];match.Minerals=500;
+            var match=new PrototypeMatch();var hq=match.Buildings[0];match.Metal=500;
             for(int i=0;i<2;i++)Assert.That(match.Train(hq,UnitKind.Worker),Is.True);
             for(float t=0;t<25;t+=.05f)match.Tick(.05f);
             Assert.That(match.Units.Count,Is.EqualTo(3));
-            var deposit=Mineral(match,11);
+            var deposit=Metal(match,11);
             foreach(var w in match.Units)Assert.That(match.Move(w,deposit.X+.5f,deposit.Z+.5f),Is.True);
             int maxMining=0;
             for(float t=0;t<20;t+=.05f)
@@ -46,19 +46,19 @@ namespace Order.Tests.EditMode
         }
         [Test] public void DepletedDepositSendsTheWorkerToTheNextOne()
         {
-            var match=new PrototypeMatch();var worker=match.Units[0];var deposit=Mineral(match,11);deposit.Remaining=5;
+            var match=new PrototypeMatch();var worker=match.Units[0];var deposit=Metal(match,11);deposit.Remaining=5;
             Assert.That(match.Move(worker,deposit.X+.5f,deposit.Z+.5f),Is.True);
             for(float t=0;t<12;t+=.05f)match.Tick(.05f);
             Assert.That(deposit.Remaining,Is.Zero);Assert.That(match.Map.ResourceAt(11,5),Is.Null);
-            Assert.That(worker.HarvestTarget,Is.Not.Null);Assert.That(worker.HarvestTarget,Is.Not.SameAs(deposit));Assert.That(worker.HarvestTarget.Gas,Is.False);
+            Assert.That(worker.HarvestTarget,Is.Not.Null);Assert.That(worker.HarvestTarget,Is.Not.SameAs(deposit));Assert.That(worker.HarvestTarget.Plasma,Is.False);
         }
         [Test] public void WithoutACommandNodeTheWorkerKeepsItsLoad()
         {
-            var match=new PrototypeMatch();var worker=match.Units[0];var deposit=Mineral(match,11);
+            var match=new PrototypeMatch();var worker=match.Units[0];var deposit=Metal(match,11);
             match.Buildings[0].Health=0;
             Assert.That(match.Move(worker,deposit.X+.5f,deposit.Z+.5f),Is.True);
             for(float t=0;t<10;t+=.05f)match.Tick(.05f);
-            Assert.That(worker.Carrying,Is.EqualTo(worker.Stats.HarvestAmount));Assert.That(worker.HarvestTarget,Is.Null);Assert.That(match.Minerals,Is.EqualTo(500));
+            Assert.That(worker.Carrying,Is.EqualTo(worker.Stats.HarvestAmount));Assert.That(worker.HarvestTarget,Is.Null);Assert.That(match.Metal,Is.EqualTo(500));
         }
     }
 }

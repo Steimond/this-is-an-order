@@ -14,10 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Order.Balance::Order.Balance.BuildingBalanceAsset
   DisplayName: "\u0423\u0437\u0435\u043B \u0441\u043D\u0430\u0431\u0436\u0435\u043D\u0438\u044F"
   Footprint: 2
-  Minerals: 100
-  Gas: 0
+  Metal: 100
+  Plasma: 0
   Supply: 8
   Health: 500
   Vision: 7
   ConstructionSeconds: 5
   ModelHeight: 1.4
+  Trains: 

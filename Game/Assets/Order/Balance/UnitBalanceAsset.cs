@@ -1,5 +1,6 @@
 using Order.Content;
 using UnityEngine;
+using UnityEngine.Serialization;
 namespace Order.Balance
 {
     [CreateAssetMenu(menuName="Order/Balance/Unit")]
@@ -19,11 +20,12 @@ namespace Order.Balance
         [Min(.1f)] public float AttackCooldown=1;
         public bool HitsGround=true, HitsAir;
         [Header("Производство")]
-        [Min(0)] public int Minerals=50, Gas;
+        [Min(0), FormerlySerializedAs("Minerals")] public int Metal=50;
+        [Min(0), FormerlySerializedAs("Gas")] public int Plasma;
         [Min(.1f)] public float TrainSeconds=12;
         public UnitStats Snapshot()=>new UnitStats{Name=DisplayName,Speed=Mathf.Max(.1f,MoveSpeed),Radius=Mathf.Clamp(CollisionRadius,.1f,.45f),Health=Mathf.Max(1,Health),
             Vision=Mathf.Clamp(Vision,1,64),HarvestAmount=Mathf.Max(0,HarvestAmount),HarvestInterval=Mathf.Max(.1f,HarvestInterval),Supply=Mathf.Max(0,Supply),Flying=Flying,
             Damage=Mathf.Max(0,Damage),AttackRange=Mathf.Max(0,AttackRange),AttackCooldown=Mathf.Max(.1f,AttackCooldown),HitsGround=HitsGround,HitsAir=HitsAir,
-            Minerals=Mathf.Max(0,Minerals),Gas=Mathf.Max(0,Gas),TrainSeconds=Mathf.Max(.1f,TrainSeconds)};
+            Metal=Mathf.Max(0,Metal),Plasma=Mathf.Max(0,Plasma),TrainSeconds=Mathf.Max(.1f,TrainSeconds)};
     }
 }

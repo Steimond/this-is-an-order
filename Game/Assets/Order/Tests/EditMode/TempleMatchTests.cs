@@ -16,7 +16,7 @@ namespace Order.Tests.EditMode
         }
         [Test] public void SmoothedRoutePreservesCollisionRadiusAroundBuildings()
         {
-            var match=new PrototypeMatch();var worker=match.Units[0];float radius=worker.Stats.Radius;Assert.That(match.Build(15,14,0),Is.True);
+            var match=new PrototypeMatch();var worker=match.Units[0];float radius=worker.Stats.Radius;Sites.Place(match,15,14,0);
             Assert.That(match.CanTravel(worker.X,worker.Z,18.7f,17.2f,radius),Is.False);
             Assert.That(match.Move(worker,18.7f,17.2f),Is.True);
             for(int i=0;i<150;i++){float x=worker.X,z=worker.Z;match.Tick(.05f);Assert.That(match.CanTravel(x,z,worker.X,worker.Z,radius),Is.True);}
@@ -24,15 +24,15 @@ namespace Order.Tests.EditMode
         }
         [Test] public void BalanceControlsEconomyMovementAndConstructionDuration()
         {
-            var balance=new MatchBalance{StartingMinerals=999,StartingGas=777,MineralDeposit=111,GasDeposit=333};
-            balance.Worker.Speed=2;balance.Buildings[0].BuildSeconds=12;balance.Buildings[0].Minerals=37;
+            var balance=new MatchBalance{StartingMetal=999,StartingPlasma=777,MetalDeposit=111,PlasmaDeposit=333};
+            balance.Worker.Speed=2;balance.Buildings[0].BuildSeconds=12;balance.Buildings[0].Metal=37;
             var match=new PrototypeMatch(balance);var worker=match.Units[0];
-            Assert.That(match.Gas,Is.EqualTo(777));Assert.That(match.Map.ResourceAt(5,5).Remaining,Is.EqualTo(111));
-            Assert.That(match.Build(15,14,0),Is.True);Assert.That(match.Minerals,Is.EqualTo(962));
-            match.Tick(6);Assert.That(match.Buildings[1].Ready,Is.EqualTo(.5f));
-            match.Tick(5.9f);Assert.That(match.Buildings[1].Ready,Is.LessThan(1));
-            match.Tick(.1f);Assert.That(match.Buildings[1].Ready,Is.EqualTo(1).Within(.0001f));
-            Assert.That(match.Move(worker,18.5f,13.5f),Is.True);match.Tick(.5f);Assert.That(worker.X,Is.EqualTo(14.5f).Within(.0001f));
+            Assert.That(match.Plasma,Is.EqualTo(777));Assert.That(match.Map.ResourceAt(5,5).Remaining,Is.EqualTo(111));
+            var node=Sites.Place(match,15,14,0);Assert.That(match.Metal,Is.EqualTo(962));
+            match.Tick(6);Assert.That(node.Ready,Is.EqualTo(.5f));
+            match.Tick(5.9f);Assert.That(node.Ready,Is.LessThan(1));
+            match.Tick(.1f);Assert.That(node.Ready,Is.EqualTo(1).Within(.0001f));
+            float x=worker.X;Assert.That(match.Move(worker,x-2,worker.Z),Is.True);match.Tick(.5f);Assert.That(worker.X,Is.EqualTo(x-1).Within(.0001f));
         }
         [Test] public void FourStartsHaveEqualResourceBudgets()
         {
@@ -59,11 +59,11 @@ namespace Order.Tests.EditMode
             Assert.That(match.CanBuild(10,10,0,out _),Is.False);
             Assert.That(match.CanBuild(50,50,0,out _),Is.False);
             Assert.That(match.CanBuild(20,10,0,out _),Is.False);
-            Assert.That(match.Build(15,14,0),Is.True);
-            Assert.That(match.Minerals,Is.EqualTo(400));
-            Assert.That(match.Build(15,14,0),Is.False);Assert.That(match.Minerals,Is.EqualTo(400));
-            match.Tick(5);Assert.That(match.Buildings[1].Ready,Is.EqualTo(1));
-            match.Minerals=0;Assert.That(match.CanBuild(17,14,0,out _),Is.False);
+            var node=Sites.Place(match,15,14,0);
+            Assert.That(match.Metal,Is.EqualTo(400));
+            Assert.That(match.Build(match.Units[0],15,14,0),Is.False);Assert.That(match.Metal,Is.EqualTo(400));
+            match.Tick(5);Assert.That(node.Ready,Is.EqualTo(1));
+            match.Metal=0;Assert.That(match.CanBuild(17,14,0,out _),Is.False);
         }
         [Test] public void ExploredCellsRemainRememberedAndHighGroundBlocksLowGroundVision()
         {
@@ -75,22 +75,22 @@ namespace Order.Tests.EditMode
         [Test] public void ResourceOrderHarvestsOnlyAfterArrivalAndDepletesDeposit()
         {
             var match=new PrototypeMatch();Assert.That(match.Move(match.Units[0],9,5),Is.True);
-            int before=match.Minerals;match.Tick(.01f);Assert.That(match.Minerals,Is.EqualTo(before));
+            int before=match.Metal;match.Tick(.01f);Assert.That(match.Metal,Is.EqualTo(before));
             for(int i=0;i<100;i++)match.Tick(.1f);
-            Assert.That(match.Minerals,Is.GreaterThan(before));Assert.That(match.Map.ResourceAt(9,5).Remaining,Is.LessThan(1500));
+            Assert.That(match.Metal,Is.GreaterThan(before));Assert.That(match.Map.ResourceAt(9,5).Remaining,Is.LessThan(1500));
         }
-        [Test] public void GasCannotBeHarvestedPastRemainingAmount()
+        [Test] public void PlasmaCannotBeHarvestedPastRemainingAmount()
         {
-            var match=new PrototypeMatch();var gas=match.Map.ResourceAt(5,10);gas.Remaining=3;
+            var match=new PrototypeMatch();var plasma=match.Map.ResourceAt(5,10);plasma.Remaining=3;
             Assert.That(match.Move(match.Units[0],5,10),Is.True);for(int i=0;i<100;i++)match.Tick(.1f);
-            Assert.That(match.Gas,Is.EqualTo(103));Assert.That(gas.Remaining,Is.Zero);
+            Assert.That(match.Plasma,Is.EqualTo(103));Assert.That(plasma.Remaining,Is.Zero);
         }
         [Test] public void FactoryChargesBothResourcesAndBoundaryPlacementFails()
         {
-            var match=new PrototypeMatch();Assert.That(match.Build(15,14,1),Is.True);
-            Assert.That(match.Minerals,Is.EqualTo(350));Assert.That(match.Gas,Is.EqualTo(50));
-            Assert.That(match.Build(63,63,1),Is.False);Assert.That(match.Build(-1,12,0),Is.False);
-            Assert.That(match.Minerals,Is.EqualTo(350));Assert.That(match.Move(match.Units[0],-1,0),Is.False);
+            var match=new PrototypeMatch();var worker=match.Units[0];Sites.Place(match,15,14,1);
+            Assert.That(match.Metal,Is.EqualTo(350));Assert.That(match.Plasma,Is.EqualTo(50));
+            Assert.That(match.Build(worker,63,63,1),Is.False);Assert.That(match.Build(worker,-1,12,0),Is.False);
+            Assert.That(match.Metal,Is.EqualTo(350));Assert.That(match.Move(match.Units[0],-1,0),Is.False);
         }
         [Test] public void TestSquadHasEveryKindOnFreeGroundWithinSupply()
         {
@@ -114,21 +114,26 @@ namespace Order.Tests.EditMode
             Assert.That(air.X,Is.EqualTo(30.5f).Within(.01f));Assert.That(melee.X,Is.EqualTo(30.5f).Within(.01f));
             Assert.That(match.Visible[30,30],Is.True);
         }
-        [Test] public void OnlyWorkersHarvestAndGroundUnitsBlockConstruction()
+        [Test] public void OnlyWorkersHarvestAndOnlyEnemyGroundUnitsBlockConstruction()
         {
             var match=new PrototypeMatch();match.AddTestSquad();
             var ranged=match.Units.Find(u=>u.Kind==UnitKind.Ranged);
             Assert.That(match.Move(ranged,9,5),Is.True);Assert.That(ranged.HarvestTarget,Is.Null);
-            int minerals=match.Minerals;for(int i=0;i<100;i++)match.Tick(.1f);Assert.That(match.Minerals,Is.EqualTo(minerals));
-            var melee=match.Units.Find(u=>u.Kind==UnitKind.Melee);var air=match.Units.Find(u=>u.Kind==UnitKind.Air);
-            Assert.That(match.CanBuild((int)melee.X,(int)melee.Z,0,out var reason),Is.False);Assert.That(reason,Is.EqualTo("Здесь стоит юнит"));
-            Assert.That(match.CanBuild((int)air.X,(int)air.Z,0,out _),Is.True);
+            int metal=match.Metal;for(int i=0;i<100;i++)match.Tick(.1f);Assert.That(match.Metal,Is.EqualTo(metal));
+            var melee=match.Units.Find(u=>u.Kind==UnitKind.Melee);
+            Assert.That(match.CanBuild((int)melee.X,(int)melee.Z,0,out _),Is.True,"Own units step off a site");
+            match.Spawn(UnitKind.Melee,16.5f,15.5f,PrototypeMatch.Enemy);match.Spawn(UnitKind.Air,16.5f,8.5f,PrototypeMatch.Enemy);match.UpdateVision();
+            Assert.That(match.CanBuild(16,15,0,out var reason),Is.False);Assert.That(reason,Is.EqualTo("Здесь стоит юнит противника"));
+            Assert.That(match.CanBuild(16,8,0,out _),Is.True,"Air units do not block");
         }
         [Test] public void NewBuildingReroutesUnitsWalkingThroughIt()
         {
             var match=new PrototypeMatch();var worker=match.Units[0];
             Assert.That(match.Move(worker,13.5f,18.5f),Is.True);Assert.That(worker.WaypointCount,Is.EqualTo(1));
-            Assert.That(match.Build(13,16,0),Is.True);Assert.That(worker.WaypointCount,Is.GreaterThan(1));
+            // A second worker right by the site places the building on the next step, across the first one's way.
+            var builder=match.Spawn(UnitKind.Worker,12.6f,17);
+            Assert.That(match.Build(builder,13,16,0),Is.True);match.Tick(.05f);
+            Assert.That(match.Buildings.Exists(b=>b.X==13&&b.Z==16),Is.True);Assert.That(worker.WaypointCount,Is.GreaterThan(1));
             for(int i=0;i<100;i++){float x=worker.X,z=worker.Z;match.Tick(.05f);Assert.That(match.CanTravel(x,z,worker.X,worker.Z,worker.Stats.Radius),Is.True);}
             Assert.That(worker.Z,Is.EqualTo(18.5f).Within(.01f));
         }

@@ -5,8 +5,9 @@ using Order.Content;
 namespace Order.Simulation
 {
     // Enemy bot of the test ground, an easy StarCraft-like opponent. Once a second it:
-    // - keeps its workers mining (two on gas once it has eight) and trains more up to a dozen;
-    // - adds a supply node before supply runs out and, after its first wave, a second factory once it has minerals to spare;
+    // - keeps its workers mining (two on plasma once it has eight) and trains more up to a dozen;
+    // - adds a supply node before supply runs out and, after its first wave, a second factory once it has metal to spare;
+    //   a worker builds them, by the player's rules, and a building left without its worker gets another one;
     // - keeps its factories training a mixed army, gathered at the top of its ramp;
     // - meets player units that come near its buildings with the army at home;
     // - from the fifth minute sends the army at the player's buildings each time it has grown to the next wave's size;
@@ -28,12 +29,8 @@ namespace Order.Simulation
         {
             BotEnabled = true;
             var hq = BotHeadquarters();
-            if (hq != null && !Units.Exists(u => u.Owner == Enemy && u.Kind == UnitKind.Worker))
-            {
-                var message = Message;
-                SpawnSquad(UnitKind.Worker, 4, hq.X + hq.Width * .5f, hq.Z - 1.5f, Enemy);
-                Message = message;
-            }
+            // Starting workers are part of the bot's base, not a cheat.
+            if (hq != null && !Units.Exists(u => u.Owner == Enemy && u.Kind == UnitKind.Worker)) SpawnAround(UnitKind.Worker, 4, hq.X + hq.Width * .5f, hq.Z - 1.5f, Enemy);
         }
         public bool ToggleBot() { if (BotEnabled) BotEnabled = false; else StartBot(); return Cheat(BotEnabled, "бот противника"); }
         // Cheat: the next think sends the army at the player whatever its size and the time.
@@ -58,25 +55,25 @@ namespace Order.Simulation
             var hq = BotHeadquarters();
             if (hq == null || hq.Ready < 1) return;
             var workers = Units.FindAll(u => u.Owner == Enemy && u.Kind == UnitKind.Worker);
-            int onGas = workers.FindAll(w => w.HarvestTarget != null && w.HarvestTarget.Gas).Count, wantGas = workers.Count >= 8 ? 2 : 0;
+            int onPlasma = workers.FindAll(w => w.HarvestTarget != null && w.HarvestTarget.Plasma).Count, wantPlasma = workers.Count >= 8 ? 2 : 0;
             foreach (var w in workers)
             {
-                if (w.HarvestTarget != null || w.Moving) continue;
-                bool gas = onGas < wantGas;
-                var deposit = BotDeposit(hq, gas, workers) ?? BotDeposit(hq, !gas, workers);
+                if (w.HarvestTarget != null || w.Moving || Busy(w)) continue;
+                bool plasma = onPlasma < wantPlasma;
+                var deposit = BotDeposit(hq, plasma, workers) ?? BotDeposit(hq, !plasma, workers);
                 if (deposit == null) continue;
                 Move(w, deposit.X + .5f, deposit.Z + .5f);
-                if (w.HarvestTarget != null && w.HarvestTarget.Gas) onGas++;
+                if (w.HarvestTarget != null && w.HarvestTarget.Plasma) onPlasma++;
             }
-            // Busy miners are moved to gas too, between trips.
-            while (onGas < wantGas)
+            // Busy miners are moved to plasma too, between trips.
+            while (onPlasma < wantPlasma)
             {
-                var gas = BotDeposit(hq, true, workers);
-                var miner = workers.Find(w => w.HarvestTarget != null && !w.HarvestTarget.Gas && w.Carrying == 0);
-                if (gas == null || miner == null) break;
-                Move(miner, gas.X + .5f, gas.Z + .5f);
-                if (miner.HarvestTarget != gas) break;
-                onGas++;
+                var plasma = BotDeposit(hq, true, workers);
+                var miner = workers.Find(w => w.HarvestTarget != null && !w.HarvestTarget.Plasma && w.Carrying == 0);
+                if (plasma == null || miner == null) break;
+                Move(miner, plasma.X + .5f, plasma.Z + .5f);
+                if (miner.HarvestTarget != plasma) break;
+                onPlasma++;
             }
             int queued = 0; foreach (var k in hq.queue) if (k == UnitKind.Worker) queued++;
             if (workers.Count + queued < BotWorkers && hq.queue.Count == 0) Train(hq, UnitKind.Worker);
@@ -84,13 +81,13 @@ namespace Order.Simulation
             if (rally != null && (!hq.HasRally || Map.ResourceAt((int)hq.RallyX, (int)hq.RallyZ) == null)) SetRally(hq, rally.X + .5f, rally.Z + .5f);
         }
         // The deposit of the kind nearest the command node among those with the fewest of the bot's workers on them.
-        ResourceDeposit BotDeposit(PrototypeBuilding hq, bool gas, List<PrototypeUnit> workers)
+        ResourceDeposit BotDeposit(PrototypeBuilding hq, bool plasma, List<PrototypeUnit> workers)
         {
             float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f;
             ResourceDeposit best = null; float bestScore = float.MaxValue;
             foreach (var r in Map.Resources)
             {
-                if (r.Gas != gas || r.Remaining <= 0) continue;
+                if (r.Plasma != plasma || r.Remaining <= 0) continue;
                 float d = (float)Math.Sqrt((r.X + .5f - cx) * (r.X + .5f - cx) + (r.Z + .5f - cz) * (r.Z + .5f - cz));
                 if (d > 10) continue;
                 int on = 0; foreach (var w in workers) if (w.HarvestTarget == r) on++;
@@ -104,17 +101,25 @@ namespace Order.Simulation
         {
             var hq = BotHeadquarters();
             if (hq == null) return;
-            bool raising = Buildings.Exists(b => b.Owner == Enemy && b.Ready < 1);
+            // A building left without its worker gets another one.
+            foreach (var b in Buildings)
+            {
+                if (b.Owner != Enemy || b.Ready >= 1 || b.Builder != null) continue;
+                var worker = BotBuilder(b.X + b.Width * .5f, b.Z + b.Width * .5f);
+                if (worker != null) Resume(worker, b);
+                return;
+            }
+            bool raising = Buildings.Exists(b => b.Owner == Enemy && b.Ready < 1) || Units.Exists(u => u.Owner == Enemy && u.SiteKind >= 0);
             if (raising) return;
             if (Supply(Enemy) + 6 >= Limit(Enemy) && Limit(Enemy) < 200) { if (BotPlace(hq, 0)) return; }
             int factories = Buildings.FindAll(b => b.Owner == Enemy && Trains(b, UnitKind.Ranged)).Count;
-            if (factories < 2 && Waves >= 1 && mineralStock[Enemy] >= 400) BotPlace(hq, 1);
+            if (factories < 2 && Waves >= 1 && metalStock[Enemy] >= 400) BotPlace(hq, 1);
         }
-        // A free spot near the command node that leaves a cell of room all round and keeps off the mineral line.
+        // A free spot near the command node that leaves a cell of room all round and keeps off the metal line.
         bool BotPlace(PrototypeBuilding hq, int kind)
         {
             var stats = Balance.Buildings[kind];
-            if (mineralStock[Enemy] < stats.Minerals || gasStock[Enemy] < stats.Gas) return false;
+            if (metalStock[Enemy] < stats.Metal || plasmaStock[Enemy] < stats.Plasma) return false;
             int w = stats.Width; float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f, level = Map.Height(hq.X, hq.Z);
             int bestX = 0, bestZ = 0; float best = float.MaxValue;
             for (int z = hq.Z - 10; z <= hq.Z + 10; z++)
@@ -124,7 +129,22 @@ namespace Order.Simulation
                 if (d >= best || d < 9 || !Room(x, z, w, level) || !CanBuild(x, z, kind, out _, Enemy)) continue;
                 best = d; bestX = x; bestZ = z;
             }
-            return best < float.MaxValue && Build(bestX, bestZ, kind, Enemy);
+            if (best == float.MaxValue) return false;
+            var builder = BotBuilder(bestX + w * .5f, bestZ + w * .5f);
+            return builder != null && Build(builder, bestX, bestZ, kind);
+        }
+        // The worker nearest the spot that is not building: a metal miner with empty hands if there is one.
+        PrototypeUnit BotBuilder(float x, float z)
+        {
+            PrototypeUnit best = null; float bestScore = float.MaxValue;
+            foreach (var u in Units)
+            {
+                if (u.Owner != Enemy || u.Kind != UnitKind.Worker || Busy(u)) continue;
+                float score = (u.X - x) * (u.X - x) + (u.Z - z) * (u.Z - z);
+                if (u.Carrying > 0 || (u.HarvestTarget != null && u.HarvestTarget.Plasma)) score += 10000;
+                if (score < bestScore) { bestScore = score; best = u; }
+            }
+            return best;
         }
         bool Room(int x, int z, int w, float level)
         {
@@ -149,7 +169,7 @@ namespace Order.Simulation
                 foreach (var (kind, weight) in new[] { (UnitKind.Ranged, 3f), (UnitKind.Melee, 2f), (UnitKind.Air, 1f) })
                 {
                     var stats = Balance.Unit(kind);
-                    if (!Trains(b, kind) || mineralStock[Enemy] < stats.Minerals || gasStock[Enemy] < stats.Gas) continue;
+                    if (!Trains(b, kind) || metalStock[Enemy] < stats.Metal || plasmaStock[Enemy] < stats.Plasma) continue;
                     int have = army.FindAll(u => u.Kind == kind).Count; foreach (var q in b.queue) if (q == kind) have++;
                     if (have / weight < least) { least = have / weight; pick = kind; }
                 }

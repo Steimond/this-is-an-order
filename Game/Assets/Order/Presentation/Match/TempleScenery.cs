@@ -32,7 +32,7 @@ namespace Order.Presentation
         readonly float[] shownVisible, shownExplored, targetVisible, targetExplored, blurScratch;
         readonly bool[] lastVisible = new bool[Size * Size], lastExplored = new bool[Size * Size];
         bool fogReady, settled;
-        Material foliage, solid, steam;
+        Material foliage, solid, wisps;
         public Light Sun { get; private set; }
 
         struct Wall { public Vector3 Top0, Top1, Low0, Low1, Outward; }
@@ -543,17 +543,18 @@ namespace Order.Presentation
             var color = system.colorOverLifetime; color.enabled = true; color.color = Fade(new Color(1, .75f, .4f), new Color(1, .3f, .1f));
             system.Play();
         }
-        public void Steam(Transform parent, Vector3 position)
+        // Glowing wisps rising from a plasma rift.
+        public void PlasmaWisps(Transform parent, Vector3 position)
         {
-            if (steam == null) steam = Glow("Steam", new Color(.75f, 1, .8f, .3f), false, m => { m.SetFloat("_Soft", 1); m.SetFloat("_Fog", 1); });
-            var system = Particles("Gas steam", parent, position, steam, 40);
+            if (wisps == null) wisps = Glow("Plasma wisps", new Color(1, .5f, .95f, .32f), false, m => { m.SetFloat("_Soft", 1); m.SetFloat("_Fog", 1); });
+            var system = Particles("Plasma wisps", parent, position, wisps, 40);
             var main = system.main;
             main.startLifetime = new ParticleSystem.MinMaxCurve(2.4f, 3.6f); main.startSpeed = new ParticleSystem.MinMaxCurve(.3f, .55f);
             main.startSize = new ParticleSystem.MinMaxCurve(.45f, .8f); main.startRotation = new ParticleSystem.MinMaxCurve(0, Mathf.PI * 2);
             var emission = system.emission; emission.rateOverTime = 5;
             var shape = system.shape; shape.shapeType = ParticleSystemShapeType.Cone; shape.angle = 10; shape.radius = .1f; shape.rotation = new Vector3(-90, 0, 0);
             var size = system.sizeOverLifetime; size.enabled = true; size.size = new ParticleSystem.MinMaxCurve(1, AnimationCurve.Linear(0, .8f, 1, 2.4f));
-            var color = system.colorOverLifetime; color.enabled = true; color.color = Fade(Color.white, new Color(.8f, 1, .85f));
+            var color = system.colorOverLifetime; color.enabled = true; color.color = Fade(new Color(1, .85f, 1), new Color(.9f, .45f, 1));
             var noise = system.noise; noise.enabled = true; noise.strength = .15f; noise.frequency = .6f;
             system.Play();
         }

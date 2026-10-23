@@ -8,13 +8,13 @@ namespace Order.Tests.EditMode
     {
         static void Run(PrototypeMatch match,float seconds){for(float t=0;t<seconds-1e-4f;t+=.05f)match.Tick(.05f);}
         static PrototypeBuilding Headquarters(PrototypeMatch match)=>match.Buildings.Find(b=>b.Kind==2);
-        static PrototypeBuilding Factory(PrototypeMatch match){Assert.That(match.Build(14,15,1),Is.True,match.Message);Run(match,8.1f);return match.Buildings.Find(b=>b.Kind==1);}
+        static PrototypeBuilding Factory(PrototypeMatch match)=>Sites.Place(match,14,15,1,finish:true);
 
         [Test] public void HeadquartersTrainsAWorkerThatAppearsBesideIt()
         {
-            var match=new PrototypeMatch();var hq=Headquarters(match);int minerals=match.Minerals;
+            var match=new PrototypeMatch();var hq=Headquarters(match);int metal=match.Metal;
             Assert.That(match.Train(hq,UnitKind.Worker),Is.True);
-            Assert.That(match.Minerals,Is.EqualTo(minerals-match.Balance.Worker.Minerals),"The cost is paid when queued");
+            Assert.That(match.Metal,Is.EqualTo(metal-match.Balance.Worker.Metal),"The cost is paid when queued");
             Assert.That(match.SupplyUsed,Is.EqualTo(1));Run(match,.05f);
             Assert.That(match.SupplyUsed,Is.EqualTo(2),"Supply is taken once training starts");
             Run(match,match.Balance.Worker.TrainSeconds-.15f);Assert.That(match.Units.Count,Is.EqualTo(1));
@@ -26,34 +26,34 @@ namespace Order.Tests.EditMode
         }
         [Test] public void QueueHoldsFiveAndCancelRefunds()
         {
-            var match=new PrototypeMatch();var hq=Headquarters(match);match.Minerals=1000;
+            var match=new PrototypeMatch();var hq=Headquarters(match);match.Metal=1000;
             for(int i=0;i<PrototypeMatch.QueueSize;i++)Assert.That(match.Train(hq,UnitKind.Worker),Is.True);
             Assert.That(match.Train(hq,UnitKind.Worker),Is.False);Assert.That(match.Message,Does.Contain("Очередь"));
-            Assert.That(match.Minerals,Is.EqualTo(1000-5*50));
+            Assert.That(match.Metal,Is.EqualTo(1000-5*50));
             Run(match,3);
             Assert.That(match.CancelTraining(hq,0),Is.True);
-            Assert.That(match.Minerals,Is.EqualTo(1000-4*50));Assert.That(hq.Queue.Count,Is.EqualTo(4));Assert.That(hq.Training,Is.Zero);
+            Assert.That(match.Metal,Is.EqualTo(1000-4*50));Assert.That(hq.Queue.Count,Is.EqualTo(4));Assert.That(hq.Training,Is.Zero);
             Assert.That(match.CancelTraining(hq,3),Is.True);Assert.That(hq.Queue.Count,Is.EqualTo(3));
         }
         [Test] public void BuildingsTrainOnlyTheirOwnUnitsAndNotWhileBuilding()
         {
             var match=new PrototypeMatch();var hq=Headquarters(match);
             Assert.That(match.Train(hq,UnitKind.Ranged),Is.False);
-            Assert.That(match.Build(14,15,1),Is.True);var factory=match.Buildings.Find(b=>b.Kind==1);
+            var factory=Sites.Place(match,14,15,1);
             Assert.That(match.Train(factory,UnitKind.Ranged),Is.False);Assert.That(match.Message,Does.Contain("строится"));
             Run(match,8.1f);
             Assert.That(match.Train(factory,UnitKind.Worker),Is.False);
             Assert.That(match.Train(factory,UnitKind.Ranged),Is.True);
-            match.Gas=0;Assert.That(match.Train(factory,UnitKind.Air),Is.False);Assert.That(match.Message,Does.Contain("газа"));
+            match.Plasma=0;Assert.That(match.Train(factory,UnitKind.Air),Is.False);Assert.That(match.Message,Does.Contain("плазмы"));
         }
         [Test] public void FullSupplyHoldsTrainingUntilANewSupplyNodeIsReady()
         {
-            var match=new PrototypeMatch();match.AddTestSquad();match.Minerals=1000;var hq=Headquarters(match);
+            var match=new PrototypeMatch();match.AddTestSquad();match.Metal=1000;var hq=Headquarters(match);
             Assert.That(match.SupplyUsed,Is.EqualTo(match.SupplyLimit));
             Assert.That(match.Train(hq,UnitKind.Worker),Is.True);
             Run(match,20);
             Assert.That(hq.SupplyBlocked,Is.True);Assert.That(hq.Training,Is.Zero);Assert.That(match.Units.Count,Is.EqualTo(7));
-            Assert.That(match.Build(15,7,0),Is.True,match.Message);
+            Sites.Place(match,15,7,0);
             Run(match,match.Balance.Buildings[0].BuildSeconds+match.Balance.Worker.TrainSeconds+.2f);
             Assert.That(hq.SupplyBlocked,Is.False);Assert.That(match.Units.Count,Is.EqualTo(8));
         }

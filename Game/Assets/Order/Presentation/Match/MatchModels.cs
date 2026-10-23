@@ -207,35 +207,39 @@ namespace Order.Presentation
             return b.ToMesh("Building " + kind);
         }
 
-        // Crystal cluster on one cell: tilted hexagonal prisms with glowing tips around a rocky base.
-        public static Mesh Minerals(int seed)
+        // Metal vein on one cell: a dark rock outcrop split by angular shards of polished ore, steel with a cold sheen and
+        // a few brass glints; thin bright seams run down the largest shards.
+        public static Mesh MetalVein(int seed)
         {
             var random = new System.Random(seed);
             float R(float a, float c) => a + (float)random.NextDouble() * (c - a);
             var b = new MeshBuilder();
-            b.Paint = new Color(.2f, .21f, .24f);
-            for (int i = 0; i < 3; i++)
+            b.Paint = new Color(.2f, .19f, .2f);
+            for (int i = 0; i < 5; i++)
             {
-                float a = R(0, 6.28f);
-                b.Place(new Vector3(Mathf.Cos(a) * .22f, 0, Mathf.Sin(a) * .22f), Quaternion.Euler(R(0, 40), R(0, 360), 0), new Vector3(R(.12f, .2f), R(.08f, .12f), R(.12f, .2f)));
-                b.Blob(seed + i, .25f, 0);
+                float a = R(0, 6.28f), d = i == 0 ? 0 : .24f;
+                b.Place(new Vector3(Mathf.Cos(a) * d, 0, Mathf.Sin(a) * d), Quaternion.Euler(R(0, 40), R(0, 360), 0), new Vector3(R(.16f, .25f), R(.12f, .2f), R(.16f, .25f)));
+                b.Blob(seed + i, .3f, 0);
             }
-            int count = 4 + random.Next(3);
+            int count = 3 + random.Next(3);
             for (int i = 0; i < count; i++)
             {
-                float a = i * Mathf.PI * 2 / count + R(-.4f, .4f), distance = i == 0 ? 0 : R(.12f, .28f), radius = R(.08f, .13f), height = i == 0 ? R(.85f, 1.15f) : R(.4f, .85f);
-                var color = Color.Lerp(new Color(.22f, .55f, 1), new Color(.38f, .86f, 1), R(0, 1));
+                float a = i * Mathf.PI * 2 / count + R(-.4f, .4f), distance = i == 0 ? 0 : R(.12f, .25f), radius = R(.1f, .16f), height = i == 0 ? R(.5f, .65f) : R(.26f, .48f);
+                bool brass = i > 0 && random.NextDouble() < .25;
+                var color = brass ? new Color(.58f, .46f, .27f) : Color.Lerp(new Color(.34f, .38f, .44f), new Color(.52f, .57f, .64f), R(0, 1));
                 var position = new Vector3(Mathf.Cos(a) * distance, -.05f, Mathf.Sin(a) * distance);
-                var tilt = Quaternion.AngleAxis(R(6, 24) * (i == 0 ? .3f : 1), Vector3.Cross(Vector3.up, position.sqrMagnitude > 0 ? position.normalized : Vector3.right));
-                b.Transform = Matrix4x4.TRS(position, tilt * Quaternion.Euler(0, R(0, 60), 0), Vector3.one);
-                b.Paint = color; b.Glow = .18f; b.Prism(6, radius, radius * .9f, 0, height, 0, 0);
-                b.Paint = Color.Lerp(color, Color.white, .3f); b.Glow = .9f; b.Prism(6, radius * .9f, radius * .9f, height, height, radius * 1.9f);
+                var tilt = Quaternion.AngleAxis(R(14, 38) * (i == 0 ? .4f : 1), Vector3.Cross(Vector3.up, position.sqrMagnitude > 0 ? position.normalized : Vector3.right));
+                b.Transform = Matrix4x4.TRS(position, tilt * Quaternion.Euler(0, R(0, 90), 0), Vector3.one);
+                // Blocky four-sided slabs with a flat chisel top, not crystal tips.
+                b.Paint = color; b.Glow = .03f; b.Prism(4, radius, radius * .72f, 0, height, 0, 0);
+                b.Paint = Color.Lerp(color, Color.white, .22f); b.Glow = .1f; b.Prism(4, radius * .72f, radius * .45f, height, height + radius * .35f, 0, 0);
+                if (i == 0) { b.Paint = new Color(.75f, .86f, 1); b.Glow = .6f; b.Prism(4, radius * .14f, radius * .1f, height * .15f, height * .95f, 0, 45); }
             }
-            return b.ToMesh("Mineral crystals");
+            return b.ToMesh("Metal vein");
         }
 
-        // Gas vent: a rocky mound around a glowing pool; steam is a separate particle effect.
-        public static Mesh Vent(int seed)
+        // Plasma rift: a cracked rocky mound around a glowing pool of plasma; the wisps are a separate particle effect.
+        public static Mesh PlasmaRift(int seed)
         {
             var random = new System.Random(seed);
             float R(float a, float c) => a + (float)random.NextDouble() * (c - a);
@@ -248,9 +252,17 @@ namespace Order.Presentation
                 b.Blob(seed + i, .3f, 0);
             }
             b.Transform = Matrix4x4.identity;
-            b.Paint = new Color(.2f, .32f, .22f); b.Glow = .25f; b.Ring(.2f, .3f, 10, .172f);
-            b.Paint = new Color(.45f, 1, .55f); b.Glow = 1; b.Disc(.2f, 10, .175f);
-            return b.ToMesh("Gas vent");
+            b.Paint = new Color(.3f, .12f, .3f); b.Glow = .35f; b.Ring(.2f, .3f, 10, .172f);
+            b.Paint = new Color(1, .36f, .92f); b.Glow = 1; b.Disc(.2f, 10, .175f);
+            // Glowing cracks running out of the pool across the mound.
+            for (int i = 0; i < 3; i++)
+            {
+                float a = i / 3f * Mathf.PI * 2 + R(-.5f, .5f);
+                var from = new Vector3(Mathf.Cos(a) * .27f, .176f, Mathf.Sin(a) * .27f); var to = new Vector3(Mathf.Cos(a + R(-.3f, .3f)) * .47f, .1f, Mathf.Sin(a + R(-.3f, .3f)) * .47f);
+                var across = Vector3.Cross(to - from, Vector3.up).normalized * .025f;
+                b.Paint = new Color(1, .45f, .95f); b.Glow = .9f; b.Quad(from + across, to + across * .3f, to - across * .3f, from - across);
+            }
+            return b.ToMesh("Plasma rift");
         }
 
         // Selection circle of unit radius: a bright rim over a faint fill; the material colour tints both.

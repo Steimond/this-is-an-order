@@ -15,13 +15,14 @@ namespace Order.Simulation
     }
 
     // Order queue: a queued order starts once the unit's current order is done (a move or attack-move arrived, the attack
-    // target is gone). An idle or harvesting unit starts it at once. Any order given without Shift, Stop and Hold clear
-    // the queue; holding position never ends by itself, so orders queued after it wait.
+    // target is gone). An idle or harvesting unit starts it at once, a worker on a construction after the building is done.
+    // Any order given without Shift, Stop and Hold clear the queue; holding position never ends by itself, so orders queued
+    // after it wait.
     public sealed partial class PrototypeMatch
     {
         public void Enqueue(PrototypeUnit unit, QueuedOrder order)
         {
-            if (unit.queued.Count == 0 && unit.Order == UnitOrder.Idle && (!unit.Moving || unit.HarvestTarget != null)) { Execute(unit, order); return; }
+            if (unit.queued.Count == 0 && unit.Order == UnitOrder.Idle && !Busy(unit) && (!unit.Moving || unit.HarvestTarget != null)) { Execute(unit, order); return; }
             unit.queued.Add(order);
         }
         public bool EnqueueGroup(IReadOnlyList<PrototypeUnit> units, PrototypeUnit target)
@@ -52,7 +53,7 @@ namespace Order.Simulation
         {
             foreach (var u in Units)
             {
-                while (u.queued.Count > 0 && u.Order == UnitOrder.Idle && !u.Moving)
+                while (u.queued.Count > 0 && u.Order == UnitOrder.Idle && !u.Moving && !Busy(u))
                 {
                     var next = u.queued[0]; u.queued.RemoveAt(0);
                     var rest = new List<QueuedOrder>(u.queued);

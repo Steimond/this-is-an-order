@@ -109,6 +109,8 @@ namespace Order.Simulation
         {
             unit.Order = order; unit.ordered = null; unit.orderedBuilding = null; unit.Target = null; unit.TargetBuilding = null;
             unit.aggressor = null; unit.engaged = false; unit.returning = false; unit.returns = 0; unit.delivering = false; unit.queued.Clear();
+            // Any new order takes a worker off its construction: the building waits, a planned site is dropped.
+            unit.Constructing = null; unit.SiteKind = -1;
         }
 
         // ---------- Steps ----------
@@ -379,6 +381,7 @@ namespace Order.Simulation
                 if (u.aggressor != null && !u.aggressor.Alive) u.aggressor = null;
                 if (u.TargetBuilding != null && u.TargetBuilding.Health <= 0) u.TargetBuilding = null;
                 if (u.orderedBuilding != null && u.orderedBuilding.Health <= 0) u.orderedBuilding = null;
+                if (u.Constructing != null && u.Constructing.Health <= 0) u.Constructing = null;
             }
             foreach (var u in dead) { u.route.Clear(); u.Target = null; u.TargetBuilding = null; Died?.Invoke(u); }
             if (ruined.Count == 0) return;

@@ -26,7 +26,7 @@ namespace Order.Editor
             string path=$"Assets/Order/Balance/Faction1/Units/{name}.asset";
             bool exists=AssetDatabase.LoadAssetAtPath<UnitBalanceAsset>(path)!=null;
             var asset=Asset<UnitBalanceAsset>($"Faction1/Units/{name}");
-            if(!exists){asset.DisplayName=defaults.Name;asset.MoveSpeed=defaults.Speed;asset.CollisionRadius=defaults.Radius;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.HarvestAmount=defaults.HarvestAmount;asset.HarvestInterval=defaults.HarvestInterval;asset.Supply=defaults.Supply;asset.Flying=defaults.Flying;asset.Damage=defaults.Damage;asset.AttackRange=defaults.AttackRange;asset.AttackCooldown=defaults.AttackCooldown;asset.HitsGround=defaults.HitsGround;asset.HitsAir=defaults.HitsAir;asset.Minerals=defaults.Minerals;asset.Gas=defaults.Gas;asset.TrainSeconds=defaults.TrainSeconds;EditorUtility.SetDirty(asset);}
+            if(!exists){asset.DisplayName=defaults.Name;asset.MoveSpeed=defaults.Speed;asset.CollisionRadius=defaults.Radius;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.HarvestAmount=defaults.HarvestAmount;asset.HarvestInterval=defaults.HarvestInterval;asset.Supply=defaults.Supply;asset.Flying=defaults.Flying;asset.Damage=defaults.Damage;asset.AttackRange=defaults.AttackRange;asset.AttackCooldown=defaults.AttackCooldown;asset.HitsGround=defaults.HitsGround;asset.HitsAir=defaults.HitsAir;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.TrainSeconds=defaults.TrainSeconds;EditorUtility.SetDirty(asset);}
             return asset;
         }
         static BuildingBalanceAsset Building(string name,BuildingStats defaults)
@@ -34,7 +34,7 @@ namespace Order.Editor
             string path=$"Assets/Order/Balance/Faction1/Buildings/{name}.asset";
             bool exists=AssetDatabase.LoadAssetAtPath<BuildingBalanceAsset>(path)!=null;
             var asset=Asset<BuildingBalanceAsset>($"Faction1/Buildings/{name}");
-            if(!exists){asset.DisplayName=defaults.Name;asset.Footprint=defaults.Width;asset.Minerals=defaults.Minerals;asset.Gas=defaults.Gas;asset.Supply=defaults.Supply;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.ConstructionSeconds=defaults.BuildSeconds;asset.ModelHeight=defaults.Height;asset.Trains=(UnitKind[])defaults.Trains.Clone();EditorUtility.SetDirty(asset);}
+            if(!exists){asset.DisplayName=defaults.Name;asset.Footprint=defaults.Width;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.Supply=defaults.Supply;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.ConstructionSeconds=defaults.BuildSeconds;asset.ModelHeight=defaults.Height;asset.Trains=(UnitKind[])defaults.Trains.Clone();EditorUtility.SetDirty(asset);}
             return asset;
         }
         static T Asset<T>(string relative) where T:ScriptableObject

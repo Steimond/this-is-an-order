@@ -70,7 +70,7 @@ namespace Order.Tests.EditMode
         [Test] public void ConstructionStartsFragileAndLosingASupplyNodeLowersTheLimit()
         {
             var match=new PrototypeMatch();var stats=match.Balance.Buildings[0];
-            Assert.That(match.Build(15,7,0),Is.True);var node=match.Buildings[1];
+            var node=Sites.Place(match,15,7,0);
             Assert.That(node.Health,Is.EqualTo(stats.Health/10));
             Run(match,stats.BuildSeconds+.1f);
             Assert.That(node.Health,Is.EqualTo(stats.Health));Assert.That(match.SupplyLimit,Is.EqualTo(18));

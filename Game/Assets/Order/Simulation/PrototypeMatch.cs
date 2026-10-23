@@ -6,7 +6,7 @@ using Unity.Entities;
 namespace Order.Simulation
 {
     public readonly struct Waypoint { public readonly float X,Z; public Waypoint(float x,float z){X=x;Z=z;} }
-    // Rules of the test match: economy, construction and vision. Unit movement lives in PrototypeMatch.Movement.cs,
+    // Rules of the test match: economy and vision. Construction lives in PrototypeMatch.Construction.cs, unit movement in PrototypeMatch.Movement.cs,
     // attacks in PrototypeMatch.Combat.cs. Side 0 is the player, side 1 the enemy.
     public sealed partial class PrototypeMatch
     {
@@ -19,12 +19,12 @@ namespace Order.Simulation
         public readonly List<PrototypeBuilding> Buildings = new List<PrototypeBuilding>();
         public readonly List<PrototypeUnit> Units = new List<PrototypeUnit>();
         public readonly MatchBalance Balance;
-        // Resources of each side; Minerals and Gas are the player's.
-        readonly int[] mineralStock=new int[2],gasStock=new int[2];
-        public int Minerals{get=>mineralStock[Player];set=>mineralStock[Player]=value;}
-        public int Gas{get=>gasStock[Player];set=>gasStock[Player]=value;}
-        public int MineralsOf(int side)=>mineralStock[side];
-        public int GasOf(int side)=>gasStock[side];
+        // Resources of each side; Metal and Plasma are the player's.
+        readonly int[] metalStock=new int[2],plasmaStock=new int[2];
+        public int Metal{get=>metalStock[Player];set=>metalStock[Player]=value;}
+        public int Plasma{get=>plasmaStock[Player];set=>plasmaStock[Player]=value;}
+        public int MetalOf(int side)=>metalStock[side];
+        public int PlasmaOf(int side)=>plasmaStock[side];
         // Seconds of play since the match began.
         public float Clock{get;private set;}
         public string Message = "Рабочий готов. ПКМ — движение / добыча.";
@@ -33,8 +33,8 @@ namespace Order.Simulation
         public PrototypeMatch(MatchBalance balance=null)
         {
             Balance=balance??new MatchBalance();
-            for(int side=0;side<2;side++){mineralStock[side]=Balance.StartingMinerals;gasStock[side]=Balance.StartingGas;}
-            foreach(var r in Map.Resources)r.Remaining=r.Gas?Balance.GasDeposit:Balance.MineralDeposit;
+            for(int side=0;side<2;side++){metalStock[side]=Balance.StartingMetal;plasmaStock[side]=Balance.StartingPlasma;}
+            foreach(var r in Map.Resources)r.Remaining=r.Plasma?Balance.PlasmaDeposit:Balance.MetalDeposit;
             AddBuilding(2,10,10,Player,1);
             Spawn(UnitKind.Worker,13.5f,13.5f);UpdateVision();
         }
@@ -70,44 +70,9 @@ namespace Order.Simulation
         public int SupplyLimit=>Limit(Player);
         int Limit(int owner){int limit=0;foreach(var b in Buildings)if(b.Owner==owner&&b.Ready>=1)limit+=Balance.Buildings[b.Kind].Supply;return limit;}
         public float HeightAt(float x,float z)=>Map.Height((int)x,(int)z,x-(int)x);
-        // The player builds only where it sees; the bot builds anywhere on its own ground.
-        public bool CanBuild(int x,int z,int kind,out string reason,int owner=Player)
-        {
-            if(kind<0||kind>1){reason="Неизвестный тип здания";return false;}
-            var stats=Balance.Buildings[kind];int w=stats.Width;float h=Map.Inside(x,z)?Map.Height(x,z):0;
-            for(int zz=z;zz<z+w;zz++)for(int xx=x;xx<x+w;xx++)
-            {
-                if(!Map.Inside(xx,zz)){reason="За границей карты";return false;}
-                if(owner==Player&&!Visible[xx,zz]){reason="Нужна текущая видимость";return false;}
-                if(Map.Ramp(xx,zz)||Map.Height(xx,zz)!=h||Occupied(xx,zz)){reason="Занято, рампа или перепад высот";return false;}
-                foreach(var u in Units)
-                {
-                    if(u.Stats.Flying)continue;
-                    float nx=Math.Max(xx,Math.Min(u.X,xx+1)),nz=Math.Max(zz,Math.Min(u.Z,zz+1));
-                    if((u.X-nx)*(u.X-nx)+(u.Z-nz)*(u.Z-nz)<u.Stats.Radius*u.Stats.Radius){reason="Здесь стоит юнит";return false;}
-                }
-            }
-            if(mineralStock[owner]<stats.Minerals||gasStock[owner]<stats.Gas){reason="Недостаточно ресурсов";return false;}
-            reason="ЛКМ — построить";return true;
-        }
-        public bool Build(int x,int z,int kind,int owner=Player)
-        {
-            if(!CanBuild(x,z,kind,out var reason,owner)){if(owner==Player)Message=reason;return false;}
-            var stats=Balance.Buildings[kind];mineralStock[owner]-=stats.Minerals;gasStock[owner]-=stats.Gas;
-            AddBuilding(kind,x,z,owner,0);
-            RouteAroundNewBuildings();
-            if(owner==Player)Message="Строительство начато.";
-            UpdateVision();return true;
-        }
         public void Tick(float dt)
         {
-            foreach(var b in Buildings)
-            {
-                if(b.Ready>=1)continue;
-                // A building under construction gains its health as it rises, from a tenth of the full value.
-                var stats=Balance.Buildings[b.Kind];float rate=FastBuild&&b.Owner==Player?FastFactor:1,step=Math.Min(dt*rate/stats.BuildSeconds,1-b.Ready);
-                b.Ready=Math.Min(1,b.Ready+step);b.Health=Math.Min(stats.Health,b.Health+(int)Math.Ceiling(stats.Health*.9f*step));
-            }
+            TickBuildings(dt);
             Clock+=dt;
             TickProduction(dt);
             TickBot(dt);
@@ -172,9 +137,16 @@ namespace Order.Simulation
         // The enemy building it attacks when no enemy unit is targeted.
         public PrototypeBuilding TargetBuilding { get; internal set; }
         public ResourceDeposit HarvestTarget { get; internal set; }
-        // Mining trips: the load a worker carries to a command node, whether it is gas, and whether it is mining right now.
+        // Construction: the building this worker raises (it rises only while the worker stands by it), and the site the
+        // worker walks to before that building is placed (kind -1: none).
+        public PrototypeBuilding Constructing { get; internal set; }
+        public int SiteKind { get; internal set; } = -1;
+        public int SiteX { get; internal set; }
+        public int SiteZ { get; internal set; }
+        internal float siteTimer;
+        // Mining trips: the load a worker carries to a command node, whether it is plasma, and whether it is mining right now.
         public int Carrying { get; internal set; }
-        public bool CarriesGas { get; internal set; }
+        public bool CarriesPlasma { get; internal set; }
         public bool Mining { get; internal set; }
         internal bool delivering;
         // Combat state: the target of an Attack order, the AttackMove destination, the last enemy that hit this unit,
@@ -203,6 +175,9 @@ namespace Order.Simulation
     {
         public int X,Z,Width,Kind,Owner,Health;
         public float Ready;
+        // The worker raising it, while it is at work on it; nobody when the construction waits.
+        internal PrototypeUnit builder;
+        public PrototypeUnit Builder=>builder!=null&&builder.Alive&&builder.Constructing==this?builder:null;
         // Production: the queue (the front unit is in training), seconds trained on it, whether it has taken its supply
         // or waits for it, and where new units go.
         internal readonly List<UnitKind> queue=new List<UnitKind>();

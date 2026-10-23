@@ -19,8 +19,8 @@ namespace Order.Content
                 Add(c, 29, 13, true);
             }
         }
-        void Add(int c, int x, int z, bool gas) => Resources.Add(new ResourceDeposit
-        { X = (c & 1) == 0 ? x : 63-x, Z = (c & 2) == 0 ? z : 63-z, Gas = gas, Remaining = gas ? 2500 : 1500 });
+        void Add(int c, int x, int z, bool plasma) => Resources.Add(new ResourceDeposit
+        { X = (c & 1) == 0 ? x : 63-x, Z = (c & 2) == 0 ? z : 63-z, Plasma = plasma, Remaining = plasma ? 2500 : 1500 });
         public bool Inside(int x, int z) => x >= 0 && z >= 0 && x < Size && z < Size;
         public bool Ramp(int x, int z)
         {
@@ -37,5 +37,5 @@ namespace Order.Content
         }
         public ResourceDeposit ResourceAt(int x, int z) => Resources.Find(r => r.X == x && r.Z == z && r.Remaining > 0);
     }
-    public sealed class ResourceDeposit { public int X, Z, Remaining; public bool Gas; }
+    public sealed class ResourceDeposit { public int X, Z, Remaining; public bool Plasma; }
 }

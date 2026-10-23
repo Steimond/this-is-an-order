@@ -27,9 +27,9 @@ namespace Order.Simulation
         {
             var stats = Balance.Unit(kind);
             string reason = b.Ready < 1 ? "Здание ещё строится." : !Trains(b, kind) ? $"{Balance.Buildings[b.Kind].Name} не обучает: {stats.Name}."
-                : b.queue.Count >= QueueSize ? "Очередь заполнена." : mineralStock[b.Owner] < stats.Minerals ? "Недостаточно минералов." : gasStock[b.Owner] < stats.Gas ? "Недостаточно газа." : null;
+                : b.queue.Count >= QueueSize ? "Очередь заполнена." : metalStock[b.Owner] < stats.Metal ? "Недостаточно металла." : plasmaStock[b.Owner] < stats.Plasma ? "Недостаточно плазмы." : null;
             if (reason != null) { if (b.Owner == Player) Message = reason; return false; }
-            mineralStock[b.Owner] -= stats.Minerals; gasStock[b.Owner] -= stats.Gas;
+            metalStock[b.Owner] -= stats.Metal; plasmaStock[b.Owner] -= stats.Plasma;
             b.queue.Add(kind);
             if (b.Owner == Player) Message = $"Обучение: {stats.Name}.";
             return true;
@@ -39,7 +39,7 @@ namespace Order.Simulation
         {
             if (index < 0 || index >= b.queue.Count) return false;
             var stats = Balance.Unit(b.queue[index]);
-            mineralStock[b.Owner] += stats.Minerals; gasStock[b.Owner] += stats.Gas;
+            metalStock[b.Owner] += stats.Metal; plasmaStock[b.Owner] += stats.Plasma;
             b.queue.RemoveAt(index);
             if (index == 0) { b.started = false; b.Training = 0; b.SupplyBlocked = false; }
             if (b.Owner == Player) Message = $"Отменено: {stats.Name}.";

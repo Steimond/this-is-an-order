@@ -13,7 +13,7 @@ namespace Order.Tests.EditMode
             var match=new PrototypeMatch();match.AddEnemyBase();
             Assert.That(match.Cheated,Is.False);
             Assert.That(match.ToggleFastBuild(),Is.True);Assert.That(match.Cheated,Is.True);
-            Assert.That(match.Build(15,7,0),Is.True);var node=match.Buildings.Find(b=>b.Kind==0&&b.Owner==PrototypeMatch.Player);
+            var node=Sites.Place(match,15,7,0);
             var hq=match.Buildings.Find(b=>b.Kind==2&&b.Owner==PrototypeMatch.Player);Assert.That(match.Train(hq,UnitKind.Worker),Is.True);
             Run(match,match.Balance.Buildings[0].BuildSeconds/PrototypeMatch.FastFactor+.1f);
             Assert.That(node.Ready,Is.EqualTo(1));

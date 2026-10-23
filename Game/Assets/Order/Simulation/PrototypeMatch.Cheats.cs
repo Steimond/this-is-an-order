@@ -16,7 +16,7 @@ namespace Order.Simulation
         public bool Invulnerable { get; private set; }
         public bool Cheated { get; private set; }
 
-        public void AddResources(int minerals, int gas) { Minerals += minerals; Gas += gas; Cheated = true; Message = $"Чит: +{minerals} минералов, +{gas} газа."; }
+        public void AddResources(int metal, int plasma) { Metal += metal; Plasma += plasma; Cheated = true; Message = $"Чит: +{metal} металла, +{plasma} плазмы."; }
         public bool ToggleFastBuild() { FastBuild = !FastBuild; return Cheat(FastBuild, $"стройка и обучение ×{FastFactor:0}"); }
         public bool ToggleNoSupply() { NoSupply = !NoSupply; return Cheat(NoSupply, "без лимита снабжения"); }
         public bool ToggleReveal() { Revealed = !Revealed; UpdateVision(); return Cheat(Revealed, "вся карта открыта"); }
@@ -29,10 +29,17 @@ namespace Order.Simulation
             foreach (var b in Buildings) if (b.Owner != Player) b.Health = 0;
             if (!Buildings.Exists(b => b.Owner != Player)) { Winner = Player; Message = "Победа: все здания противника уничтожены."; }
         }
-        // New units of either side on free ground around a point, nearest first.
+        // Cheat: new units of either side on free ground around a point, nearest first.
         public List<PrototypeUnit> SpawnSquad(UnitKind kind, int count, float x, float z, int owner = Player)
         {
             Cheated = true;
+            var spawned = SpawnAround(kind, count, x, z, owner);
+            Message = spawned.Count > 0 ? $"Чит: {Balance.Unit(kind).Name} ×{spawned.Count}{(owner == Player ? "" : " у противника")}." : "Нет места для юнитов.";
+            return spawned;
+        }
+        // Units on free ground around a point, nearest first: for cheats and for the bot's starting workers.
+        List<PrototypeUnit> SpawnAround(UnitKind kind, int count, float x, float z, int owner)
+        {
             var spawned = new List<PrototypeUnit>();
             var stats = Balance.Unit(kind);
             float spacing = stats.Radius * 2.1f;
@@ -49,7 +56,6 @@ namespace Order.Simulation
                 }
             }
             UpdateVision();
-            Message = spawned.Count > 0 ? $"Чит: {stats.Name} ×{spawned.Count}{(owner == Player ? "" : " у противника")}." : "Нет места для юнитов.";
             return spawned;
         }
         bool SpawnRoom(UnitStats stats, float x, float z)
