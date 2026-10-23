@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Order.Balance::Order.Balance.BuildingBalanceAsset
   DisplayName: "\u042F\u0434\u0440\u043E"
   Footprint: 3
-  Metal: 0
+  Metal: 400
   Plasma: 0
   Supply: 10
   Health: 1500
   Vision: 7
-  ConstructionSeconds: 5
+  ConstructionSeconds: 45
   ModelHeight: 2.6
   Trains: 00000000i
   Coverage: 10

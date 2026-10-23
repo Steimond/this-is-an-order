@@ -216,6 +216,19 @@ namespace Order.Presentation
                     p.BeginPath(); HudPaint.Polygon(p, pin, 5 * pulse, 4, 0); p.Fill(); p.Stroke();
                 }
 
+                // The machines' network coverage, while it shows on the ground too; a cut-off relay is grey.
+                if (host.CoverageShown)
+                {
+                    p.lineWidth = 1;
+                    foreach (var b in match.Buildings)
+                    {
+                        if (b.Owner != PrototypeMatch.Player || b.Stats.Coverage <= 0 || b.Ready < 1) continue;
+                        var center = M(b.X + b.Width * .5f, b.Z + b.Width * .5f);
+                        p.strokeColor = b.Powered ? HudPaint.Alpha(Accent, .7f) : new Color(.55f, .55f, .6f, .5f);
+                        p.BeginPath(); HudPaint.Circle(p, center, b.Stats.Coverage / size * r.width); p.Stroke();
+                    }
+                }
+
                 // Attacks off screen: a red ring widening from the spot, three times over the alert's life.
                 var now = Time.unscaledTime;
                 foreach (var (point, time) in host.Alerts)

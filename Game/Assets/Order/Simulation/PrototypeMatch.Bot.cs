@@ -5,9 +5,11 @@ using Order.Content;
 namespace Order.Simulation
 {
     // Enemy bot of the test ground, an easy StarCraft-like opponent. Once a second it:
-    // - keeps its workers mining and trains more: humans up to a dozen, two on plasma once it has eight; machines one on
-    //   each deposit round its base, one on plasma once it has five;
-    // - adds a supply node before supply runs out and, after its first wave, a second factory once it has metal to spare;
+    // - keeps its workers mining and trains more: humans up to a dozen (ten more per extra base), two on plasma once it has
+    //   eight; machines one on each deposit round its bases, one on plasma once it has five;
+    // - from the sixth minute takes a second base: the free base spot nearest its first one;
+    // - adds a supply node before supply runs out and, after its first wave, a second factory once it has metal to spare
+    //   and a research building, where it upgrades weapons and armour in turn;
     //   a worker builds them, by its faction's rules, and a human building left without its worker gets another one;
     // - keeps its factories training a mixed army, gathered at the top of its ramp;
     // - meets player units that come near its buildings with the army at home;
@@ -17,7 +19,7 @@ namespace Order.Simulation
     {
         public bool BotEnabled { get; private set; }
         public int Waves { get; private set; }
-        const float BotThink = 1, FirstWave = 300, DefenseRadius = 12;
+        const float BotThink = 1, FirstWave = 300, DefenseRadius = 12, ExpandAt = 360;
         const int BotWorkers = 12, FirstWaveSupply = 10, WaveGrowth = 4, MaxWaveSupply = 40;
         float botTimer;
         int waveSupply = FirstWaveSupply;
@@ -55,19 +57,20 @@ namespace Order.Simulation
 
         void BotEconomy()
         {
-            var hq = BotHeadquarters();
-            if (hq == null || hq.Ready < 1) return;
+            var bases = Buildings.FindAll(b => b.Owner == Enemy && b.Kind == FactionBalance.Main && b.Ready >= 1);
+            if (bases.Count == 0) return;
             var workers = Units.FindAll(u => u.Owner == Enemy && u.Kind == UnitKind.Worker);
-            // Hauling workers share deposits: a dozen, two on plasma from eight. Nanite workers hold one deposit each: as
-            // many as there are deposits round the base, one on plasma from five.
+            // Hauling workers share deposits: a dozen at the first base and ten more at each other, two on plasma from
+            // eight. Nanite workers hold one deposit each: as many as there are deposits round the bases, one on plasma
+            // from five.
             bool nanites = Roster(Enemy).NaniteMining;
-            int wanted = nanites ? DepositsNear(hq) : BotWorkers;
-            int onPlasma = workers.FindAll(w => w.HarvestTarget != null && w.HarvestTarget.Plasma).Count, wantPlasma = nanites ? (workers.Count >= 5 ? 1 : 0) : workers.Count >= 8 ? 2 : 0;
+            int wanted = nanites ? DepositsNear(bases) : BotWorkers + 10 * (bases.Count - 1);
+            int onPlasma = workers.FindAll(w => w.HarvestTarget != null && w.HarvestTarget.Plasma).Count, wantPlasma = nanites ? (workers.Count >= 5 ? bases.Count : 0) : workers.Count >= 8 ? 2 * bases.Count : 0;
             foreach (var w in workers)
             {
                 if (w.HarvestTarget != null || w.Moving || Busy(w)) continue;
                 bool plasma = onPlasma < wantPlasma;
-                var deposit = BotDeposit(hq, plasma, workers) ?? BotDeposit(hq, !plasma, workers);
+                var deposit = BotDeposit(bases, plasma, workers) ?? BotDeposit(bases, !plasma, workers);
                 if (deposit == null) continue;
                 Move(w, deposit.X + .5f, deposit.Z + .5f);
                 if (w.HarvestTarget != null && w.HarvestTarget.Plasma) onPlasma++;
@@ -75,39 +78,50 @@ namespace Order.Simulation
             // Busy miners are moved to plasma too, between trips.
             while (onPlasma < wantPlasma)
             {
-                var plasma = BotDeposit(hq, true, workers);
+                var plasma = BotDeposit(bases, true, workers);
                 var miner = workers.Find(w => w.HarvestTarget != null && !w.HarvestTarget.Plasma && w.Carrying == 0);
                 if (plasma == null || miner == null) break;
                 Move(miner, plasma.X + .5f, plasma.Z + .5f);
                 if (miner.HarvestTarget != plasma) break;
                 onPlasma++;
             }
-            int queued = 0; foreach (var k in hq.queue) if (k == UnitKind.Worker) queued++;
-            if (workers.Count + queued < wanted && hq.queue.Count == 0) Train(hq, UnitKind.Worker);
-            var rally = BotDeposit(hq, false, workers);
-            if (rally != null && (!hq.HasRally || Map.ResourceAt((int)hq.RallyX, (int)hq.RallyZ) == null)) SetRally(hq, rally.X + .5f, rally.Z + .5f);
+            int queued = 0; foreach (var b in bases) foreach (var k in b.queue) if (k == UnitKind.Worker) queued++;
+            // New workers from the least busy base, rallied to a deposit next to it.
+            var idle = bases.Find(b => b.queue.Count == 0);
+            if (idle != null && workers.Count + queued < wanted) Train(idle, UnitKind.Worker);
+            foreach (var b in bases)
+            {
+                var rally = BotDeposit(new List<PrototypeBuilding> { b }, false, workers);
+                if (rally != null && (!b.HasRally || Map.ResourceAt((int)b.RallyX, (int)b.RallyZ) == null)) SetRally(b, rally.X + .5f, rally.Z + .5f);
+            }
         }
-        int DepositsNear(PrototypeBuilding hq)
+        int DepositsNear(List<PrototypeBuilding> bases)
         {
             int count = 0;
-            foreach (var r in Map.Resources) if (r.Remaining > 0 && Reach(hq, r) <= 10) count++;
+            foreach (var r in Map.Resources) if (r.Remaining > 0 && Reach(bases, r) <= 10) count++;
             return count;
         }
-        static float Reach(PrototypeBuilding hq, ResourceDeposit r)
+        // From the deposit to the nearest of the bases.
+        static float Reach(List<PrototypeBuilding> bases, ResourceDeposit r)
         {
-            float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f;
-            return (float)Math.Sqrt((r.X + .5f - cx) * (r.X + .5f - cx) + (r.Z + .5f - cz) * (r.Z + .5f - cz));
+            float best = float.MaxValue;
+            foreach (var hq in bases)
+            {
+                float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f;
+                best = Math.Min(best, (float)Math.Sqrt((r.X + .5f - cx) * (r.X + .5f - cx) + (r.Z + .5f - cz) * (r.Z + .5f - cz)));
+            }
+            return best;
         }
-        // The deposit of the kind nearest the command node among those with the fewest of the bot's workers on them; a
-        // nanite worker only takes a deposit nobody holds.
-        ResourceDeposit BotDeposit(PrototypeBuilding hq, bool plasma, List<PrototypeUnit> workers)
+        // The deposit of the kind nearest a base among those with the fewest of the bot's workers on them; a nanite
+        // worker only takes a deposit nobody holds.
+        ResourceDeposit BotDeposit(List<PrototypeBuilding> bases, bool plasma, List<PrototypeUnit> workers)
         {
             bool nanites = Roster(Enemy).NaniteMining;
             ResourceDeposit best = null; float bestScore = float.MaxValue;
             foreach (var r in Map.Resources)
             {
                 if (r.Plasma != plasma || r.Remaining <= 0) continue;
-                float d = Reach(hq, r);
+                float d = Reach(bases, r);
                 if (d > 10) continue;
                 int on = 0; foreach (var w in workers) if (w.HarvestTarget == r) on++;
                 if (nanites && (on > 0 || (miners.TryGetValue(r, out var holder) && Holds(holder, r)))) continue;
@@ -129,11 +143,42 @@ namespace Order.Simulation
                 if (worker != null) Resume(worker, b);
                 return;
             }
-            bool raising = Buildings.Exists(b => b.Owner == Enemy && b.Ready < 1) || Units.Exists(u => u.Owner == Enemy && u.SiteKind >= 0);
+            // One building at a time, apart from a new base, which takes long: supply goes on meanwhile.
+            bool raising = Buildings.Exists(b => b.Owner == Enemy && b.Ready < 1 && b.Kind != FactionBalance.Main)
+                || Units.Exists(u => u.Owner == Enemy && u.SiteKind >= 0 && u.SiteKind != FactionBalance.Main);
             if (raising) return;
             if (Supply(Enemy) + 6 >= Limit(Enemy) && Limit(Enemy) < 200) { if (BotPlace(hq, 0)) return; }
+            if (BotExpand(hq)) return;
             int factories = Buildings.FindAll(b => b.Owner == Enemy && Trains(b, UnitKind.Ranged)).Count;
-            if (factories < 2 && Waves >= 1 && metalStock[Enemy] >= 400) BotPlace(hq, 1);
+            if (factories < 2 && Waves >= 1 && metalStock[Enemy] >= 400) { if (BotPlace(hq, 1)) return; }
+            // After its first wave it builds a research building and upgrades weapons and armour in turn.
+            int research = Roster(Enemy).Research;
+            if (research >= 0 && Waves >= 1 && !Buildings.Exists(b => b.Owner == Enemy && b.Kind == research) && metalStock[Enemy] >= 300) BotPlace(hq, research);
+            foreach (var b in Buildings)
+                if (b.Owner == Enemy && b.Kind == research && !b.research.HasValue)
+                {
+                    var next = Level(Enemy, Upgrade.Weapons) <= Level(Enemy, Upgrade.Armor) ? Upgrade.Weapons : Upgrade.Armor;
+                    if (ResearchBlocked(b, next) != null) next = next == Upgrade.Weapons ? Upgrade.Armor : Upgrade.Weapons;
+                    if (ResearchBlocked(b, next) == null) Research(b, next);
+                }
+        }
+        // From the sixth minute the bot takes a second base: the free base spot nearest its first one. Until it has the
+        // metal, it saves for it and trains no army.
+        bool ExpansionDue() => Clock >= ExpandAt && Buildings.FindAll(b => b.Owner == Enemy && b.Kind == FactionBalance.Main).Count == 1
+            && !Units.Exists(u => u.Owner == Enemy && u.SiteKind == FactionBalance.Main);
+        bool BotExpand(PrototypeBuilding hq)
+        {
+            if (!ExpansionDue() || metalStock[Enemy] < Roster(Enemy).Buildings[FactionBalance.Main].Metal) return false;
+            float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f, best = float.MaxValue; int bx = 0, bz = 0;
+            foreach (var (x, z) in Map.Bases)
+            {
+                float d = (x + 1.5f - cx) * (x + 1.5f - cx) + (z + 1.5f - cz) * (z + 1.5f - cz);
+                if (d < 1 || d >= best || !CanBuild(x, z, FactionBalance.Main, out _, Enemy)) continue;
+                best = d; bx = x; bz = z;
+            }
+            if (best == float.MaxValue) return false;
+            var builder = BotBuilder(bx + 1.5f, bz + 1.5f);
+            return builder != null && Build(builder, bx, bz, FactionBalance.Main);
         }
         // A free spot near the command node that leaves a cell of room all round and keeps off the metal line.
         bool BotPlace(PrototypeBuilding hq, int kind)
@@ -178,6 +223,7 @@ namespace Order.Simulation
 
         void BotProduce()
         {
+            if (ExpansionDue() && metalStock[Enemy] < Roster(Enemy).Buildings[FactionBalance.Main].Metal) return;
             var army = Units.FindAll(u => u.Owner == Enemy && u.Stats.Damage > 0);
             foreach (var b in Buildings)
             {

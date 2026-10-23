@@ -82,6 +82,7 @@ namespace Order.Simulation
             TickBuildings(dt);
             Clock+=dt;
             TickProduction(dt);
+            TickResearch(dt);
             TickBot(dt);
             // Movement runs in fixed steps, so a long frame and many short ones end in the same place.
             for(float left=dt;left>1e-6f;left-=Step)StepUnits(Math.Min(Step,left));
@@ -198,6 +199,10 @@ namespace Order.Simulation
         public bool SelfBuilt{get;internal set;}
         // Machines: whether the network covers it (a core always is); humans always are. See PrototypeMatch.Network.cs.
         public bool Powered{get;internal set;}=true;
+        // The upgrade a research building is researching, and for how long it has been at it.
+        internal Upgrade? research;
+        public Upgrade? Researching=>research;
+        public float ResearchTime{get;internal set;}
         // The worker raising it, while it is at work on it; nobody when the construction waits.
         internal PrototypeUnit builder;
         public PrototypeUnit Builder=>builder!=null&&builder.Alive&&builder.Constructing==this?builder:null;

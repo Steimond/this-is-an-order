@@ -86,7 +86,7 @@ namespace Order.Presentation
             return b.ToMesh("Weaver");
         }
 
-        // Kinds follow FactionBalance: 0 compute node, 1 assembler, 2 core, 3 relay. Origin is the footprint centre on the ground.
+        // Kinds follow FactionBalance: 0 compute node, 1 assembler, 2 core, 3 relay, 4 firmware node. Origin is the footprint centre on the ground.
         public static Mesh Building(int kind, float w, float h)
         {
             var b = new MeshBuilder();
@@ -136,6 +136,20 @@ namespace Order.Presentation
                     b.Paint = Ice; b.Team = 0; b.Glow = 1; b.Ring(r * .5f, r * .55f, 8, y + .005f);
                 }
                 Prism(Ice, new Vector3(0, h * .82f, 0), 6, w * .1f, w * .1f, 0, 0, 0, 1, h * .16f, .5f);
+            }
+            else if (kind == 4)
+            {
+                // Firmware node: a dark monolith split by a glowing seam, with three data panes turning round it.
+                Prism(Steel, Vector3.zero, 4, w * .24f, w * .2f, .15f, h * .9f, 0, 0, 0, .5f);
+                Prism(Ice, Vector3.zero, 4, w * .245f, w * .245f, h * .45f, h * .5f, 0, 1, 0, .5f);
+                Prism(Pale, Vector3.zero, 4, w * .2f, w * .2f, h * .9f, h * .9f, 1, 0, h * .1f, .5f);
+                for (int i = 0; i < 3; i++)
+                {
+                    float a = i / 3f * Mathf.PI * 2;
+                    var at = new Vector3(Mathf.Cos(a) * w * .36f, h * (.35f + i * .12f), Mathf.Sin(a) * w * .36f);
+                    b.Paint = Ice; b.Team = 0; b.Glow = .8f; b.Place(at, Quaternion.Euler(0, -a * Mathf.Rad2Deg + 90, 0), new Vector3(.22f, .3f, .02f));
+                    b.Box(Vector3.zero, Vector3.one);
+                }
             }
             else
             {

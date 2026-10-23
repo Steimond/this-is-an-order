@@ -19,6 +19,7 @@ namespace Order.Editor
             catalog.Supply=Building("Faction1","Supply",humans.Buildings[0]);
             catalog.Factory=Building("Faction1","Factory",humans.Buildings[1]);
             catalog.Headquarters=Building("Faction1","Headquarters",humans.Buildings[2]);
+            catalog.Research=Building("Faction1","Workshop",humans.Buildings[humans.Research]);
             var machines=defaults.Resonance;
             catalog.Resonance??=new FactionAssets();
             catalog.Resonance.Worker=Unit("Faction2","Weaver",machines.Unit(UnitKind.Worker));
@@ -30,6 +31,7 @@ namespace Order.Editor
             catalog.Resonance.Factory=Building("Faction2","Assembler",machines.Buildings[1]);
             catalog.Resonance.Headquarters=Building("Faction2","Core",machines.Buildings[2]);
             catalog.Resonance.Relay=Building("Faction2","Relay",machines.Buildings[FactionBalance.Relay]);
+            catalog.Resonance.Research=Building("Faction2","Firmware",machines.Buildings[machines.Research]);
             catalog.Economy=Asset<EconomyBalanceAsset>("Shared/Economy");
             EditorUtility.SetDirty(catalog);AssetDatabase.SaveAssets();
         }
@@ -51,7 +53,7 @@ namespace Order.Editor
             string relative=$"{faction}/Buildings/{name}";
             bool exists=AssetDatabase.LoadAssetAtPath<BuildingBalanceAsset>($"Assets/Order/Balance/{relative}.asset")!=null;
             var asset=Asset<BuildingBalanceAsset>(relative);
-            if(!exists){asset.DisplayName=defaults.Name;asset.Footprint=defaults.Width;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.Supply=defaults.Supply;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.ConstructionSeconds=defaults.BuildSeconds;asset.ModelHeight=defaults.Height;asset.Trains=(UnitKind[])defaults.Trains.Clone();asset.Coverage=defaults.Coverage;asset.Relays=defaults.Relays;EditorUtility.SetDirty(asset);}
+            if(!exists){asset.DisplayName=defaults.Name;asset.Footprint=defaults.Width;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.Supply=defaults.Supply;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.ConstructionSeconds=defaults.BuildSeconds;asset.ModelHeight=defaults.Height;asset.Trains=(UnitKind[])defaults.Trains.Clone();asset.Coverage=defaults.Coverage;asset.Relays=defaults.Relays;asset.Researches=defaults.Researches;EditorUtility.SetDirty(asset);}
             return asset;
         }
         static T Asset<T>(string relative) where T:ScriptableObject

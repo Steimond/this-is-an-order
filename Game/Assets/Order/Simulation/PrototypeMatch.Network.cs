@@ -30,7 +30,8 @@ namespace Order.Simulation
                     b.Powered = false;
                     // A building destroyed this step is no node, even before it is cleared away.
                     if (b.Health <= 0) continue;
-                    if (b.Kind == FactionBalance.Main && b.Ready >= 1) { b.Powered = true; reach.Enqueue(b); }
+                    // A core needs no coverage, even while it rises; it becomes a node once finished.
+                    if (b.Kind == FactionBalance.Main) { b.Powered = true; if (b.Ready >= 1) reach.Enqueue(b); }
                     else if (b.Kind == FactionBalance.Relay && b.Ready >= 1 && allowed > 0) { allowed--; nodes.Add(b); }
                 }
                 while (reach.Count > 0)

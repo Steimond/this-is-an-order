@@ -18,6 +18,7 @@ namespace Order.Simulation
         // How close to the footprint a worker builds; the view uses it for the welding beam too.
         public const float BuildReach = 1;
         const float SiteWait = 3, CancelRefund = .75f;
+        const int MainRoom = 2;
 
         // Whether the site can take the building now. The player builds only where it sees; the bot builds anywhere on its
         // own ground. Own units do not block a site (they step off it when the building is placed), visible enemies do.
@@ -25,7 +26,7 @@ namespace Order.Simulation
         {
             if(!SiteFits(x,z,kind,owner,owner==Player,out reason))return false;
             int w=Roster(owner).Buildings[kind].Width;
-            if(kind==FactionBalance.Relay&&RelaysLeft(owner)<=0){reason=$"Лимит ретрансляторов: {Roster(owner).Buildings[FactionBalance.Main].Relays} на ядро";return false;}
+            if(Roster(owner).Network&&kind==FactionBalance.Relay&&RelaysLeft(owner)<=0){reason=$"Лимит ретрансляторов: {Roster(owner).Buildings[FactionBalance.Main].Relays} на ядро";return false;}
             foreach(var u in Units)if(u.Owner!=owner&&SeenBy(owner,u)&&On(u,x,z,w)){reason="Здесь стоит юнит противника";return false;}
             reason="ЛКМ — построить";return true;
         }
@@ -43,6 +44,9 @@ namespace Order.Simulation
             }
             // Machines build only inside the coverage of their network (the core itself starts a network).
             if(roster.Network&&kind!=FactionBalance.Main&&!Covered(owner,x+w*.5f,z+w*.5f)){reason="Вне покрытия сети";return false;}
+            // As in StarCraft, a main building keeps a little room from the deposits it serves: two free cells all round.
+            if(kind==FactionBalance.Main)foreach(var r in Map.Resources)
+                if(r.Remaining>0&&r.X>=x-MainRoom&&r.X<x+w+MainRoom&&r.Z>=z-MainRoom&&r.Z<z+w+MainRoom){reason="Слишком близко к залежам";return false;}
             if(metalStock[owner]<stats.Metal){reason="Недостаточно металла";return false;}
             if(plasmaStock[owner]<stats.Plasma){reason="Недостаточно плазмы";return false;}
             reason=null;return true;
@@ -154,7 +158,7 @@ namespace Order.Simulation
                 var stats=Roster(u.Owner).Buildings[u.SiteKind];int x=u.SiteX,z=u.SiteZ,w=stats.Width;
                 if(SiteGap(u,x,z,w)>BuildReach){EndSite(u,"Не дойти до места стройки.");continue;}
                 if(!SiteFits(x,z,u.SiteKind,u.Owner,false,out var reason)){EndSite(u,reason+".");continue;}
-                if(u.SiteKind==FactionBalance.Relay&&RelaysLeft(u.Owner)<0){EndSite(u,"Лимит ретрансляторов.");continue;}
+                if(Roster(u.Owner).Network&&u.SiteKind==FactionBalance.Relay&&RelaysLeft(u.Owner)<0){EndSite(u,"Лимит ретрансляторов.");continue;}
                 bool blocked=false;
                 foreach(var v in Units)
                 {

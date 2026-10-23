@@ -339,7 +339,7 @@ namespace Order.Simulation
             if (!(Invulnerable && target.Owner == Player))
             {
                 // A machine worker's nanite cocoon takes the blow first.
-                int damage = attacker.Stats.Damage, absorbed = Math.Min(target.Cocoon, damage);
+                int damage = Damage(attacker, target), absorbed = Math.Min(target.Cocoon, damage);
                 target.Cocoon -= absorbed; target.Health = Math.Max(0, target.Health - (damage - absorbed));
                 target.sinceHit = 0;
             }
@@ -351,7 +351,7 @@ namespace Order.Simulation
         }
         void Hit(PrototypeUnit attacker, PrototypeBuilding target)
         {
-            if (!(Invulnerable && target.Owner == Player)) target.Health = Math.Max(0, target.Health - attacker.Stats.Damage);
+            if (!(Invulnerable && target.Owner == Player)) target.Health = Math.Max(0, target.Health - Damage(attacker));
             AttackedBuilding?.Invoke(attacker, target);
             if (target.Owner == Player && attacker.Owner != Player) Alert(target.X + target.Width * .5f, target.Z + target.Width * .5f, true);
             if (target.Health > 0) CallForHelp(target.Owner, target.X + target.Width * .5f, target.Z + target.Width * .5f, attacker, null);
@@ -396,7 +396,7 @@ namespace Order.Simulation
             if (ruined.Count == 0) return;
             // Freed cells change paths and vision.
             foreach (var b in ruined) NavigationChanged(b.X, b.Z, b.Width);
-            foreach (var b in ruined) { b.queue.Clear(); b.started = false; Destroyed?.Invoke(b); }
+            foreach (var b in ruined) { b.queue.Clear(); b.started = false; b.research = null; Destroyed?.Invoke(b); }
             if (Winner < 0)
             {
                 foreach (var b in ruined)

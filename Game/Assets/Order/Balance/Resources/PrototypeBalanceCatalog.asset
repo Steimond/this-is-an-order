@@ -19,6 +19,7 @@ MonoBehaviour:
   Supply: {fileID: 11400000, guid: de12dedff54d1024f8387dbc99d37c19, type: 2}
   Factory: {fileID: 11400000, guid: 56c846026e24ee34e8d601a7f0d15708, type: 2}
   Headquarters: {fileID: 11400000, guid: 720d5115959f754438e353af438d1006, type: 2}
+  Research: {fileID: 11400000, guid: 8ab1eacdb31544c4999d6b066e65057f, type: 2}
   Resonance:
     Worker: {fileID: 11400000, guid: d558beac2f18a704dbce7bf4d5e65ae1, type: 2}
     Melee: {fileID: 11400000, guid: 82b385bb71d60a140ad7f909b94fbd68, type: 2}
@@ -27,6 +28,7 @@ MonoBehaviour:
     Supply: {fileID: 11400000, guid: 5cef7b2de9befa840a602e1e75638ddb, type: 2}
     Factory: {fileID: 11400000, guid: 9b77c6de6cad09f4a9c37feb6d30ecf9, type: 2}
     Headquarters: {fileID: 11400000, guid: 694a99515fd04704dba43a657b0aba1a, type: 2}
+    Research: {fileID: 11400000, guid: 4b746d18ad8f34b47a5096e1d7d90231, type: 2}
     Relay: {fileID: 11400000, guid: b34b76a0f67b7aa45a5a773f50fdd487, type: 2}
     Leaper: {fileID: 11400000, guid: 08e02e863b3b1204b95a19bf7bcae976, type: 2}
   Economy: {fileID: 11400000, guid: 96c7291b177d491458539ac1f77f7a24, type: 2}

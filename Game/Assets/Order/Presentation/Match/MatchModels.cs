@@ -134,7 +134,7 @@ namespace Order.Presentation
             return b.ToMesh("Worker drone");
         }
 
-        // Kinds follow MatchBalance: 0 supply node, 1 factory, 2 headquarters. Origin is the footprint centre on the ground.
+        // Kinds follow MatchBalance: 0 supply node, 1 factory, 2 headquarters, 3 workshop. Origin is the footprint centre on the ground.
         public static Mesh Building(int kind, float w, float h)
         {
             var b = new MeshBuilder();
@@ -185,6 +185,22 @@ namespace Order.Presentation
                     Prism(new Color(1, .55f, .2f), stack, 8, .115f, .115f, h * .92f, h * .97f, 0, 1);
                 }
                 Box(Cyan, new Vector3(0, .18f + h * .03f, centerZ - radius - .04f), new Vector3(w * .42f, .03f, .03f), 0, 1);
+            }
+            else if (kind == 3)
+            {
+                // Workshop: a low shed with a sloped roof, an open bay and a crane arm with a glowing work light.
+                Box(Concrete, new Vector3(0, .08f, 0), new Vector3(w * .96f, .16f, w * .96f));
+                Box(Plate, new Vector3(0, .16f + h * .25f, .05f), new Vector3(w * .8f, h * .5f, w * .6f));
+                b.Paint = Metal; b.Team = 0; b.Glow = 0; b.Transform = Matrix4x4.identity;
+                float eave = .16f + h * .5f, ridge = eave + h * .22f, half = w * .42f, depth = w * .34f;
+                b.Quad(new Vector3(-half, eave, -depth + .05f), new Vector3(-half, ridge, .05f), new Vector3(half, ridge, .05f), new Vector3(half, eave, -depth + .05f));
+                b.Quad(new Vector3(half, eave, depth + .05f), new Vector3(half, ridge, .05f), new Vector3(-half, ridge, .05f), new Vector3(-half, eave, depth + .05f));
+                Box(Light, new Vector3(0, ridge + .02f, .05f), new Vector3(w * .84f, .04f, .08f), 1);
+                Box(Dark, new Vector3(0, .16f + h * .2f, -w * .26f), new Vector3(w * .44f, h * .4f, .04f));
+                Box(Light, new Vector3(0, .16f + h * .42f, -w * .27f), new Vector3(w * .5f, .06f, .05f), 1);
+                Prism(Metal, new Vector3(w * .36f, 0, w * .32f), 4, .07f, .05f, .16f, h * .95f, 0, 0, 0, .5f);
+                Box(Metal, new Vector3(w * .2f, h * .95f, w * .32f), new Vector3(w * .36f, .05f, .06f));
+                Box(new Color(1, .7f, .3f), new Vector3(w * .04f, h * .9f, w * .32f), new Vector3(.06f, .06f, .06f), 0, 1);
             }
             else
             {

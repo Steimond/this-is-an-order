@@ -59,7 +59,7 @@ namespace Order.Presentation
         MaterialPropertyBlock markerColor;
         readonly Dictionary<int, UnitView> unitViews = new Dictionary<int, UnitView>();
         readonly Dictionary<(FactionId, UnitKind), UnitModel> unitModels = new Dictionary<(FactionId, UnitKind), UnitModel>();
-        readonly Mesh[,] buildingMeshes = new Mesh[2,4];
+        readonly Mesh[,] buildingMeshes = new Mesh[2,5];
         Mesh ringMesh, beaconMesh, shadowMesh, selectionMesh, markerMesh, cargoMesh;
         Material buildingMaterial, enemyBuildingMaterial, ghostMaterial, footprintMaterial, selectedMaterial, neutralMaterial, constructionMaterial, beaconMaterial, unitMaterial, enemyMaterial, beamMaterial, shadowMaterial,
             unitRingMaterial, hoverRingMaterial, enemyRingMaterial, enemyHoverMaterial, markerMaterial, oreMaterial, plasmaCargoMaterial, naniteMaterial, cocoonMaterial, coverageMaterial, darkCoverageMaterial;
@@ -914,7 +914,7 @@ namespace Order.Presentation
         {
             int shown=0;
             bool worker=false;foreach(var u in selection.Orderable)if(u.Kind==UnitKind.Worker)worker=true;
-            bool show=Match.Roster(PrototypeMatch.Player).Network&&(Mode==MatchMode.Build||worker||(selectedBuilding!=null&&selectedBuilding.Owner==PrototypeMatch.Player&&selectedBuilding.Stats.Coverage>0));
+            bool show=CoverageShown=Match.Roster(PrototypeMatch.Player).Network&&(Mode==MatchMode.Build||worker||(selectedBuilding!=null&&selectedBuilding.Owner==PrototypeMatch.Player&&selectedBuilding.Stats.Coverage>0));
             if(show)foreach(var b in Match.Buildings)
             {
                 if(b.Owner!=PrototypeMatch.Player||b.Stats.Coverage<=0||b.Ready<1)continue;
@@ -935,6 +935,7 @@ namespace Order.Presentation
             for(int i=shown;i<coverageRings.Count;i++)coverageRings[i].enabled=false;
         }
         const int CoverageSegments=72;
+        public bool CoverageShown{get;private set;}
         // Sites the player's workers are walking to, and the ones queued with Shift, show as ghosts of their buildings until
         // the building is placed.
         void ShowPlannedSites()

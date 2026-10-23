@@ -9,6 +9,9 @@ namespace Order.Content
         public const int Size = 64;
         public const string Id = "temple-basin-v1";
         public readonly List<ResourceDeposit> Resources = new List<ResourceDeposit>();
+        // Where a main building (3×3) stands at each base, corner of the footprint: the four starts on the plateaus, then
+        // the four expansions in the basin below their ramps.
+        public readonly List<(int x, int z)> Bases = new List<(int, int)>();
         public TempleMap()
         {
             for (int c = 0; c < 4; c++)
@@ -18,7 +21,10 @@ namespace Order.Content
                 for (int i = 0; i < 5; i++) Add(c, 26 + i, 9, false);
                 Add(c, 29, 13, true);
             }
+            for (int c = 0; c < 4; c++) Bases.Add(Base(c, 10, 10));
+            for (int c = 0; c < 4; c++) Bases.Add(Base(c, 24, 14));
         }
+        static (int, int) Base(int c, int x, int z) => ((c & 1) == 0 ? x : 61 - x, (c & 2) == 0 ? z : 61 - z);
         void Add(int c, int x, int z, bool plasma) => Resources.Add(new ResourceDeposit
         { X = (c & 1) == 0 ? x : 63-x, Z = (c & 2) == 0 ? z : 63-z, Plasma = plasma, Remaining = plasma ? 2500 : 1500 });
         public bool Inside(int x, int z) => x >= 0 && z >= 0 && x < Size && z < Size;

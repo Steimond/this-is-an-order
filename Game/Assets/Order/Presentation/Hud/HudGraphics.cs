@@ -54,7 +54,7 @@ namespace Order.Presentation
     {
         Gear, Power, Mic, ChevronLeft, ChevronRight, Close, Lock, Back, Check, Grid,
         Worker, Headquarters, Supply, Factory, Metal, Plasma, Move, Stop, Harvest, Pin, Base, Target, Armor, Menu, ClearPins, Train, Build,
-        Assault, Rifleman, Gunship, Hold, Relay, Spider, Leaper
+        Assault, Rifleman, Gunship, Hold, Relay, Spider, Leaper, Upgrade
     }
 
     public sealed class HudIcon : HudVector
@@ -128,6 +128,11 @@ namespace Order.Presentation
                     // A mast with signal arcs on both sides.
                     Shape(p, P, .5f, .36f, .5f, .86f); Shape(p, P, .36f, .86f, .64f, .86f);
                     HudPaint.Arc(p, P(.5f, .36f), size * .14f, 200, 340); HudPaint.Arc(p, P(.5f, .36f), size * .26f, 205, 335);
+                    break;
+                case HudIconKind.Upgrade:
+                    // Two chevrons pointing up over a bar.
+                    Shape(p, P, .26f, .5f, .5f, .26f, .74f, .5f); Shape(p, P, .26f, .7f, .5f, .46f, .74f, .7f);
+                    Shape(p, P, .28f, .86f, .72f, .86f);
                     break;
                 case HudIconKind.Factory:
                     Shape(p, P, .12f, .84f, .88f, .84f);

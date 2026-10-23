@@ -14,11 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Order.Balance::Order.Balance.BuildingBalanceAsset
   DisplayName: "\u041A\u043E\u043C\u0430\u043D\u0434\u043D\u044B\u0439 \u0443\u0437\u0435\u043B"
   Footprint: 3
-  Metal: 0
+  Metal: 400
   Plasma: 0
   Supply: 10
   Health: 1500
   Vision: 7
-  ConstructionSeconds: 5
+  ConstructionSeconds: 50
   ModelHeight: 2.6
   Trains: 00000000i
+  Coverage: 0
+  Relays: 0
