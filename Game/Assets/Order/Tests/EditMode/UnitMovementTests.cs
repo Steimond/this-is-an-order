@@ -103,6 +103,31 @@ namespace Order.Tests.EditMode
                 Assert.That(backwards,Is.LessThan(steps*.05f),"Too much jostling backwards");
             }
         }
+        // A group order spreads the paths across the way: a big crowd fills the ramp's width instead of filing down one lane.
+        [Test] public void BigCrowdFillsTheRampWidthInsteadOfQueueing()
+        {
+            var match=new PrototypeMatch();var crowd=new List<PrototypeUnit>();
+            for(int i=0;i<24;i++)crowd.Add(match.Spawn(i%2==0?UnitKind.Melee:UnitKind.Ranged,8+(i%6),13.5f+i/6));
+            Assert.That(match.MoveGroup(crowd,31.5f,10.5f),Is.True);
+            int maxOnRamp=0,moving=0,slowed=0;float done=-1;
+            for(float t=0;t<15&&done<0;t+=.05f)
+            {
+                var before=new List<(float,float)>();foreach(var u in crowd)before.Add((u.X,u.Z));
+                match.Tick(.05f);int onRamp=0;
+                for(int i=0;i<crowd.Count;i++)
+                {
+                    var u=crowd[i];if(match.Map.Ramp((int)u.X,(int)u.Z))onRamp++;
+                    if(!u.Moving)continue;moving++;
+                    float dx=u.X-before[i].Item1,dz=u.Z-before[i].Item2;if(dx*dx+dz*dz<(u.Stats.Speed*.05f*.35f)*(u.Stats.Speed*.05f*.35f))slowed++;
+                }
+                maxOnRamp=System.Math.Max(maxOnRamp,onRamp);
+                if(!crowd.Exists(u=>u.Moving))done=t;
+            }
+            Assert.That(done,Is.InRange(0f,7.8f),"The crowd should be down in under 8 s");
+            Assert.That(maxOnRamp,Is.GreaterThanOrEqualTo(13),"Many units on the ramp at once means it is used across its width");
+            Assert.That(slowed,Is.LessThan(moving*.08f),"Few steps spent waiting behind others");
+            foreach(var u in crowd)AssertOnFreeGround(match,u);
+        }
         [Test] public void RampsAreEnteredOnlyAtTheirEnds()
         {
             var match=new PrototypeMatch();var unit=match.Spawn(UnitKind.Ranged,25.5f,13.6f);

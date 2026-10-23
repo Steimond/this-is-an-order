@@ -177,7 +177,7 @@ namespace Order.Simulation
         internal float harvestTimer;
         // Movement state: the order's destination, where the last order ended (for group arrival) and progress tracking.
         internal float goalX, goalZ, arrivedX, arrivedZ, levelY, bestDistance, stuckTime, startX, startZ, lastDx, lastDz;
-        internal bool hasGoal, arrived, touchedArrived, returning;
+        internal bool hasGoal, arrived, touchedArrived, returning, holdsSpot;
         internal int replans;
         // Where the unit came to rest after its last order, and how long since a passing unit last shoved it from there.
         internal float restX, restZ, calmTime;

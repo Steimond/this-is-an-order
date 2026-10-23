@@ -159,8 +159,60 @@ namespace Order.Simulation
                 if (any) message = Message;
             }
             Message = message;
+            if (!queue) SpreadLanes(units, x, z);
             return any;
         }
+        // A group's paths share their corners, so the whole group would file through one lane round every corner and up
+        // every ramp. Each unit's corners are moved off the obstacle by its offset across the group's way, counted from the
+        // unit nearest the inner side of that corner, as far as the passage allows: the group keeps its order across and
+        // fills the width of a ramp or a gap.
+        void SpreadLanes(IReadOnlyList<PrototypeUnit> units, float x, float z)
+        {
+            float mx = 0, mz = 0; int count = 0;
+            foreach (var u in units) if (!u.Stats.Flying) { mx += u.X; mz += u.Z; count++; }
+            if (count < 2) return;
+            mx /= count; mz /= count;
+            float dx = x - mx, dz = z - mz, dl = (float)Math.Sqrt(dx * dx + dz * dz);
+            if (dl < 1) return;
+            float lx = -dz / dl, lz = dx / dl, minLateral = float.MaxValue, maxLateral = float.MinValue;
+            foreach (var u in units)
+            {
+                if (u.Stats.Flying) continue;
+                float lateral = (u.X - mx) * lx + (u.Z - mz) * lz;
+                minLateral = Math.Min(minLateral, lateral); maxLateral = Math.Max(maxLateral, lateral);
+            }
+            foreach (var u in units)
+            {
+                if (u.Stats.Flying || u.route.Count < 2) continue;
+                float lateral = (u.X - mx) * lx + (u.Z - mz) * lz, r = u.Stats.Radius;
+                var points = new List<Waypoint>(u.route);
+                float px = u.X, pz = u.Z;
+                for (int k = 0; k < points.Count - 1; k++)
+                {
+                    var p = points[k]; var next = points[k + 1];
+                    float ix = p.X - px, iz = p.Z - pz, il = (float)Math.Sqrt(ix * ix + iz * iz);
+                    float ox = next.X - p.X, oz = next.Z - p.Z, ol = (float)Math.Sqrt(ox * ox + oz * oz);
+                    if (il < 1e-3f || ol < 1e-3f) { px = p.X; pz = p.Z; continue; }
+                    ix /= il; iz /= il; ox /= ol; oz /= ol;
+                    // The path turns towards the inner side of the corner; the unit moves away from it.
+                    float turn = ix * oz - iz * ox, tx = ix + ox, tz = iz + oz, tl = (float)Math.Sqrt(tx * tx + tz * tz);
+                    if (tl < 1e-3f || Math.Abs(turn) < 1e-3f) { px = p.X; pz = p.Z; continue; }
+                    float nx = -tz / tl, nz = tx / tl, side = turn > 0 ? 1 : -1;
+                    float innerX = nx * side, innerZ = nz * side;
+                    float fromInner = innerX * lx + innerZ * lz > 0 ? maxLateral - lateral : lateral - minLateral;
+                    fromInner = Math.Min(fromInner, 4);
+                    foreach (var share in Shares)
+                    {
+                        float sx = p.X - innerX * fromInner * share, sz = p.Z - innerZ * fromInner * share;
+                        if (share > 0 && !(InMap(sx, sz) && CanTravel(px, pz, sx, sz, r) && CanTravel(sx, sz, next.X, next.Z, r))) continue;
+                        points[k] = new Waypoint(sx, sz); break;
+                    }
+                    px = points[k].X; pz = points[k].Z;
+                }
+                u.route.Clear(); foreach (var p in points) u.route.Enqueue(p);
+            }
+        }
+        static readonly float[] Shares = { 1, .75f, .5f, .25f, 0 };
         bool FreeSpot(PrototypeUnit unit, float x, float z, float level)
         {
             float r = unit.Stats.Radius;
@@ -387,10 +439,18 @@ namespace Order.Simulation
             }
             else if (am) a.touchedArrived = true;
             else if (bm) b.touchedArrived = true;
+            bool aHome = !am && AtHome(a), bHome = !bm && AtHome(b);
+            // A unit standing on the very spot it was sent to gives way little; the one still looking for room moves.
+            if (!am && !bm && aHome != bHome) { wa = aHome ? .15f : .85f; wb = 1 - wa; }
             a.X -= nx * overlap * wa; a.Z -= nz * overlap * wa;
             b.X += nx * overlap * wb; b.Z += nz * overlap * wb;
-            // Two idle units easing apart settle where they end up instead of walking back into each other.
-            if (!am && !bm) { a.restX = a.X; a.restZ = a.Z; b.restX = b.X; b.restZ = b.Z; }
+            // Two idle units easing apart settle where they end up instead of walking back into each other; a unit pushed off
+            // its own spot keeps it and returns there once the crowd has settled.
+            if (!am && !bm)
+            {
+                if (!aHome) { a.restX = a.X; a.restZ = a.Z; }
+                if (!bHome) { b.restX = b.X; b.restZ = b.Z; }
+            }
         }
         static bool Firm(PrototypeUnit u, PrototypeUnit other) =>
             !u.Moving && (u.Order == UnitOrder.Hold || u.Owner != other.Owner || (u.engaged && (u.Target != null || u.TargetBuilding != null)));
@@ -442,6 +502,7 @@ namespace Order.Simulation
             idle.calmTime = 0;
             mover.X -= nx * overlap * .1f; mover.Z -= nz * overlap * .1f;
         }
+        static bool AtHome(PrototypeUnit u) => u.arrived && u.holdsSpot;
         static bool SameGoal(PrototypeUnit mover, PrototypeUnit arrived) =>
             (mover.goalX - arrived.arrivedX) * (mover.goalX - arrived.arrivedX) + (mover.goalZ - arrived.arrivedZ) * (mover.goalZ - arrived.arrivedZ) < .09f;
         // Slides a ground unit back out of blocked cells, cliff edges, ramp sides and the map border. Cells are judged from the
@@ -499,7 +560,8 @@ namespace Order.Simulation
         void Arrive(PrototypeUnit u)
         {
             u.route.Clear(); u.hasGoal = false; u.arrived = true; u.replans = 0;
-            if (!u.returning) { u.arrivedX = u.goalX; u.arrivedZ = u.goalZ; }
+            // A unit that reached its very destination holds that spot against the units still settling round it.
+            if (!u.returning) { u.arrivedX = u.goalX; u.arrivedZ = u.goalZ; u.holdsSpot = (u.X - u.goalX) * (u.X - u.goalX) + (u.Z - u.goalZ) * (u.Z - u.goalZ) < .15f * .15f; }
             u.returning = false; u.restX = u.X; u.restZ = u.Z; u.calmTime = 0;
             if (!u.engaged && (u.Order == UnitOrder.Move || u.Order == UnitOrder.AttackMove)) u.Order = UnitOrder.Idle;
         }
