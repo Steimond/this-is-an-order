@@ -461,6 +461,21 @@
 .match-unit-tile.is-hurt .match-unit-tile__fill { background-color: #F2C744; }
 .match-unit-tile.is-critical .match-unit-tile__fill { background-color: #F0583A; }
 
+/* Production queue of the selected building: the unit in training is highlighted, empty slots are dim */
+.match-queue {
+    flex-direction: row;
+    margin-top: 8px;
+}
+
+.match-queue__slot.is-current {
+    border-color: var(--hud-accent);
+    background-color: var(--hud-accent-soft);
+}
+
+.match-queue__slot.is-empty {
+    opacity: 0.35;
+}
+
 /* Control groups: tabs on the top edge of the selection panel */
 .match-groups {
     position: absolute;
@@ -597,3 +612,19 @@
     color: var(--hud-accent);
     -unity-background-image-tint-color: var(--hud-panel-strong);
 }
+
+/* Match outcome across the middle of the screen */
+.match-banner {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 26%;
+    -unity-text-align: middle-center;
+    font-size: 64px;
+    letter-spacing: 18px;
+    -unity-font-style: bold;
+    color: var(--hud-hot);
+    text-shadow: 0 0 12px rgba(0, 0, 0, 0.9);
+}
+
+.match-banner.is-defeat { color: #F0583A; }

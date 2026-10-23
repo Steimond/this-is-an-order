@@ -15,7 +15,7 @@ using UnityEngine.UIElements;
 
 namespace Order.Presentation
 {
-    public enum MatchMode { None, Build, Move, Harvest, Ping, Attack }
+    public enum MatchMode { None, Build, Move, Harvest, Ping, Attack, Rally }
 
     // What the HUD needs from the running match view.
     public interface IMatchHost
@@ -23,7 +23,7 @@ namespace Order.Presentation
         PrototypeMatch Match { get; }
         MatchMode Mode { get; }
         int BuildKind { get; }
-        int SelectedBuilding { get; }
+        PrototypeBuilding SelectedBuilding { get; }
         ResourceDeposit SelectedDeposit { get; }
         IReadOnlyList<Vector2> Pins { get; }
         UnitSelection Selection { get; }
@@ -37,6 +37,9 @@ namespace Order.Presentation
         bool MoveSelection(Vector2 point);
         bool AttackMoveSelection(Vector2 point);
         void HoldSelection();
+        bool Train(UnitKind kind);
+        void CancelTraining(int index);
+        void SetRallyPoint(Vector2 point);
         void Stop();
         void Focus(Vector2 point);
         void FocusWorker();
@@ -77,10 +80,12 @@ namespace Order.Presentation
         private readonly Label assistantName, subtitle;
         private readonly HudIcon selectionIcon;
         private readonly Label selectionName, selectionStatus, selectionStats, selectionEmpty;
-        private readonly VisualElement upgrades, selectionBody, unitGrid, groupTabs, selectionBox;
-        private readonly List<VisualElement> unitTiles = new List<VisualElement>(), tabs = new List<VisualElement>();
+        private readonly VisualElement upgrades, selectionBody, unitGrid, groupTabs, selectionBox, queueRow;
+        private readonly List<VisualElement> unitTiles = new List<VisualElement>(), tabs = new List<VisualElement>(), queueTiles = new List<VisualElement>();
+        // The building whose production queue is shown.
+        private PrototypeBuilding queue;
         private readonly HudBar health, shields, progress;
-        private readonly Label commandsTitle;
+        private readonly Label commandsTitle, banner;
         private readonly Button[] buttons = new Button[Slots];
         private readonly HudAction[] actions = new HudAction[Slots];
         private readonly VisualElement tooltip;
@@ -189,6 +194,18 @@ namespace Order.Presentation
             selectionBody.Add(health); selectionBody.Add(shields); selectionBody.Add(progress);
             selectionStats = Hud.Text("", "match-selection__stats");
             selectionBody.Add(selectionStats);
+            // Production queue: the unit in training first; a click cancels and refunds.
+            queueRow = Hud.Box("match-queue");
+            for (var i = 0; i < PrototypeMatch.QueueSize; i++)
+            {
+                var index = i;
+                var slot = Hud.Box("match-unit-tile"); slot.AddToClassList("match-queue__slot");
+                var icon = new HudIcon(HudIconKind.Worker); icon.AddToClassList("match-unit-tile__icon");
+                slot.Add(icon);
+                slot.RegisterCallback<PointerDownEvent>(evt => { if (evt.button == 0 && queue != null && index < queue.Queue.Count) { host.CancelTraining(index); evt.StopPropagation(); } });
+                queueRow.Add(slot); queueTiles.Add(slot);
+            }
+            selectionBody.Add(queueRow);
             selection.Add(selectionBody);
             selectionEmpty = Hud.Text("", "match-selection__empty");
             selection.Add(selectionEmpty);
@@ -259,6 +276,9 @@ namespace Order.Presentation
 
             selectionBox = Hud.Box("match-selection-box"); selectionBox.pickingMode = PickingMode.Ignore;
             screen.Add(selectionBox);
+            // Outcome of the match across the middle of the screen.
+            banner = Hud.Text("", "match-banner"); banner.pickingMode = PickingMode.Ignore; banner.style.display = DisplayStyle.None;
+            screen.Add(banner);
 
             if (services?.App != null)
             {
@@ -343,6 +363,9 @@ namespace Order.Presentation
             var used = match.SupplyUsed; var limit = match.SupplyLimit;
             supply.text = $"{used} / {limit}";
             supply.EnableInClassList("is-full", used >= limit);
+            banner.style.display = match.Winner < 0 ? DisplayStyle.None : DisplayStyle.Flex;
+            banner.text = match.Winner == PrototypeMatch.Player ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
+            banner.EnableInClassList("is-defeat", match.Winner == PrototypeMatch.Enemy);
             if (match.Message != lastMessage) { lastMessage = match.Message; ShowEvent(match.Message); }
             var hint = host.ModeHint;
             if (hint != lastHint) { lastHint = hint; if (!string.IsNullOrEmpty(hint)) ShowEvent(hint, true); }
@@ -393,6 +416,7 @@ namespace Order.Presentation
             upgrades.Clear();
             shields.style.display = DisplayStyle.None;
             progress.style.display = DisplayStyle.None;
+            queueRow.style.display = DisplayStyle.None; queue = null;
             var any = true;
             var selected = host.Selection.Units;
             var unit = selected.Count > 0 ? selected[0] : null;
@@ -416,26 +440,36 @@ namespace Order.Presentation
                 health.Set(unit.Health, stats.Health);
                 var place = MapGrid.Name(unit.X, unit.Z, TempleMap.Size);
                 var targets = stats.HitsGround && stats.HitsAir ? "наземные и воздушные" : stats.HitsAir ? "только воздушные" : "только наземные";
-                var role = stats.Damage <= 0 ? $"Добыча {stats.HarvestAmount} за {stats.HarvestInterval:0.#} с"
+                var role = stats.Damage <= 0 ? $"Груз {stats.HarvestAmount} за рейс, {stats.HarvestInterval:0.#} с у залежи"
                     : $"Урон {stats.Damage}  ·  {(stats.AttackRange < 1 ? "Ближний бой" : $"Дальность {stats.AttackRange:0.#}")}  ·  Перезарядка {stats.AttackCooldown:0.##} с  ·  Цели: {targets}";
                 selectionStats.text = $"{role}  ·  Скорость {stats.Speed:0.#}  ·  Обзор {stats.Vision}{(stats.Flying ? "  ·  Воздушный" : "")}  ·  {place}";
                 Upgrade(HudIconKind.Armor, "БРОНЯ", 0);
                 Upgrade(HudIconKind.Target, "ОРУЖИЕ", stats.Damage > 0 ? 0 : -1);
             }
-            else if (host.SelectedBuilding >= 0 && host.SelectedBuilding < match.Buildings.Count)
+            else if (host.SelectedBuilding != null)
             {
-                var building = match.Buildings[host.SelectedBuilding];
+                var building = host.SelectedBuilding;
                 var stats = balance.Buildings[building.Kind];
                 selectionIcon.Kind = building.Kind == 0 ? HudIconKind.Supply : building.Kind == 1 ? HudIconKind.Factory : HudIconKind.Headquarters;
                 selectionName.text = stats.Name.ToUpperInvariant();
                 var ready = building.Ready >= 1;
-                selectionStatus.text = ready ? (building.Kind == 2 ? "ГОТОВО · ПРОИЗВОДСТВО ПОЯВИТСЯ ПОЗЖЕ" : "ГОТОВО") : "СТРОИТЕЛЬСТВО";
-                health.Set(stats.Health, stats.Health);
+                var training = ready && building.Queue.Count > 0 ? balance.Unit(building.Queue[0]) : null;
+                selectionStatus.text = (building.Owner != PrototypeMatch.Player ? "ПРОТИВНИК · " : "") + (!ready ? "СТРОИТЕЛЬСТВО"
+                    : training == null ? "ГОТОВО" : building.SupplyBlocked ? "ЖДЁТ СНАБЖЕНИЯ" : "ОБУЧЕНИЕ · " + training.Name.ToUpperInvariant());
+                health.Set(building.Health, stats.Health);
+                var progressCaption = progress.Q<Label>(className: "hud-bar__caption");
                 if (!ready)
                 {
-                    progress.style.display = DisplayStyle.Flex;
+                    progress.style.display = DisplayStyle.Flex; progressCaption.text = "СТРОИТЕЛЬСТВО";
                     progress.Set(building.Ready, 1, $"{building.Ready * 100:0}%  ·  {(1 - building.Ready) * stats.BuildSeconds:0.0} с");
                 }
+                else if (training != null)
+                {
+                    progress.style.display = DisplayStyle.Flex; progressCaption.text = "ОБУЧЕНИЕ";
+                    progress.Set(building.Training, training.TrainSeconds, building.SupplyBlocked ? "нужно снабжение"
+                        : $"{building.Training / training.TrainSeconds * 100:0}%  ·  {training.TrainSeconds - building.Training:0.0} с");
+                }
+                if (building.Owner == PrototypeMatch.Player && stats.Trains.Length > 0) { queue = building; RefreshQueue(building); }
                 selectionStats.text = $"Снабжение +{stats.Supply}  ·  Обзор {stats.Vision}  ·  След {stats.Width}×{stats.Width}  ·  {MapGrid.Name(building.X + stats.Width / 2f, building.Z + stats.Width / 2f, TempleMap.Size)}";
                 Upgrade(HudIconKind.Armor, "БРОНЯ", 0);
             }
@@ -448,10 +482,10 @@ namespace Order.Presentation
                 selectionStatus.text = visible ? "ЗАЛЕЖЬ · ВИДНА" : "ЗАЛЕЖЬ · ПОСЛЕДНЕЕ НАБЛЮДЕНИЕ";
                 var total = deposit.Gas ? balance.GasDeposit : balance.MineralDeposit;
                 health.Set(deposit.Remaining, total, $"{deposit.Remaining} / {total}");
-                selectionStats.text = $"Рабочий добывает {balance.Worker.HarvestAmount} за {balance.Worker.HarvestInterval:0.#} с  ·  {MapGrid.Name(deposit.X + .5f, deposit.Z + .5f, TempleMap.Size)}";
+                selectionStats.text = $"Рабочий выносит {balance.Worker.HarvestAmount} за рейс  ·  {MapGrid.Name(deposit.X + .5f, deposit.Z + .5f, TempleMap.Size)}";
             }
             else any = false;
-            health.Q<Label>(className: "hud-bar__caption").text = host.SelectedDeposit != null && unit == null && host.SelectedBuilding < 0 ? "ЗАПАС" : "ПРОЧНОСТЬ";
+            health.Q<Label>(className: "hud-bar__caption").text = host.SelectedDeposit != null && unit == null && host.SelectedBuilding == null ? "ЗАПАС" : "ПРОЧНОСТЬ";
             selectionBody.style.display = any && !many ? DisplayStyle.Flex : DisplayStyle.None;
             upgrades.style.display = any && !many ? DisplayStyle.Flex : DisplayStyle.None;
             unitGrid.style.display = many ? DisplayStyle.Flex : DisplayStyle.None;
@@ -465,13 +499,34 @@ namespace Order.Presentation
             }
         }
 
+        private void RefreshQueue(PrototypeBuilding building)
+        {
+            queueRow.style.display = DisplayStyle.Flex;
+            for (var i = 0; i < queueTiles.Count; i++)
+            {
+                var slot = queueTiles[i];
+                var filled = i < building.Queue.Count;
+                slot.EnableInClassList("is-empty", !filled);
+                slot.EnableInClassList("is-current", filled && i == 0);
+                var icon = slot.Q<HudIcon>();
+                icon.style.visibility = filled ? Visibility.Visible : Visibility.Hidden;
+                if (filled) icon.Kind = UnitIcon(building.Queue[i]);
+                slot.tooltip = filled ? host.Match.Balance.Unit(building.Queue[i]).Name + " · клик — отмена" : "";
+            }
+        }
+
+        // Hotkeys of the training buttons: the first letter of the unit's English name, as on StarCraft cards.
+        private static Key TrainKey(UnitKind kind) => kind == UnitKind.Worker ? Key.E : kind == UnitKind.Melee ? Key.A : kind == UnitKind.Ranged ? Key.R : Key.G;
+
         private static string State(PrototypeUnit unit)
         {
             var deposit = unit.HarvestTarget;
-            if (unit.Target != null) return unit.Moving ? "ПРЕСЛЕДУЕТ ЦЕЛЬ" : "АТАКУЕТ";
+            if (unit.Target != null || unit.TargetBuilding != null) return unit.Moving ? "ПРЕСЛЕДУЕТ ЦЕЛЬ" : "АТАКУЕТ";
             if (unit.Order == UnitOrder.Hold) return "ДЕРЖИТ ПОЗИЦИЮ";
             if (unit.Order == UnitOrder.AttackMove) return "АТАКА С ДВИЖЕНИЕМ";
+            if (deposit != null && unit.Carrying > 0) return "НЕСЁТ " + (unit.CarriesGas ? "ГАЗ" : "МИНЕРАЛЫ");
             if (unit.Moving) return deposit != null ? "НАПРАВЛЯЕТСЯ К ЗАЛЕЖИ" : "ДВИЖЕНИЕ";
+            if (deposit != null && !unit.Mining && deposit.Remaining > 0) return "ЖДЁТ ОЧЕРЕДИ У ЗАЛЕЖИ";
             return deposit != null && deposit.Remaining > 0 ? "ДОБЫЧА · " + (deposit.Gas ? "ГАЗ" : "МИНЕРАЛЫ") : "ОЖИДАЕТ ПРИКАЗА";
         }
 
@@ -608,13 +663,27 @@ namespace Order.Presentation
                         Run = () => host.SetMode(MatchMode.Build, building) };
                 }
             }
-            else if (host.SelectedBuilding >= 0 && host.SelectedBuilding < match.Buildings.Count)
+            else if (host.SelectedBuilding != null)
             {
-                var building = match.Buildings[host.SelectedBuilding];
-                title = "КОМАНДЫ · " + match.Balance.Buildings[building.Kind].Name.ToUpperInvariant();
-                if (building.Kind == 2)
-                    actions[0] = new HudAction { Title = "Рабочий", Hotkey = "E", Key = Key.E, Icon = HudIconKind.Train, Minerals = 50,
-                        Description = "Обучить рабочего.", Locked = "Производство юнитов появится вместе с экономикой армии.", Run = () => { } };
+                var building = host.SelectedBuilding;
+                var stats = match.Balance.Buildings[building.Kind];
+                title = (building.Owner == PrototypeMatch.Player ? "КОМАНДЫ · " : "ПРОТИВНИК · ") + stats.Name.ToUpperInvariant();
+                if (building.Owner == PrototypeMatch.Player)
+                {
+                    for (var i = 0; i < stats.Trains.Length && i < 4; i++)
+                    {
+                        var kind = stats.Trains[i];
+                        var unitStats = match.Balance.Unit(kind);
+                        var key = TrainKey(kind);
+                        actions[i] = new HudAction { Title = unitStats.Name, Hotkey = key.ToString(), Key = key, Icon = UnitIcon(kind),
+                            Minerals = unitStats.Minerals, Gas = unitStats.Gas, Seconds = unitStats.TrainSeconds,
+                            Description = $"Снабжение {unitStats.Supply}. Очередь до {PrototypeMatch.QueueSize}; клик по юниту в очереди — отмена с возвратом стоимости.",
+                            Locked = building.Ready < 1 ? "Здание ещё строится." : null, Run = () => host.Train(kind) };
+                    }
+                    if (stats.Trains.Length > 0)
+                        actions[4] = new HudAction { Title = "Точка сбора", Hotkey = "Y", Key = Key.Y, Icon = HudIconKind.Pin, Active = host.Mode == MatchMode.Rally,
+                            Description = "Куда идут новые юниты. Рабочие с точкой на залежи сразу добывают. Также: ПКМ по карте.", Run = () => host.SetMode(MatchMode.Rally) };
+                }
             }
             if (host.Mode != MatchMode.None)
                 actions[14] = new HudAction { Title = "Отмена", Hotkey = "ESC", Icon = HudIconKind.Close, Description = "Выйти из режима указания цели.", Run = () => host.SetMode(MatchMode.None) };
@@ -802,7 +871,7 @@ namespace Order.Presentation
             bool Is(string pattern) => Regex.IsMatch(t, pattern, RegexOptions.CultureInvariant);
             if (Is(@"^(?:помощь|справка|команды|что ты умеешь)$"))
             {
-                reply = "Приказы полигона: «выбери армию», «выбери стрелков», «группа 1», «иди в D-2-9», «атакуй в F-6», «держи позицию», «к метке 2», «стоп», «добывай газ», «построй узел снабжения в C-7», «метка в E-4», «камера на H-8», «сетка», «к базе». " +
+                reply = "Приказы полигона: «выбери армию», «выбери стрелков», «группа 1», «иди в D-2-9», «атакуй в F-6», «держи позицию», «обучи 2 стрелков», «к метке 2», «стоп», «добывай газ», «построй узел снабжения в C-7», «метка в E-4», «камера на H-8», «сетка», «к базе». " +
                     (services == null ? "" : "Меню: «открой графику», «громкость 40», «в штаб».");
                 return true;
             }
@@ -878,6 +947,25 @@ namespace Order.Presentation
                 if (deposit == null) { ok = false; reply = wantGas ? "Нет разведанного газа." : "Нет разведанных минералов."; return true; }
                 ok = match.Move(harvester, deposit.X + .5f, deposit.Z + .5f);
                 reply = ok ? $"{harvester.Stats.Name}: добыча {(deposit.Gas ? "газа" : "минералов")} в {MapGrid.Name(deposit.X + .5f, deposit.Z + .5f, TempleMap.Size)}." : match.Message;
+                return true;
+            }
+            var trainMatch = Regex.Match(t, @"^(?:обучи|найми|закажи|произведи)\s+(?:(\d)\s+)?(рабоч|штурмов|стрел|винтокрыл)\w*(?:\s+(\d))?$", RegexOptions.CultureInvariant);
+            if (trainMatch.Success)
+            {
+                var word = trainMatch.Groups[2].Value;
+                var kind = word == "рабоч" ? UnitKind.Worker : word == "штурмов" ? UnitKind.Melee : word == "стрел" ? UnitKind.Ranged : UnitKind.Air;
+                var digits = trainMatch.Groups[1].Success ? trainMatch.Groups[1].Value : trainMatch.Groups[3].Value;
+                var count = Mathf.Clamp(digits.Length > 0 ? digits[0] - '0' : 1, 1, PrototypeMatch.QueueSize);
+                // The selected building if it trains this unit, otherwise the least busy one that does.
+                var selected = host.SelectedBuilding;
+                var building = selected != null && selected.Owner == PrototypeMatch.Player && selected.Ready >= 1 && match.Trains(selected, kind) ? selected
+                    : match.Buildings.Where(b => b.Owner == PrototypeMatch.Player && b.Ready >= 1 && match.Trains(b, kind)).OrderBy(b => b.Queue.Count).FirstOrDefault();
+                var name = match.Balance.Unit(kind).Name;
+                if (building == null) { ok = false; reply = kind == UnitKind.Worker ? "Нет готового командного узла." : $"{name}: нужен готовый цех."; return true; }
+                var queued = 0;
+                while (queued < count && match.Train(building, kind)) queued++;
+                ok = queued > 0;
+                reply = ok ? $"Обучение: {name}{(queued > 1 ? " ×" + queued : "")} — {match.Balance.Buildings[building.Kind].Name.ToLowerInvariant()}." + (queued < count ? " Остальные: " + match.Message : "") : match.Message;
                 return true;
             }
             if (Is(@"^(?:держи\w* позици\w*|держать позици\w*|стой на месте|стоять на месте)$"))

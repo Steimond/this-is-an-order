@@ -26,3 +26,6 @@ MonoBehaviour:
   AttackCooldown: 0.85
   HitsGround: 1
   HitsAir: 1
+  Minerals: 50
+  Gas: 0
+  TrainSeconds: 18

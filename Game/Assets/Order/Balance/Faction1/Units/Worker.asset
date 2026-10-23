@@ -17,8 +17,8 @@ MonoBehaviour:
   CollisionRadius: 0.28
   Health: 40
   Vision: 9
-  HarvestAmount: 8
-  HarvestInterval: 1
+  HarvestAmount: 5
+  HarvestInterval: 2
   Supply: 1
   Flying: 0
   Damage: 0
@@ -26,3 +26,6 @@ MonoBehaviour:
   AttackCooldown: 1
   HitsGround: 1
   HitsAir: 0
+  Minerals: 50
+  Gas: 0
+  TrainSeconds: 12

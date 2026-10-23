@@ -135,11 +135,11 @@ namespace Order.Simulation
 
         // Several units to one point. When a compact group is sent beyond its own bounds, every unit keeps its place
         // in the formation (if that spot is free and on the clicked level); a click inside the group gathers it on the point.
-        public bool MoveGroup(IReadOnlyList<PrototypeUnit> units, float x, float z) => GroupOrder(units, x, z, false);
-        bool GroupOrder(IReadOnlyList<PrototypeUnit> units, float x, float z, bool attack)
+        public bool MoveGroup(IReadOnlyList<PrototypeUnit> units, float x, float z) => GroupOrder(units, x, z, false, false);
+        bool GroupOrder(IReadOnlyList<PrototypeUnit> units, float x, float z, bool attack, bool queue)
         {
             if (units.Count == 0) return false;
-            if (units.Count == 1) return attack ? AttackMove(units[0], x, z) : Move(units[0], x, z);
+            if (units.Count == 1 && !queue) return attack ? AttackMove(units[0], x, z) : Move(units[0], x, z);
             int cx = (int)x, cz = (int)z;
             bool deposit = Map.Inside(cx, cz) && Explored[cx, cz] && Map.ResourceAt(cx, cz) != null;
             float mx = 0, mz = 0, minX = 64, minZ = 64, maxX = 0, maxZ = 0, spread = 0;
@@ -153,7 +153,9 @@ namespace Order.Simulation
             {
                 float gx = x + u.X - mx, gz = z + u.Z - mz;
                 bool keep = formation && FreeSpot(u, gx, gz, level);
-                any |= attack ? AttackMove(u, keep ? gx : x, keep ? gz : z) : Move(u, keep ? gx : x, keep ? gz : z);
+                float px = keep ? gx : x, pz = keep ? gz : z;
+                if (queue) { Enqueue(u, new QueuedOrder(attack ? UnitOrder.AttackMove : UnitOrder.Move, px, pz)); any = true; message = "Приказ добавлен в очередь."; continue; }
+                any |= attack ? AttackMove(u, px, pz) : Move(u, px, pz);
                 if (any) message = Message;
             }
             Message = message;
@@ -180,7 +182,7 @@ namespace Order.Simulation
         void Replan(PrototypeUnit u)
         {
             var message = Message; var deposit = u.HarvestTarget; int replans = u.replans;
-            if (deposit != null) PlanPath(u, deposit.X + .5f, deposit.Z + .5f); else PlanPath(u, u.goalX, u.goalZ);
+            if (u.delivering) Haul(u); else if (deposit != null) PlanPath(u, deposit.X + .5f, deposit.Z + .5f); else PlanPath(u, u.goalX, u.goalZ);
             u.replans = replans; Message = message;
         }
 
@@ -253,7 +255,9 @@ namespace Order.Simulation
                 float r = u.Stats.Radius; u.X = Math.Max(r, Math.Min(64 - r, u.X)); u.Z = Math.Max(r, Math.Min(64 - r, u.Z));
             }
             foreach (var u in Units) { UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
+            TickHarvest(dt);
             RemoveDead();
+            RunQueues();
         }
         // Exactly along the route: a lone unit ends precisely on its destination. In a crowd a unit pushed off its line does
         // not go back for every corner: once near one, with a clear straight line to the next, it cuts across.
@@ -286,8 +290,8 @@ namespace Order.Simulation
             var next = u.route.Peek(); float dx = next.X - u.X, dz = next.Z - u.Z, l = (float)Math.Sqrt(dx * dx + dz * dz);
             if (l > 1e-4f) { hx = dx / l; hz = dz / l; }
         }
-        // A harvesting worker passes through others, as in StarCraft.
-        static bool Ghost(PrototypeUnit u) => u.route.Count == 0 && u.HarvestTarget != null;
+        // A worker in the mining cycle passes through others, as in StarCraft.
+        static bool Ghost(PrototypeUnit u) => u.HarvestTarget != null;
         // Units by map cell; contacts are always within the 3×3 cells around a unit.
         void FillBuckets()
         {
@@ -326,6 +330,8 @@ namespace Order.Simulation
                     Heading(v, 0, 0, out float vx, out float vz);
                     float together = hx * vx + hz * vz;
                     if (together < .3f) continue;
+                    // Two units side by side may each see the other ahead in its lane; only one of them waits.
+                    if (-(dx * vx + dz * vz) > 0 && u.Id < v.Id) continue;
                     // The ally ahead moves on by about what it covered last step along our heading.
                     float gap = ahead - (float)Math.Sqrt(reach * reach - lateral * lateral), pace = Math.Max(0, v.lastDx * hx + v.lastDz * hz);
                     free = Math.Min(free, Math.Max(0, gap) + pace);
@@ -387,10 +393,11 @@ namespace Order.Simulation
             if (!am && !bm) { a.restX = a.X; a.restZ = a.Z; b.restX = b.X; b.restZ = b.Z; }
         }
         static bool Firm(PrototypeUnit u, PrototypeUnit other) =>
-            !u.Moving && (u.Order == UnitOrder.Hold || u.Owner != other.Owner || (u.engaged && u.Target != null));
+            !u.Moving && (u.Order == UnitOrder.Hold || u.Owner != other.Owner || (u.engaged && (u.Target != null || u.TargetBuilding != null)));
         // Only the other unit gives way; a mover pressing into a firm unit also slips sideways, so it goes round it.
-        // (nx, nz) points from the firm unit to the one that gives way.
-        static void Slide(PrototypeUnit unit, PrototypeUnit firm, float nx, float nz, float overlap)
+        // (nx, nz) points from the firm unit to the one that gives way. A ground unit slips to the side that is free of walls and
+        // standing units, so a line of units hitting a wall is passed on the open side instead of being pressed into the crowd.
+        void Slide(PrototypeUnit unit, PrototypeUnit firm, float nx, float nz, float overlap)
         {
             float dx = nx, dz = nz;
             if (unit.Moving)
@@ -398,9 +405,28 @@ namespace Order.Simulation
                 Heading(unit, -nx, -nz, out float hx, out float hz);
                 float along = nx * hx + nz * hz, sx = nx - hx * along, sz = nz - hz * along, sl = (float)Math.Sqrt(sx * sx + sz * sz);
                 if (sl < .2f) { float side = unit.Id % 2 == 0 ? 1 : -1; sx = -hz * side; sz = hx * side; } else { sx /= sl; sz /= sl; }
+                if (!unit.Stats.Flying)
+                {
+                    float probe = unit.Stats.Radius + .35f;
+                    float ax = unit.X + hx * .3f, az = unit.Z + hz * .3f;
+                    if (!Open(unit, ax + sx * probe, az + sz * probe) && Open(unit, ax - sx * probe, az - sz * probe)) { sx = -sx; sz = -sz; }
+                }
                 dx += sx; dz += sz;
             }
             unit.X += dx * overlap; unit.Z += dz * overlap;
+        }
+        // Room for the unit at a point: no wall, cliff or building there and no other standing unit of its layer.
+        bool Open(PrototypeUnit unit, float x, float z)
+        {
+            float r = unit.Stats.Radius;
+            if (!CanTravel(x, z, x, z, r)) return false;
+            foreach (var v in Units)
+            {
+                if (v == unit || v.Moving || v.Stats.Flying != unit.Stats.Flying || Ghost(v)) continue;
+                float reach = (r + v.Stats.Radius) * .9f, dx = v.X - x, dz = v.Z - z;
+                if (dx * dx + dz * dz < reach * reach) return false;
+            }
+            return true;
         }
         // An idle unit in the way steps aside across the mover's heading rather than being bulldozed ahead of it.
         static void Shove(PrototypeUnit mover, PrototypeUnit idle, float nx, float nz, float overlap)
@@ -420,7 +446,7 @@ namespace Order.Simulation
             (mover.goalX - arrived.arrivedX) * (mover.goalX - arrived.arrivedX) + (mover.goalZ - arrived.arrivedZ) * (mover.goalZ - arrived.arrivedZ) < .09f;
         // Slides a ground unit back out of blocked cells, cliff edges, ramp sides and the map border. Cells are judged from the
         // height and cell the unit stood on before this step, so a push never drops it off a cliff, lifts it onto a plateau
-        // or carries it over a ramp side.
+        // or carries it over a ramp side; a unit on a ramp is also kept off the cells beside it, as CanTravel requires.
         void KeepOutOfObstacles(PrototypeUnit u)
         {
             float r = u.Stats.Radius;
@@ -431,7 +457,7 @@ namespace Order.Simulation
                 for (int zz = (int)(u.Z - r); zz <= (int)(u.Z + r); zz++)
                 for (int xx = (int)(u.X - r); xx <= (int)(u.X + r); xx++)
                 {
-                    if (Map.Inside(xx, zz) && !Occupied(xx, zz) && !RampSide(sx, sz, xx, zz) && Math.Abs(Map.Height(xx, zz, Math.Max(0, Math.Min(1, u.X - xx))) - u.levelY) <= .51f) continue;
+                    if (Map.Inside(xx, zz) && !Occupied(xx, zz) && !RampSide(sx, sz, xx, zz) && !RampSide((int)u.X, (int)u.Z, xx, zz) && Math.Abs(Map.Height(xx, zz, Math.Max(0, Math.Min(1, u.X - xx))) - u.levelY) <= .51f) continue;
                     float nearX = Math.Max(xx, Math.Min(u.X, xx + 1)), nearZ = Math.Max(zz, Math.Min(u.Z, zz + 1));
                     float dx = u.X - nearX, dz = u.Z - nearZ, d2 = dx * dx + dz * dz;
                     if (d2 >= r * r) continue;
@@ -489,11 +515,11 @@ namespace Order.Simulation
             if (PlanPath(u, rx, rz)) { u.returning = true; u.arrived = true; u.arrivedX = ax; u.arrivedZ = az; }
             u.returns = returns + 1; Message = message;
         }
-        // Stops short of the goal; a worker gives up harvesting unless it stands next to its deposit.
+        // Stops short of the goal; a worker gives up harvesting unless it stands next to its deposit or carries a load home.
         void Stand(PrototypeUnit u)
         {
             var deposit = u.HarvestTarget;
-            if (deposit != null && (Math.Abs(u.X - deposit.X - .5f) > 1.35f || Math.Abs(u.Z - deposit.Z - .5f) > 1.35f)) u.HarvestTarget = null;
+            if (deposit != null && !u.delivering && !NextTo(u, deposit)) u.HarvestTarget = null;
             Arrive(u);
         }
 

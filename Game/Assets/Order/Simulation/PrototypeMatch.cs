@@ -27,7 +27,7 @@ namespace Order.Simulation
         {
             Balance=balance??new MatchBalance();Minerals=Balance.StartingMinerals;Gas=Balance.StartingGas;
             foreach(var r in Map.Resources)r.Remaining=r.Gas?Balance.GasDeposit:Balance.MineralDeposit;
-            Buildings.Add(new PrototypeBuilding { X=10, Z=10, Width=Balance.Buildings[2].Width, Ready=1, Kind=2 });
+            AddBuilding(2,10,10,Player,1);
             Spawn(UnitKind.Worker,13.5f,13.5f);UpdateVision();
         }
         public PrototypeUnit Spawn(UnitKind kind,float x,float z,int owner=Player)
@@ -50,8 +50,17 @@ namespace Order.Simulation
             for(int i=0;i<3;i++)Spawn(UnitKind.Ranged,32.8f+i*1.2f,41.6f,Enemy);
             Spawn(UnitKind.Air,34,43,Enemy);UpdateVision();
         }
-        public int SupplyUsed{get{int used=0;foreach(var u in Units)if(u.Owner==Player)used+=u.Stats.Supply;return used;}}
-        public int SupplyLimit{get{int limit=0;foreach(var b in Buildings)if(b.Ready>=1)limit+=Balance.Buildings[b.Kind].Supply;return limit;}}
+        // Units in training count from the moment their training starts, as in StarCraft.
+        public int SupplyUsed=>Supply(Player);
+        int Supply(int owner)
+        {
+            int used=0;
+            foreach(var u in Units)if(u.Owner==owner)used+=u.Stats.Supply;
+            foreach(var b in Buildings)if(b.Owner==owner&&b.started)used+=Balance.Unit(b.queue[0]).Supply;
+            return used;
+        }
+        public int SupplyLimit=>Limit(Player);
+        int Limit(int owner){int limit=0;foreach(var b in Buildings)if(b.Owner==owner&&b.Ready>=1)limit+=Balance.Buildings[b.Kind].Supply;return limit;}
         public float HeightAt(float x,float z)=>Map.Height((int)x,(int)z,x-(int)x);
         public bool CanBuild(int x,int z,int kind,out string reason)
         {
@@ -76,28 +85,22 @@ namespace Order.Simulation
         {
             if(!CanBuild(x,z,kind,out var reason)){Message=reason;return false;}
             var stats=Balance.Buildings[kind];Minerals-=stats.Minerals;Gas-=stats.Gas;
-            Buildings.Add(new PrototypeBuilding{X=x,Z=z,Width=stats.Width,Kind=kind});
+            AddBuilding(kind,x,z,Player,0);
             navigationVersion++;RouteAroundNewBuildings();
             Message="Строительство начато.";UpdateVision();return true;
         }
         public void Tick(float dt)
         {
-            foreach(var b in Buildings)b.Ready=Math.Min(1,b.Ready+dt/Balance.Buildings[b.Kind].BuildSeconds);
+            foreach(var b in Buildings)
+            {
+                if(b.Ready>=1)continue;
+                // A building under construction gains its health as it rises, from a tenth of the full value.
+                var stats=Balance.Buildings[b.Kind];float step=Math.Min(dt/stats.BuildSeconds,1-b.Ready);
+                b.Ready=Math.Min(1,b.Ready+step);b.Health=Math.Min(stats.Health,b.Health+(int)Math.Ceiling(stats.Health*.9f*step));
+            }
+            TickProduction(dt);
             // Movement runs in fixed steps, so a long frame and many short ones end in the same place.
             for(float left=dt;left>1e-6f;left-=Step)StepUnits(Math.Min(Step,left));
-            foreach(var u in Units)
-            {
-                var target=u.HarvestTarget;
-                if(u.route.Count>0||target==null||target.Remaining<=0)continue;
-                u.harvestTimer+=dt;
-                while(u.harvestTimer>=u.Stats.HarvestInterval&&target.Remaining>0)
-                {
-                    u.harvestTimer-=u.Stats.HarvestInterval;int amount=Math.Min(u.Stats.HarvestAmount,target.Remaining);target.Remaining-=amount;
-                    if(target.Gas)Gas+=amount;else Minerals+=amount;
-                    // A depleted deposit no longer blocks movement.
-                    if(target.Remaining==0)navigationVersion++;
-                }
-            }
             visionTimer+=dt;if(visionTimer>=.15f){visionTimer=0;UpdateVision();}
         }
         public void UpdateVision()
@@ -107,7 +110,12 @@ namespace Order.Simulation
             foreach(var u in Units)
                 if(u.Owner==Player)Reveal((int)u.X,(int)u.Z,u.Stats.Vision,u.Stats.Flying,Visible,skyVisible,true);
                 else Reveal((int)u.X,(int)u.Z,u.Stats.Vision,u.Stats.Flying,enemyVisible,enemySky,false);
-            foreach(var b in Buildings)if(b.Ready>=1)Reveal(b.X+b.Width/2,b.Z+b.Width/2,Balance.Buildings[b.Kind].Vision,false,Visible,skyVisible,true);
+            foreach(var b in Buildings)
+            {
+                if(b.Ready<1)continue;
+                bool own=b.Owner==Player;
+                Reveal(b.X+b.Width/2,b.Z+b.Width/2,Balance.Buildings[b.Kind].Vision,false,own?Visible:enemyVisible,own?skyVisible:enemySky,own);
+            }
         }
         // Whether a side currently sees the unit; a side always sees its own units.
         public bool SeenBy(int side,PrototypeUnit u)
@@ -147,10 +155,20 @@ namespace Order.Simulation
         public UnitOrder Order { get; internal set; }
         // The enemy the unit is aiming at or closing in on right now.
         public PrototypeUnit Target { get; internal set; }
+        // The enemy building it attacks when no enemy unit is targeted.
+        public PrototypeBuilding TargetBuilding { get; internal set; }
         public ResourceDeposit HarvestTarget { get; internal set; }
+        // Mining trips: the load a worker carries to a command node, whether it is gas, and whether it is mining right now.
+        public int Carrying { get; internal set; }
+        public bool CarriesGas { get; internal set; }
+        public bool Mining { get; internal set; }
+        internal bool delivering;
         // Combat state: the target of an Attack order, the AttackMove destination, the last enemy that hit this unit,
         // and whether the current route is a chase rather than the order's own route.
         internal PrototypeUnit ordered, aggressor;
+        internal PrototypeBuilding orderedBuilding;
+        internal readonly List<QueuedOrder> queued = new List<QueuedOrder>();
+        public IReadOnlyList<QueuedOrder> Queued => queued;
         internal float attackX, attackZ, cooldown, chaseTimer;
         internal bool engaged;
         internal readonly Queue<Waypoint> route = new Queue<Waypoint>();
@@ -167,7 +185,21 @@ namespace Order.Simulation
         public IEnumerable<Waypoint> Route=>route;
         internal PrototypeUnit(int id,UnitKind kind,UnitStats stats,int owner){Id=id;Kind=kind;Stats=stats;Owner=owner;Health=stats.Health;}
     }
-    public sealed class PrototypeBuilding {public int X,Z,Width,Kind;public float Ready;}
+    public sealed class PrototypeBuilding
+    {
+        public int X,Z,Width,Kind,Owner,Health;
+        public float Ready;
+        // Production: the queue (the front unit is in training), seconds trained on it, whether it has taken its supply
+        // or waits for it, and where new units go.
+        internal readonly List<UnitKind> queue=new List<UnitKind>();
+        internal bool started;
+        public IReadOnlyList<UnitKind> Queue=>queue;
+        public float Training{get;internal set;}
+        public bool SupplyBlocked{get;internal set;}
+        public bool HasRally{get;internal set;}
+        public float RallyX{get;internal set;}
+        public float RallyZ{get;internal set;}
+    }
     public sealed class PrototypeMatchState : IComponentData {public PrototypeMatch Match;}
     public partial class PrototypeMatchSystem : SystemBase
     {

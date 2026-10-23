@@ -9,8 +9,8 @@ namespace Order.Balance
         [Min(.1f)] public float MoveSpeed=5;
         [Range(.1f,.45f)] public float CollisionRadius=.28f;
         [Min(1)] public int Health=40, Vision=9;
-        [Tooltip("0 — юнит не добывает ресурсы.")] [Min(0)] public int HarvestAmount=8;
-        [Min(.1f)] public float HarvestInterval=1;
+        [Tooltip("Груз за один рейс; 0 — юнит не добывает ресурсы.")] [Min(0)] public int HarvestAmount=5;
+        [Tooltip("Сколько секунд рабочий добывает у залежи перед рейсом к командному узлу.")] [Min(.1f)] public float HarvestInterval=2;
         [Min(0)] public int Supply=1;
         [Tooltip("Летает над скалами и зданиями.")] public bool Flying;
         [Header("Атака")]
@@ -18,8 +18,12 @@ namespace Order.Balance
         [Tooltip("Дальность от края юнита до края цели.")] [Min(0)] public float AttackRange;
         [Min(.1f)] public float AttackCooldown=1;
         public bool HitsGround=true, HitsAir;
+        [Header("Производство")]
+        [Min(0)] public int Minerals=50, Gas;
+        [Min(.1f)] public float TrainSeconds=12;
         public UnitStats Snapshot()=>new UnitStats{Name=DisplayName,Speed=Mathf.Max(.1f,MoveSpeed),Radius=Mathf.Clamp(CollisionRadius,.1f,.45f),Health=Mathf.Max(1,Health),
             Vision=Mathf.Clamp(Vision,1,64),HarvestAmount=Mathf.Max(0,HarvestAmount),HarvestInterval=Mathf.Max(.1f,HarvestInterval),Supply=Mathf.Max(0,Supply),Flying=Flying,
-            Damage=Mathf.Max(0,Damage),AttackRange=Mathf.Max(0,AttackRange),AttackCooldown=Mathf.Max(.1f,AttackCooldown),HitsGround=HitsGround,HitsAir=HitsAir};
+            Damage=Mathf.Max(0,Damage),AttackRange=Mathf.Max(0,AttackRange),AttackCooldown=Mathf.Max(.1f,AttackCooldown),HitsGround=HitsGround,HitsAir=HitsAir,
+            Minerals=Mathf.Max(0,Minerals),Gas=Mathf.Max(0,Gas),TrainSeconds=Mathf.Max(.1f,TrainSeconds)};
     }
 }
