@@ -10,25 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a91781e7ed5a16d498537bdf79177c1c, type: 3}
-  m_Name: Cutter
+  m_Name: Spider
   m_EditorClassIdentifier: Order.Balance::Order.Balance.UnitBalanceAsset
-  DisplayName: "\u0420\u0435\u0437\u0430\u043A"
-  MoveSpeed: 4.2
-  CollisionRadius: 0.38
-  Health: 120
-  Vision: 8
+  DisplayName: "\u041F\u0430\u0443\u0447\u043E\u043A"
+  MoveSpeed: 6
+  CollisionRadius: 0.22
+  Health: 35
+  Vision: 7
   HarvestAmount: 0
   HarvestInterval: 2
   WrapSeconds: 0
   Cocoon: 0
   CocoonRegen: 0
-  Supply: 2
+  Supply: 1
   Flying: 0
-  Damage: 12
-  AttackRange: 0.3
-  AttackCooldown: 1.1
+  Damage: 5
+  AttackRange: 0.2
+  AttackCooldown: 0.6
   HitsGround: 1
   HitsAir: 0
-  Metal: 100
-  Plasma: 25
-  TrainSeconds: 22
+  Leap: 0
+  Metal: 40
+  Plasma: 0
+  TrainSeconds: 12

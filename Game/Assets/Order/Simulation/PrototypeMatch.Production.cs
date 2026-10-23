@@ -26,7 +26,7 @@ namespace Order.Simulation
         public bool Train(PrototypeBuilding b, UnitKind kind)
         {
             var stats = Roster(b.Owner).Unit(kind);
-            string reason = b.Ready < 1 ? "Здание ещё строится." : !Trains(b, kind) ? $"{b.Stats.Name} не обучает: {stats.Name}."
+            string reason = b.Ready < 1 ? "Здание ещё строится." : !b.Powered ? "Нет сигнала сети." : !Trains(b, kind) ? $"{b.Stats.Name} не обучает: {stats.Name}."
                 : b.queue.Count >= QueueSize ? "Очередь заполнена." : metalStock[b.Owner] < stats.Metal ? "Недостаточно металла." : plasmaStock[b.Owner] < stats.Plasma ? "Недостаточно плазмы." : null;
             if (reason != null) { if (b.Owner == Player) Message = reason; return false; }
             metalStock[b.Owner] -= stats.Metal; plasmaStock[b.Owner] -= stats.Plasma;
@@ -55,7 +55,7 @@ namespace Order.Simulation
         {
             foreach (var b in Buildings)
             {
-                if (b.Ready < 1 || b.queue.Count == 0) continue;
+                if (b.Ready < 1 || b.queue.Count == 0 || !b.Powered) continue;
                 var stats = Roster(b.Owner).Unit(b.queue[0]);
                 if (!b.started)
                 {

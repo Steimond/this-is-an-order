@@ -22,12 +22,14 @@ namespace Order.Editor
             var machines=defaults.Resonance;
             catalog.Resonance??=new FactionAssets();
             catalog.Resonance.Worker=Unit("Faction2","Weaver",machines.Unit(UnitKind.Worker));
-            catalog.Resonance.Melee=Unit("Faction2","Cutter",machines.Unit(UnitKind.Melee));
+            catalog.Resonance.Melee=Unit("Faction2","Spider",machines.Unit(UnitKind.Melee));
             catalog.Resonance.Ranged=Unit("Faction2","Emitter",machines.Unit(UnitKind.Ranged));
             catalog.Resonance.Air=Unit("Faction2","Glider",machines.Unit(UnitKind.Air));
+            catalog.Resonance.Leaper=Unit("Faction2","Jumper",machines.Unit(UnitKind.Leaper));
             catalog.Resonance.Supply=Building("Faction2","ComputeNode",machines.Buildings[0]);
             catalog.Resonance.Factory=Building("Faction2","Assembler",machines.Buildings[1]);
             catalog.Resonance.Headquarters=Building("Faction2","Core",machines.Buildings[2]);
+            catalog.Resonance.Relay=Building("Faction2","Relay",machines.Buildings[FactionBalance.Relay]);
             catalog.Economy=Asset<EconomyBalanceAsset>("Shared/Economy");
             EditorUtility.SetDirty(catalog);AssetDatabase.SaveAssets();
         }
@@ -39,7 +41,7 @@ namespace Order.Editor
             if(!exists)
             {
                 asset.DisplayName=defaults.Name;asset.MoveSpeed=defaults.Speed;asset.CollisionRadius=defaults.Radius;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.HarvestAmount=defaults.HarvestAmount;asset.HarvestInterval=defaults.HarvestInterval;asset.Supply=defaults.Supply;asset.Flying=defaults.Flying;asset.Damage=defaults.Damage;asset.AttackRange=defaults.AttackRange;asset.AttackCooldown=defaults.AttackCooldown;asset.HitsGround=defaults.HitsGround;asset.HitsAir=defaults.HitsAir;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.TrainSeconds=defaults.TrainSeconds;
-                asset.WrapSeconds=defaults.WrapSeconds;asset.Cocoon=defaults.Cocoon;asset.CocoonRegen=defaults.CocoonRegen;
+                asset.WrapSeconds=defaults.WrapSeconds;asset.Cocoon=defaults.Cocoon;asset.CocoonRegen=defaults.CocoonRegen;asset.Leap=defaults.Leap;
                 EditorUtility.SetDirty(asset);
             }
             return asset;
@@ -49,7 +51,7 @@ namespace Order.Editor
             string relative=$"{faction}/Buildings/{name}";
             bool exists=AssetDatabase.LoadAssetAtPath<BuildingBalanceAsset>($"Assets/Order/Balance/{relative}.asset")!=null;
             var asset=Asset<BuildingBalanceAsset>(relative);
-            if(!exists){asset.DisplayName=defaults.Name;asset.Footprint=defaults.Width;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.Supply=defaults.Supply;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.ConstructionSeconds=defaults.BuildSeconds;asset.ModelHeight=defaults.Height;asset.Trains=(UnitKind[])defaults.Trains.Clone();EditorUtility.SetDirty(asset);}
+            if(!exists){asset.DisplayName=defaults.Name;asset.Footprint=defaults.Width;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.Supply=defaults.Supply;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.ConstructionSeconds=defaults.BuildSeconds;asset.ModelHeight=defaults.Height;asset.Trains=(UnitKind[])defaults.Trains.Clone();asset.Coverage=defaults.Coverage;asset.Relays=defaults.Relays;EditorUtility.SetDirty(asset);}
             return asset;
         }
         static T Asset<T>(string relative) where T:ScriptableObject

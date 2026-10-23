@@ -394,14 +394,14 @@ namespace Order.Simulation
             foreach (var u in Units) { u.levelY = HeightAt(u.X, u.Z); u.touchedArrived = false; u.startX = u.X; u.startZ = u.Z; }
             foreach (var u in Units) Fight(u, dt);
             FillBuckets();
-            foreach (var u in Units) Follow(u, dt);
+            foreach (var u in Units) if (u.leaping) StepLeap(u, dt); else Follow(u, dt);
             for (int i = 0; i < 2; i++) { FillBuckets(); Separate(); }
             foreach (var u in Units)
             {
                 if (!u.Stats.Flying) { KeepOutOfObstacles(u); continue; }
                 float r = u.Stats.Radius; u.X = Math.Max(r, Math.Min(64 - r, u.X)); u.Z = Math.Max(r, Math.Min(64 - r, u.Z));
             }
-            foreach (var u in Units) { UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
+            foreach (var u in Units) { if (!u.leaping) UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
             TickConstruction(dt);
             TickHarvest(dt);
             RemoveDead();
@@ -438,8 +438,8 @@ namespace Order.Simulation
             var next = u.route.Peek(); float dx = next.X - u.X, dz = next.Z - u.Z, l = (float)Math.Sqrt(dx * dx + dz * dz);
             if (l > 1e-4f) { hx = dx / l; hz = dz / l; }
         }
-        // A worker in the mining cycle passes through others, as in StarCraft.
-        static bool Ghost(PrototypeUnit u) => u.HarvestTarget != null;
+        // A worker in the mining cycle passes through others, as in StarCraft; a leaper in flight passes over them.
+        static bool Ghost(PrototypeUnit u) => u.HarvestTarget != null || u.leaping;
         // Units by map cell; contacts are always within the 3×3 cells around a unit.
         void FillBuckets()
         {

@@ -2,16 +2,20 @@ using System.Collections.Generic;
 
 namespace Order.Simulation
 {
-    // An order waiting in a unit's queue (Shift in StarCraft): a point to move or attack-move to, or a target to attack.
+    // An order waiting in a unit's queue (Shift in StarCraft): a point to move or attack-move to, a target to attack, or a
+    // building for a worker to build with its corner at (X, Z) (BuildKind -1: not a build order).
     public readonly struct QueuedOrder
     {
         public readonly UnitOrder Order;
         public readonly float X, Z;
         public readonly PrototypeUnit Unit;
         public readonly PrototypeBuilding Building;
-        public QueuedOrder(UnitOrder order, float x, float z) { Order = order; X = x; Z = z; Unit = null; Building = null; }
-        public QueuedOrder(PrototypeUnit unit) { Order = UnitOrder.Attack; X = unit.X; Z = unit.Z; Unit = unit; Building = null; }
-        public QueuedOrder(PrototypeBuilding building) { Order = UnitOrder.Attack; X = building.X + building.Width * .5f; Z = building.Z + building.Width * .5f; Unit = null; Building = building; }
+        public readonly int BuildKind;
+        public QueuedOrder(UnitOrder order, float x, float z) { Order = order; X = x; Z = z; Unit = null; Building = null; BuildKind = -1; }
+        public static QueuedOrder Build(int kind, int x, int z) => new QueuedOrder(kind, x, z);
+        QueuedOrder(int kind, int x, int z) { Order = UnitOrder.Move; X = x; Z = z; Unit = null; Building = null; BuildKind = kind; }
+        public QueuedOrder(PrototypeUnit unit) { Order = UnitOrder.Attack; X = unit.X; Z = unit.Z; Unit = unit; Building = null; BuildKind = -1; }
+        public QueuedOrder(PrototypeBuilding building) { Order = UnitOrder.Attack; X = building.X + building.Width * .5f; Z = building.Z + building.Width * .5f; Unit = null; Building = building; BuildKind = -1; }
     }
 
     // Order queue: a queued order starts once the unit's current order is done (a move or attack-move arrived, the attack
@@ -44,6 +48,7 @@ namespace Order.Simulation
 
         bool Execute(PrototypeUnit u, QueuedOrder order)
         {
+            if (order.BuildKind >= 0) return Build(u, (int)order.X, (int)order.Z, order.BuildKind);
             if (order.Unit != null) return Attack(u, order.Unit);
             if (order.Building != null) return Attack(u, order.Building);
             return order.Order == UnitOrder.AttackMove ? AttackMove(u, order.X, order.Z) : Move(u, order.X, order.Z);

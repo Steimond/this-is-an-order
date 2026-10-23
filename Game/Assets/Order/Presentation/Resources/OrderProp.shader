@@ -16,6 +16,10 @@ Shader "Order/Prop"
         _TeamOverride("Use team colour override", Float) = 0
         [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 2
         _ZWrite("Write depth", Float) = 1
+        // Machine buildings appear from the top down: everything below this world height is cut away, and a glowing
+        // band of nanites marks the edge. Far below the ground by default, so nothing is cut.
+        _RevealBelow("Hidden below world height", Float) = -1000
+        _RevealColor("Reveal edge glow", Color) = (0,0,0,0)
     }
     SubShader
     {
@@ -25,7 +29,8 @@ Shader "Order/Prop"
         CBUFFER_START(UnityPerMaterial)
             half4 _BaseColor;
             half4 _TeamColor;
-            float _Emission, _Gloss, _Rim, _Panels, _Sway, _Fog, _Opacity, _Cull, _ZWrite, _TeamOverride;
+            half4 _RevealColor;
+            float _Emission, _Gloss, _Rim, _Panels, _Sway, _Fog, _Opacity, _Cull, _ZWrite, _TeamOverride, _RevealBelow;
         CBUFFER_END
         struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; half4 color:COLOR; float4 data:TEXCOORD0; };
         float3 PropWorld(Attributes input)
@@ -34,6 +39,11 @@ Shader "Order/Prop"
             float phase = _Time.y * 1.7 + p.x * .45 + p.z * .37;
             p.xz += float2(sin(phase), cos(phase * .8)) * .05 * input.data.x * _Sway;
             return p;
+        }
+        void Reveal(float3 positionWS) { clip(positionWS.y - _RevealBelow); }
+        half3 RevealEdge(float3 positionWS)
+        {
+            return _RevealColor.rgb * (1 - saturate((positionWS.y - _RevealBelow) / .14));
         }
         ENDHLSL
 
@@ -66,6 +76,7 @@ Shader "Order/Prop"
             }
             half4 frag(Varyings input, bool front : SV_IsFrontFace) : SV_Target
             {
+                Reveal(input.positionWS);
                 float3 n = normalize(input.normalWS) * (front ? 1 : -1);
                 // Team colour is the player's (global) unless the material carries another side's colour.
                 half3 team = lerp(_OrderTeamColor.rgb, _TeamColor.rgb, _TeamOverride);
@@ -81,6 +92,7 @@ Shader "Order/Prop"
                 half3 color = OrderLighting(albedo, input.positionWS, n, 1, input.positionCS, _Gloss);
                 half rim = pow(1 - saturate(dot(n, GetWorldSpaceNormalizeViewDir(input.positionWS))), 3) * _Rim;
                 color += albedo * (input.data.z * _Emission + rim * 1.5);
+                color += RevealEdge(input.positionWS);
                 if (_Fog > .5) color = OrderApplyWorld(color, input.positionWS);
                 return half4(color, _Opacity);
             }
@@ -95,11 +107,14 @@ Shader "Order/Prop"
             #pragma vertex shadowVert
             #pragma fragment shadowFrag
             float3 _LightDirection;
-            float4 shadowVert(Attributes input) : SV_POSITION
+            struct ShadowVaryings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; };
+            ShadowVaryings shadowVert(Attributes input)
             {
-                return OrderShadowPosition(PropWorld(input), TransformObjectToWorldNormal(input.normalOS), _LightDirection);
+                ShadowVaryings o; o.positionWS = PropWorld(input);
+                o.positionCS = OrderShadowPosition(o.positionWS, TransformObjectToWorldNormal(input.normalOS), _LightDirection);
+                return o;
             }
-            half4 shadowFrag() : SV_Target { return 0; }
+            half4 shadowFrag(ShadowVaryings input) : SV_Target { Reveal(input.positionWS); return 0; }
             ENDHLSL
         }
         Pass
@@ -110,8 +125,13 @@ Shader "Order/Prop"
             HLSLPROGRAM
             #pragma vertex depthVert
             #pragma fragment depthFrag
-            float4 depthVert(Attributes input) : SV_POSITION { return TransformWorldToHClip(PropWorld(input)); }
-            half depthFrag() : SV_Target { return 0; }
+            struct DepthVaryings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; };
+            DepthVaryings depthVert(Attributes input)
+            {
+                DepthVaryings o; o.positionWS = PropWorld(input); o.positionCS = TransformWorldToHClip(o.positionWS);
+                return o;
+            }
+            half depthFrag(DepthVaryings input) : SV_Target { Reveal(input.positionWS); return 0; }
             ENDHLSL
         }
         Pass
@@ -123,16 +143,18 @@ Shader "Order/Prop"
             #pragma vertex normalsVert
             #pragma fragment normalsFrag
             #pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
-            struct NormalsVaryings { float4 positionCS:SV_POSITION; float3 normalWS:TEXCOORD0; };
+            struct NormalsVaryings { float4 positionCS:SV_POSITION; float3 normalWS:TEXCOORD0; float3 positionWS:TEXCOORD1; };
             NormalsVaryings normalsVert(Attributes input)
             {
                 NormalsVaryings o;
-                o.positionCS = TransformWorldToHClip(PropWorld(input));
+                o.positionWS = PropWorld(input);
+                o.positionCS = TransformWorldToHClip(o.positionWS);
                 o.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 return o;
             }
             half4 normalsFrag(NormalsVaryings input, bool front : SV_IsFrontFace) : SV_Target
             {
+                Reveal(input.positionWS);
                 float3 normalWS = normalize(input.normalWS) * (front ? 1 : -1);
             #if defined(_GBUFFER_NORMALS_OCT)
                 return half4(PackFloat2To888(saturate(PackNormalOctQuadEncode(normalWS) * .5 + .5)), 0);

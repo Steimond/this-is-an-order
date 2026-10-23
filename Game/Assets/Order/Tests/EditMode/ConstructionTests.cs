@@ -122,6 +122,24 @@ namespace Order.Tests.EditMode
             Run(match,4);
             Assert.That(node.Ready,Is.EqualTo(1));Assert.That(worker.X,Is.EqualTo(18.5f).Within(.05f));Assert.That(worker.Z,Is.EqualTo(11.5f).Within(.05f));
         }
+        [Test] public void ShiftQueuesBuildingsOneAfterAnother()
+        {
+            var match=new PrototypeMatch();var worker=Worker(match);match.Metal=1000;var stats=match.Balance.Expedition.Buildings[0];
+            Assert.That(match.QueueBuild(worker,15,14,0),Is.True);Assert.That(worker.SiteKind,Is.EqualTo(0),"A free worker starts at once");
+            Assert.That(match.QueueBuild(worker,18,14,0),Is.True);Assert.That(worker.Queued.Count,Is.EqualTo(1));Assert.That(match.Message,Does.Contain("очередь"));
+            Assert.That(match.QueueBuild(worker,15,7,0),Is.True);Assert.That(worker.Queued.Count,Is.EqualTo(2));
+            Run(match,3*stats.BuildSeconds+12);
+            Assert.That(match.Buildings.FindAll(b=>b.Kind==0&&b.Ready>=1).Count,Is.EqualTo(3),"All three built in turn");
+            Assert.That(worker.Queued,Is.Empty);Assert.That(match.Metal,Is.EqualTo(1000-3*stats.Metal));
+        }
+        [Test] public void BuilderWalksRoundTheBuildingAndKeepsBuilding()
+        {
+            var match=new PrototypeMatch();var worker=Worker(match);var stats=match.Balance.Expedition.Buildings[1];
+            var factory=Sites.Place(match,14,15,1);float x=worker.X,z=worker.Z,moved=0;
+            for(float t=0;t<stats.BuildSeconds-1;t+=.05f){match.Tick(.05f);moved=System.Math.Max(moved,(worker.X-x)*(worker.X-x)+(worker.Z-z)*(worker.Z-z));Assert.That(PrototypeMatch.Gap(worker,factory),Is.LessThanOrEqualTo(PrototypeMatch.BuildReach));}
+            Assert.That(moved,Is.GreaterThan(.5f),"It moved on round the building");
+            Assert.That(factory.Ready,Is.EqualTo((stats.BuildSeconds-1)/stats.BuildSeconds).Within(.02f),"Without a pause on the way");
+        }
         [Test] public void HealthRisesWithTheBuildingWhateverTheFrameRate()
         {
             foreach(var frame in new[]{.005f,.05f})

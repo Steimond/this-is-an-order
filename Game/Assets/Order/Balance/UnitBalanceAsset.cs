@@ -23,6 +23,7 @@ namespace Order.Balance
         [Tooltip("Дальность от края юнита до края цели.")] [Min(0)] public float AttackRange;
         [Min(.1f)] public float AttackCooldown=1;
         public bool HitsGround=true, HitsAir;
+        [Tooltip("Атакует прыжком сквозь цель: дальность — длина прыжка, перезарядка — время между прыжками.")] public bool Leap;
         [Header("Производство")]
         [Min(0), FormerlySerializedAs("Minerals")] public int Metal=50;
         [Min(0), FormerlySerializedAs("Gas")] public int Plasma;
@@ -31,6 +32,6 @@ namespace Order.Balance
             Vision=Mathf.Clamp(Vision,1,64),HarvestAmount=Mathf.Max(0,HarvestAmount),HarvestInterval=Mathf.Max(.1f,HarvestInterval),Supply=Mathf.Max(0,Supply),Flying=Flying,
             Damage=Mathf.Max(0,Damage),AttackRange=Mathf.Max(0,AttackRange),AttackCooldown=Mathf.Max(.1f,AttackCooldown),HitsGround=HitsGround,HitsAir=HitsAir,
             Metal=Mathf.Max(0,Metal),Plasma=Mathf.Max(0,Plasma),TrainSeconds=Mathf.Max(.1f,TrainSeconds),
-            WrapSeconds=Mathf.Max(0,WrapSeconds),Cocoon=Mathf.Max(0,Cocoon),CocoonRegen=Mathf.Max(0,CocoonRegen)};
+            WrapSeconds=Mathf.Max(0,WrapSeconds),Cocoon=Mathf.Max(0,Cocoon),CocoonRegen=Mathf.Max(0,CocoonRegen),Leap=Leap};
     }
 }

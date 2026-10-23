@@ -54,7 +54,7 @@ namespace Order.Presentation
     {
         Gear, Power, Mic, ChevronLeft, ChevronRight, Close, Lock, Back, Check, Grid,
         Worker, Headquarters, Supply, Factory, Metal, Plasma, Move, Stop, Harvest, Pin, Base, Target, Armor, Menu, ClearPins, Train, Build,
-        Assault, Rifleman, Gunship, Hold
+        Assault, Rifleman, Gunship, Hold, Relay, Spider, Leaper
     }
 
     public sealed class HudIcon : HudVector
@@ -124,6 +124,11 @@ namespace Order.Presentation
                     Shape(p, P, .4f, .3f, .4f, .2f, .6f, .2f, .6f, .3f);
                     Shape(p, P, .34f, .5f, .66f, .5f); Shape(p, P, .34f, .66f, .66f, .66f);
                     break;
+                case HudIconKind.Relay:
+                    // A mast with signal arcs on both sides.
+                    Shape(p, P, .5f, .36f, .5f, .86f); Shape(p, P, .36f, .86f, .64f, .86f);
+                    HudPaint.Arc(p, P(.5f, .36f), size * .14f, 200, 340); HudPaint.Arc(p, P(.5f, .36f), size * .26f, 205, 335);
+                    break;
                 case HudIconKind.Factory:
                     Shape(p, P, .12f, .84f, .88f, .84f);
                     Shape(p, P, .16f, .84f, .16f, .46f, .34f, .58f, .34f, .46f, .52f, .58f, .52f, .46f, .7f, .58f, .7f, .2f, .84f, .2f, .84f, .84f);
@@ -189,6 +194,22 @@ namespace Order.Presentation
                     Shape(p, P, .12f, .66f, .18f, .8f, .32f, .74f, .3f, .6f);
                     Shape(p, P, .44f, .44f, .5f, .58f);
                     Shape(p, P, .48f, .36f, .66f, .29f);
+                    break;
+                case HudIconKind.Spider:
+                    // A round body with three legs on each side.
+                    HudPaint.Circle(p, P(.5f, .52f), size * .13f);
+                    for (var i = 0; i < 3; i++)
+                    {
+                        var y = .4f + i * .12f;
+                        Shape(p, P, .38f, y, .22f, y - .1f + i * .06f, .14f, y + .08f + i * .04f);
+                        Shape(p, P, .62f, y, .78f, y - .1f + i * .06f, .86f, y + .08f + i * .04f);
+                    }
+                    break;
+                case HudIconKind.Leaper:
+                    // A body mid-jump over an arc, the blade forward.
+                    p.MoveTo(P(.12f, .84f)); p.BezierCurveTo(P(.3f, .2f), P(.7f, .2f), P(.88f, .84f));
+                    Shape(p, P, .42f, .42f, .58f, .36f, .66f, .46f, .5f, .54f, .42f, .42f);
+                    Shape(p, P, .64f, .4f, .8f, .3f);
                     break;
                 case HudIconKind.Gunship:
                     // Top-down silhouette with two rotors.

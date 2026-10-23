@@ -89,6 +89,7 @@ namespace Order.Presentation
         {
             foreach (UnitKind kind in Enum.GetValues(typeof(UnitKind)))
             {
+                if (!host.Match.Roster(owner).Has(kind)) continue;
                 var unit = kind;
                 row.Add(Hud.Button(host.Match.Roster(owner).Unit(kind).Name.ToUpperInvariant(), () =>
                 {

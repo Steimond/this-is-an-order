@@ -9,6 +9,9 @@ namespace Order.Balance
     {
         public UnitBalanceAsset Worker, Melee, Ranged, Air;
         public BuildingBalanceAsset Supply, Factory, Headquarters;
+        // Machines only: the network relay and the leaper.
+        public BuildingBalanceAsset Relay;
+        public UnitBalanceAsset Leaper;
         public bool Complete=>Worker!=null&&Melee!=null&&Ranged!=null&&Air!=null&&Supply!=null&&Factory!=null&&Headquarters!=null;
     }
     public sealed class BalanceCatalog : ScriptableObject
@@ -21,12 +24,13 @@ namespace Order.Balance
         public MatchBalance Snapshot()
         {
             var expedition=new FactionAssets{Worker=Worker,Melee=Melee,Ranged=Ranged,Air=Air,Supply=Supply,Factory=Factory,Headquarters=Headquarters};
-            if(!expedition.Complete||Resonance==null||!Resonance.Complete||Economy==null)
+            if(!expedition.Complete||Resonance==null||!Resonance.Complete||Resonance.Relay==null||Resonance.Leaper==null||Economy==null)
                 throw new InvalidOperationException("Balance catalog has missing references: run Order/Create Missing Balance Assets.");
             return new MatchBalance{Expedition=Roster(expedition,false),Resonance=Roster(Resonance,true),
                 StartingMetal=Mathf.Max(0,Economy.StartingMetal),StartingPlasma=Mathf.Max(0,Economy.StartingPlasma),MetalDeposit=Mathf.Max(1,Economy.MetalDeposit),PlasmaDeposit=Mathf.Max(1,Economy.PlasmaDeposit)};
         }
-        static FactionBalance Roster(FactionAssets a,bool machines)=>new FactionBalance{NaniteMining=machines,SelfBuilding=machines,
-            Units=new[]{a.Worker.Snapshot(),a.Melee.Snapshot(),a.Ranged.Snapshot(),a.Air.Snapshot()},Buildings=new[]{a.Supply.Snapshot(),a.Factory.Snapshot(),a.Headquarters.Snapshot()}};
+        static FactionBalance Roster(FactionAssets a,bool machines)=>new FactionBalance{NaniteMining=machines,SelfBuilding=machines,Network=machines,Buildable=machines?new[]{0,1,3}:new[]{0,1},
+            Units=machines?new[]{a.Worker.Snapshot(),a.Melee.Snapshot(),a.Ranged.Snapshot(),a.Air.Snapshot(),a.Leaper.Snapshot()}:new[]{a.Worker.Snapshot(),a.Melee.Snapshot(),a.Ranged.Snapshot(),a.Air.Snapshot()},
+            Buildings=machines?new[]{a.Supply.Snapshot(),a.Factory.Snapshot(),a.Headquarters.Snapshot(),a.Relay.Snapshot()}:new[]{a.Supply.Snapshot(),a.Factory.Snapshot(),a.Headquarters.Snapshot()}};
     }
 }

@@ -11,7 +11,59 @@ namespace Order.Presentation
         static readonly Color Mercury = new Color(.42f, .45f, .51f), Steel = new Color(.14f, .16f, .19f), Pale = new Color(.62f, .67f, .74f),
             Ice = new Color(.62f, .85f, 1);
 
-        public static UnitModel Unit(UnitKind kind) => kind == UnitKind.Worker ? new UnitModel { Body = Weaver(), Scale = 1.25f, Height = .75f } : MatchModels.Unit(kind);
+        public static UnitModel Unit(UnitKind kind) =>
+            kind == UnitKind.Worker ? new UnitModel { Body = Weaver(), Scale = 1.25f, Height = .75f }
+            : kind == UnitKind.Melee ? Spider() : kind == UnitKind.Leaper ? Leaper() : MatchModels.Unit(kind);
+
+        // A straight limb between two points, a thin four-sided bar.
+        static void Limb(MeshBuilder b, Color color, Vector3 from, Vector3 to, float thickness, float glow = 0)
+        {
+            var along = to - from;
+            b.Paint = color; b.Team = 0; b.Glow = glow;
+            b.Place((from + to) * .5f, Quaternion.FromToRotation(Vector3.up, along), new Vector3(thickness, along.magnitude, thickness));
+            b.Prism(4, .5f, .5f, -.5f, .5f, 0, .5f, true);
+        }
+
+        // Spider: a small low body on three pairs of legs; the pairs swing in turn as it runs.
+        static UnitModel Spider()
+        {
+            var b = new MeshBuilder();
+            b.Paint = Mercury; b.Place(new Vector3(0, .2f, -.05f), Quaternion.identity, new Vector3(.24f, .12f, .3f)); b.Blob(11, .06f, 0);
+            b.Paint = Pale; b.Team = 1; b.Place(new Vector3(0, .26f, -.08f), Quaternion.identity, new Vector3(.16f, .06f, .2f)); b.Blob(12, .04f, 0); b.Team = 0;
+            b.Paint = Steel; b.Place(new Vector3(0, .2f, .14f), Quaternion.identity, new Vector3(.12f, .09f, .12f)); b.Blob(13, .05f, 0);
+            b.Paint = Ice; b.Glow = 1; b.Transform = Matrix4x4.identity; b.Box(new Vector3(0, .22f, .2f), new Vector3(.08f, .025f, .03f)); b.Glow = 0;
+            var leg = new MeshBuilder();
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Limb(leg, Steel, new Vector3(side * .05f, 0, 0), new Vector3(side * .22f, .1f, 0), .03f);
+                Limb(leg, Mercury, new Vector3(side * .22f, .1f, 0), new Vector3(side * .32f, -.18f, 0), .025f);
+            }
+            return new UnitModel { Body = b.ToMesh("Spider"), Leg = leg.ToMesh("Spider legs"),
+                Hips = new[] { new Vector3(0, .18f, .1f), new Vector3(0, .18f, -.01f), new Vector3(0, .18f, -.12f) }, Scale = 1, Height = .42f };
+        }
+
+        // Leaper: a hunched body on two powerful hind legs, with two blades forward to strike as it jumps through.
+        static UnitModel Leaper()
+        {
+            var b = new MeshBuilder();
+            b.Paint = Mercury; b.Place(new Vector3(0, .5f, 0), Quaternion.Euler(-20, 0, 0), new Vector3(.3f, .22f, .42f)); b.Blob(21, .05f, 0);
+            b.Paint = Pale; b.Team = 1; b.Place(new Vector3(0, .58f, -.04f), Quaternion.Euler(-20, 0, 0), new Vector3(.2f, .08f, .3f)); b.Blob(22, .03f, 0); b.Team = 0;
+            b.Paint = Steel; b.Place(new Vector3(0, .6f, .2f), Quaternion.identity, new Vector3(.15f, .11f, .14f)); b.Blob(23, .04f, 0);
+            b.Paint = Ice; b.Glow = 1; b.Transform = Matrix4x4.identity; b.Box(new Vector3(0, .62f, .27f), new Vector3(.1f, .03f, .03f)); b.Glow = 0;
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Limb(b, Steel, new Vector3(side * .12f, .5f, .12f), new Vector3(side * .16f, .36f, .34f), .04f);
+                Limb(b, Ice, new Vector3(side * .16f, .36f, .34f), new Vector3(side * .12f, .44f, .56f), .025f, 1);
+            }
+            var leg = new MeshBuilder();
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Limb(leg, Steel, new Vector3(side * .13f, 0, 0), new Vector3(side * .19f, -.14f, -.18f), .07f);
+                Limb(leg, Mercury, new Vector3(side * .19f, -.14f, -.18f), new Vector3(side * .16f, -.36f, .02f), .05f);
+                Limb(leg, Steel, new Vector3(side * .16f, -.36f, .02f), new Vector3(side * .16f, -.38f, .1f), .05f);
+            }
+            return new UnitModel { Body = b.ToMesh("Leaper"), Leg = leg.ToMesh("Leaper legs"), Hips = new[] { new Vector3(0, .4f, -.1f) }, Scale = 1.1f, Height = .8f };
+        }
 
         // The weaver: a hovering faceted core with a glowing eye and three hooked arms that wrap deposits with nanites.
         public static Mesh Weaver()
@@ -34,7 +86,7 @@ namespace Order.Presentation
             return b.ToMesh("Weaver");
         }
 
-        // Kinds follow FactionBalance: 0 compute node, 1 assembler, 2 core. Origin is the footprint centre on the ground.
+        // Kinds follow FactionBalance: 0 compute node, 1 assembler, 2 core, 3 relay. Origin is the footprint centre on the ground.
         public static Mesh Building(int kind, float w, float h)
         {
             var b = new MeshBuilder();
@@ -73,6 +125,18 @@ namespace Order.Presentation
                 b.Team = 0;
                 b.Paint = Ice; b.Glow = 1; b.Transform = Matrix4x4.identity; b.Ring(w * .16f, w * .21f, 12, h * .7f); b.Glow = 0;
             }
+            else if (kind == 3)
+            {
+                // Relay: a slim mast with three rings round it and a glowing emitter on top.
+                Prism(Steel, Vector3.zero, 4, w * .22f, w * .1f, .15f, h * .82f, 0, 0, 0, .5f);
+                for (int i = 0; i < 3; i++)
+                {
+                    float y = h * (.3f + i * .2f), r = w * (.34f - i * .06f);
+                    b.Paint = i == 1 ? Pale : Mercury; b.Team = i == 1 ? 1 : 0; b.Glow = 0; b.Transform = Matrix4x4.identity; b.Ring(r * .55f, r, 8, y);
+                    b.Paint = Ice; b.Team = 0; b.Glow = 1; b.Ring(r * .5f, r * .55f, 8, y + .005f);
+                }
+                Prism(Ice, new Vector3(0, h * .82f, 0), 6, w * .1f, w * .1f, 0, 0, 0, 1, h * .16f, .5f);
+            }
             else
             {
                 // Core: a faceted spire of mercury split by a band of team colour, with glowing seams and a floating crown.
@@ -90,6 +154,16 @@ namespace Order.Presentation
                 b.Paint = Pale; b.Team = 1; b.Glow = 0; b.Ring(w * .25f, w * .29f, 12, h * .9f); b.Team = 0;
             }
             return b.ToMesh("Machine building " + kind);
+        }
+
+        // A piece of the construction grenade: a small double pyramid of mercury with a glowing core band.
+        public static Mesh GrenadePiece()
+        {
+            var b = new MeshBuilder();
+            b.Paint = Mercury; b.Place(Vector3.zero); b.Prism(4, .1f, .1f, 0, 0, .16f, .5f);
+            b.Paint = Pale; b.Team = 1; b.Place(Vector3.zero, Quaternion.Euler(180, 0, 0), Vector3.one); b.Prism(4, .1f, .1f, 0, 0, .12f, .5f); b.Team = 0;
+            b.Paint = Ice; b.Glow = 1; b.Place(Vector3.zero); b.Prism(4, .105f, .105f, -.015f, .015f, 0, .5f);
+            return b.ToMesh("Grenade piece");
         }
 
         // The nanite cocoon round a wrapped worker: a faceted shell, drawn translucent and glowing.

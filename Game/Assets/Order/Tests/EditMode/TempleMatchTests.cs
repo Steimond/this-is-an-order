@@ -32,7 +32,10 @@ namespace Order.Tests.EditMode
             match.Tick(6);Assert.That(node.Ready,Is.EqualTo(.5f));
             match.Tick(5.9f);Assert.That(node.Ready,Is.LessThan(1));
             match.Tick(.1f);Assert.That(node.Ready,Is.EqualTo(1).Within(.0001f));
-            float x=worker.X;Assert.That(match.Move(worker,x-2,worker.Z),Is.True);match.Tick(.5f);Assert.That(worker.X,Is.EqualTo(x-1).Within(.0001f));
+            // The builder may have walked round the building: it leaves along whichever side is open.
+            float dx=0,dz=0;foreach(var (ox,oz) in new[]{(-1f,0f),(1f,0f),(0f,-1f),(0f,1f)})if(match.CanTravel(worker.X,worker.Z,worker.X+ox*2,worker.Z+oz*2,worker.Stats.Radius)){dx=ox;dz=oz;break;}
+            float x=worker.X,z=worker.Z;Assert.That(match.Move(worker,x+dx*2,z+dz*2),Is.True);match.Tick(.5f);
+            Assert.That(worker.X,Is.EqualTo(x+dx).Within(.0001f));Assert.That(worker.Z,Is.EqualTo(z+dz).Within(.0001f));
         }
         [Test] public void FourStartsHaveEqualResourceBudgets()
         {
@@ -95,7 +98,7 @@ namespace Order.Tests.EditMode
         [Test] public void TestSquadHasEveryKindOnFreeGroundWithinSupply()
         {
             var match=new PrototypeMatch();match.AddTestSquad();
-            foreach(UnitKind kind in System.Enum.GetValues(typeof(UnitKind)))Assert.That(match.Units.Exists(u=>u.Kind==kind),Is.True,kind.ToString());
+            foreach(UnitKind kind in System.Enum.GetValues(typeof(UnitKind)))if(match.Roster(PrototypeMatch.Player).Has(kind))Assert.That(match.Units.Exists(u=>u.Kind==kind),Is.True,kind.ToString());
             Assert.That(match.SupplyUsed,Is.LessThanOrEqualTo(match.SupplyLimit));
             var ids=new System.Collections.Generic.HashSet<int>();
             foreach(var unit in match.Units)

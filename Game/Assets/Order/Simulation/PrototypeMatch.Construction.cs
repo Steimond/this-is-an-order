@@ -25,20 +25,24 @@ namespace Order.Simulation
         {
             if(!SiteFits(x,z,kind,owner,owner==Player,out reason))return false;
             int w=Roster(owner).Buildings[kind].Width;
+            if(kind==FactionBalance.Relay&&RelaysLeft(owner)<=0){reason=$"Лимит ретрансляторов: {Roster(owner).Buildings[FactionBalance.Main].Relays} на ядро";return false;}
             foreach(var u in Units)if(u.Owner!=owner&&SeenBy(owner,u)&&On(u,x,z,w)){reason="Здесь стоит юнит противника";return false;}
             reason="ЛКМ — построить";return true;
         }
         // Terrain, other buildings, deposits and the cost; units are checked separately.
         bool SiteFits(int x,int z,int kind,int owner,bool sight,out string reason)
         {
-            if(kind<0||kind>1){reason="Неизвестный тип здания";return false;}
-            var stats=Roster(owner).Buildings[kind];int w=stats.Width;float h=Map.Inside(x,z)?Map.Height(x,z):0;
+            var roster=Roster(owner);
+            if(Array.IndexOf(roster.Buildable,kind)<0){reason="Это здание не строится";return false;}
+            var stats=roster.Buildings[kind];int w=stats.Width;float h=Map.Inside(x,z)?Map.Height(x,z):0;
             for(int zz=z;zz<z+w;zz++)for(int xx=x;xx<x+w;xx++)
             {
                 if(!Map.Inside(xx,zz)){reason="За границей карты";return false;}
                 if(sight&&!Visible[xx,zz]){reason="Нужна текущая видимость";return false;}
                 if(Map.Ramp(xx,zz)||Map.Height(xx,zz)!=h||Occupied(xx,zz)){reason="Занято, рампа или перепад высот";return false;}
             }
+            // Machines build only inside the coverage of their network (the core itself starts a network).
+            if(roster.Network&&kind!=FactionBalance.Main&&!Covered(owner,x+w*.5f,z+w*.5f)){reason="Вне покрытия сети";return false;}
             if(metalStock[owner]<stats.Metal){reason="Недостаточно металла";return false;}
             if(plasmaStock[owner]<stats.Plasma){reason="Недостаточно плазмы";return false;}
             reason=null;return true;
@@ -62,6 +66,18 @@ namespace Order.Simulation
             GiveOrder(worker,UnitOrder.Move);PlanPath(worker,sx,sz);
             worker.SiteKind=kind;worker.SiteX=x;worker.SiteZ=z;worker.siteTimer=0;
             Message=owner==Player?$"{worker.Stats.Name}: идёт строить — {stats.Name}.":message;
+            return true;
+        }
+        // Shift: the worker builds it after what it is doing now, one building after another, as an SCV does. The site is
+        // checked now and again when its turn comes; an order that no longer fits is skipped.
+        public bool QueueBuild(PrototypeUnit worker,int x,int z,int kind)
+        {
+            if(worker==null||!worker.Alive||worker.Kind!=UnitKind.Worker){Message="Строить может только рабочий.";return false;}
+            if(!CanBuild(x,z,kind,out var reason,worker.Owner)){if(worker.Owner==Player)Message=reason;return false;}
+            int waiting=worker.queued.Count;
+            Enqueue(worker,QueuedOrder.Build(kind,x,z));
+            // A free worker starts at once and says so itself; a busy one only takes the order into its queue.
+            if(worker.Owner==Player&&worker.queued.Count>waiting)Message=$"Стройка добавлена в очередь: {Roster(worker.Owner).Buildings[kind].Name}.";
             return true;
         }
         // The worker goes to an unfinished building of its side that nobody is building and carries on with it.
@@ -101,7 +117,7 @@ namespace Order.Simulation
             {
                 if(b.Ready>=1)continue;
                 var builder=b.Builder;
-                if(!b.SelfBuilt&&(builder==null||Gap(builder,b)>BuildReach))continue;
+                if(!b.Powered||(!b.SelfBuilt&&(builder==null||Gap(builder,b)>BuildReach)))continue;
                 // A building under construction gains its health as it rises, from a tenth of the full value: by whole points
                 // of the progress made, so short frames do not round it up faster than the building rises. Damage taken
                 // on the way stays.
@@ -125,15 +141,20 @@ namespace Order.Simulation
                 if(b!=null)
                 {
                     if(b.Health<=0||b.Ready>=1||!Buildings.Contains(b)){u.Constructing=null;continue;}
-                    if(u.Moving||Gap(u,b)<=BuildReach||(u.siteTimer+=dt)<1)continue;
+                    if(u.Moving)continue;
+                    bool near=Gap(u,b)<=BuildReach;
+                    if((u.siteTimer+=dt)<(near?WanderSeconds:1))continue;
                     u.siteTimer=0;
-                    if(SiteSpot(u,b.X,b.Z,b.Width,out float bx,out float bz)){var message=Message;PlanPath(u,bx,bz);Message=message;}
+                    // Now and then the builder moves on round the building, as an SCV does; pushed away, it comes back.
+                    float bx,bz;
+                    if(near?Round(u,b,out bx,out bz):SiteSpot(u,b.X,b.Z,b.Width,out bx,out bz)){var message=Message;PlanPath(u,bx,bz);Message=message;}
                     continue;
                 }
                 if(u.SiteKind<0||u.Moving)continue;
                 var stats=Roster(u.Owner).Buildings[u.SiteKind];int x=u.SiteX,z=u.SiteZ,w=stats.Width;
                 if(SiteGap(u,x,z,w)>BuildReach){EndSite(u,"Не дойти до места стройки.");continue;}
                 if(!SiteFits(x,z,u.SiteKind,u.Owner,false,out var reason)){EndSite(u,reason+".");continue;}
+                if(u.SiteKind==FactionBalance.Relay&&RelaysLeft(u.Owner)<0){EndSite(u,"Лимит ретрансляторов.");continue;}
                 bool blocked=false;
                 foreach(var v in Units)
                 {
@@ -156,6 +177,29 @@ namespace Order.Simulation
         {
             float nx=Math.Max(x,Math.Min(u.X,x+w)),nz=Math.Max(z,Math.Min(u.Z,z+w));
             return (float)Math.Sqrt((u.X-nx)*(u.X-nx)+(u.Z-nz)*(u.Z-nz))-u.Stats.Radius;
+        }
+        // A spot a little farther round the footprint, clockwise, where the builder can stand; it keeps building on the way.
+        const float WanderSeconds = 2.5f, WanderStep = 1.2f;
+        bool Round(PrototypeUnit u,PrototypeBuilding b,out float sx,out float sz)
+        {
+            float r=u.Stats.Radius,m=r+.05f,x0=b.X-m,x1=b.X+b.Width+m,z0=b.Z-m,z1=b.Z+b.Width+m,side=x1-x0,level=Map.Height(b.X,b.Z);
+            // Perimeter position of a point on the outline: bottom, right, top, left.
+            (float,float) At(float s)
+            {
+                s=(s%(4*side)+4*side)%(4*side);
+                if(s<side)return (x0+s,z0);
+                if(s<2*side)return (x1,z0+s-side);
+                if(s<3*side)return (x1-(s-2*side),z1);
+                return (x0,z1-(s-3*side));
+            }
+            float here=0,best=float.MaxValue;
+            for(float s=0;s<4*side;s+=.1f){var (px,pz)=At(s);float d=(px-u.X)*(px-u.X)+(pz-u.Z)*(pz-u.Z);if(d<best){best=d;here=s;}}
+            for(float s=WanderStep;s<4*side;s+=.25f)
+            {
+                var (px,pz)=At(here+s);
+                if(InMap(px,pz)&&Math.Abs(HeightAt(px,pz)-level)<=.01f&&CanTravel(u.X,u.Z,px,pz,r)){sx=px;sz=pz;return true;}
+            }
+            sx=sz=0;return false;
         }
         // The point just outside the footprint nearest the unit where it can stand, on the footprint's level.
         bool SiteSpot(PrototypeUnit u,int x,int z,int w,out float sx,out float sz)

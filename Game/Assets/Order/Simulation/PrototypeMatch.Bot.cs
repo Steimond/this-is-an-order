@@ -50,6 +50,8 @@ namespace Order.Simulation
             Message = message;
         }
         PrototypeBuilding BotHeadquarters() => Buildings.Find(b => b.Owner == Enemy && Trains(b, UnitKind.Worker));
+        static readonly (UnitKind, float)[] HumanMix = { (UnitKind.Ranged, 3f), (UnitKind.Melee, 2f), (UnitKind.Air, 1f) },
+            MachineMix = { (UnitKind.Melee, 3f), (UnitKind.Leaper, 2f), (UnitKind.Ranged, 2f), (UnitKind.Air, 1f) };
 
         void BotEconomy()
         {
@@ -182,9 +184,10 @@ namespace Order.Simulation
                 if (b.Owner != Enemy || b.Ready < 1 || !Trains(b, UnitKind.Ranged)) continue;
                 if (!b.HasRally) SetRally(b, StageX, StageZ);
                 if (b.queue.Count >= 1) continue;
-                // Riflemen, assault units and gunships about three to two to one, as far as resources allow.
+                // Humans: riflemen, assault units and gunships about three to two to one; machines: spiders, leapers, emitters
+                // and gliders about three to two to two to one; as far as resources allow.
                 UnitKind? pick = null; float least = float.MaxValue;
-                foreach (var (kind, weight) in new[] { (UnitKind.Ranged, 3f), (UnitKind.Melee, 2f), (UnitKind.Air, 1f) })
+                foreach (var (kind, weight) in Roster(Enemy).Has(UnitKind.Leaper) ? MachineMix : HumanMix)
                 {
                     var stats = Roster(Enemy).Unit(kind);
                     if (!Trains(b, kind) || metalStock[Enemy] < stats.Metal || plasmaStock[Enemy] < stats.Plasma) continue;

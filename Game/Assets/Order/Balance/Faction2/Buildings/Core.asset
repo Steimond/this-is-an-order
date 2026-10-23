@@ -22,3 +22,5 @@ MonoBehaviour:
   ConstructionSeconds: 5
   ModelHeight: 2.6
   Trains: 00000000i
+  Coverage: 10
+  Relays: 3

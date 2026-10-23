@@ -118,6 +118,7 @@ namespace Order.Simulation
         void Fight(PrototypeUnit u, float dt)
         {
             if (u.cooldown > 0) u.cooldown -= dt;
+            if (u.leaping) return;
             if (!u.Alive || u.Stats.Damage <= 0 || u.Order == UnitOrder.Move || u.HarvestTarget != null) { u.Target = null; u.TargetBuilding = null; return; }
             var target = PickTarget(u);
             var building = target == null ? PickBuilding(u) : null;
@@ -126,7 +127,8 @@ namespace Order.Simulation
             if (fresh && u.cooldown <= 0) u.cooldown = Reaction(u);
             u.Target = target; u.TargetBuilding = building;
             if (target == null && building == null) { if (u.engaged) Disengage(u); return; }
-            if (target != null ? InRange(u, target) : Gap(u, building) <= u.Stats.AttackRange)
+            if (u.Stats.Leap && target != null) { FightByLeaps(u, target, dt); return; }
+            if (target != null ? InRange(u, target) : Gap(u, building) <= (u.Stats.Leap ? BuildingReach : u.Stats.AttackRange))
             {
                 // Stand and shoot; an attack-move picks its route up again once the fight is over.
                 if (u.route.Count > 0) { u.route.Clear(); u.hasGoal = false; u.arrived = false; }
@@ -388,6 +390,7 @@ namespace Order.Simulation
                 if (u.TargetBuilding != null && u.TargetBuilding.Health <= 0) u.TargetBuilding = null;
                 if (u.orderedBuilding != null && u.orderedBuilding.Health <= 0) u.orderedBuilding = null;
                 if (u.Constructing != null && u.Constructing.Health <= 0) u.Constructing = null;
+                if (u.leapTarget != null && !u.leapTarget.Alive) u.leapTarget = null;
             }
             foreach (var u in dead) { u.route.Clear(); u.Target = null; u.TargetBuilding = null; Died?.Invoke(u); }
             if (ruined.Count == 0) return;

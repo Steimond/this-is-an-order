@@ -74,10 +74,11 @@ namespace Order.Simulation
             return used;
         }
         public int SupplyLimit=>Limit(Player);
-        int Limit(int owner){int limit=0;foreach(var b in Buildings)if(b.Owner==owner&&b.Ready>=1)limit+=b.Stats.Supply;return limit;}
+        int Limit(int owner){int limit=0;foreach(var b in Buildings)if(b.Owner==owner&&b.Ready>=1&&b.Powered)limit+=b.Stats.Supply;return limit;}
         public float HeightAt(float x,float z)=>Map.Height((int)x,(int)z,x-(int)x);
         public void Tick(float dt)
         {
+            UpdateNetwork();
             TickBuildings(dt);
             Clock+=dt;
             TickProduction(dt);
@@ -155,6 +156,12 @@ namespace Order.Simulation
         public float Wrap{get;internal set;}
         public int Cocoon{get;internal set;}
         internal float sinceHit=float.MaxValue,cocoonGrowth;
+        // A leaper in the middle of a jump: from where to where, how far it has flown, where it passes its target.
+        internal bool leaping,leapHit;
+        internal float leapFromX,leapFromZ,leapToX,leapToZ,leapLength,leapDone,leapPass;
+        internal PrototypeUnit leapTarget;
+        public bool Leaping=>leaping;
+        public float LeapShare=>leaping?leapDone/leapLength:0;
         // Mining trips: the load a worker carries to a command node, whether it is plasma, and whether it is mining right now.
         public int Carrying { get; internal set; }
         public bool CarriesPlasma { get; internal set; }
@@ -189,6 +196,8 @@ namespace Order.Simulation
         // The owner faction's numbers for this kind; a machine building rises by itself once its site is placed.
         public BuildingStats Stats{get;internal set;}
         public bool SelfBuilt{get;internal set;}
+        // Machines: whether the network covers it (a core always is); humans always are. See PrototypeMatch.Network.cs.
+        public bool Powered{get;internal set;}=true;
         // The worker raising it, while it is at work on it; nobody when the construction waits.
         internal PrototypeUnit builder;
         public PrototypeUnit Builder=>builder!=null&&builder.Alive&&builder.Constructing==this?builder:null;
