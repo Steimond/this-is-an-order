@@ -95,7 +95,7 @@ namespace Order.Simulation
             {
                 if(b.Ready>=1)continue;
                 // A building under construction gains its health as it rises, from a tenth of the full value.
-                var stats=Balance.Buildings[b.Kind];float step=Math.Min(dt/stats.BuildSeconds,1-b.Ready);
+                var stats=Balance.Buildings[b.Kind];float rate=FastBuild&&b.Owner==Player?FastFactor:1,step=Math.Min(dt*rate/stats.BuildSeconds,1-b.Ready);
                 b.Ready=Math.Min(1,b.Ready+step);b.Health=Math.Min(stats.Health,b.Health+(int)Math.Ceiling(stats.Health*.9f*step));
             }
             TickProduction(dt);
@@ -116,6 +116,8 @@ namespace Order.Simulation
                 bool own=b.Owner==Player;
                 Reveal(b.X+b.Width/2,b.Z+b.Width/2,Balance.Buildings[b.Kind].Vision,false,own?Visible:enemyVisible,own?skyVisible:enemySky,own);
             }
+            // Cheat: the player sees the whole map.
+            if(Revealed)for(int z=0;z<64;z++)for(int x=0;x<64;x++){Visible[x,z]=skyVisible[x,z]=Explored[x,z]=true;}
         }
         // Whether a side currently sees the unit; a side always sees its own units.
         public bool SeenBy(int side,PrototypeUnit u)

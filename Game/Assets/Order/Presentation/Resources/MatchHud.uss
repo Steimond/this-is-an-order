@@ -57,6 +57,8 @@
     color: var(--hud-hot);
 }
 
+.match-top__mode.is-cheating { color: var(--hud-warn); }
+
 .match-top__mode {
     font-size: 10px;
     letter-spacing: 2px;
@@ -628,3 +630,42 @@
 }
 
 .match-banner.is-defeat { color: #F0583A; }
+
+/* Editor-only cheat menu under the top bar */
+.match-cheats {
+    position: absolute;
+    left: 14px;
+    top: 60px;
+    width: 640px;
+    display: none;
+}
+
+.match-cheats.is-open { display: flex; }
+
+.match-cheats__row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.match-cheats__row > .hud-button {
+    min-height: 32px;
+    margin: 0 6px 6px 0;
+    padding: 0 12px;
+}
+
+.match-cheats__label {
+    width: 72px;
+    margin-bottom: 6px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--hud-accent);
+}
+
+.match-cheats__hint {
+    margin-top: 6px;
+    font-size: 11px;
+    white-space: normal;
+    color: var(--hud-muted);
+}

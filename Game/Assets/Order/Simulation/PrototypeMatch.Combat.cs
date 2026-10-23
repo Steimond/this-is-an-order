@@ -327,7 +327,7 @@ namespace Order.Simulation
         }
         void Hit(PrototypeUnit attacker, PrototypeUnit target)
         {
-            target.Health = Math.Max(0, target.Health - attacker.Stats.Damage);
+            if (!(Invulnerable && target.Owner == Player)) target.Health = Math.Max(0, target.Health - attacker.Stats.Damage);
             Attacked?.Invoke(attacker, target);
             if (!target.Alive) return;
             target.aggressor = attacker;
@@ -335,7 +335,7 @@ namespace Order.Simulation
         }
         void Hit(PrototypeUnit attacker, PrototypeBuilding target)
         {
-            target.Health = Math.Max(0, target.Health - attacker.Stats.Damage);
+            if (!(Invulnerable && target.Owner == Player)) target.Health = Math.Max(0, target.Health - attacker.Stats.Damage);
             AttackedBuilding?.Invoke(attacker, target);
             if (target.Health > 0) CallForHelp(target.Owner, target.X + target.Width * .5f, target.Z + target.Width * .5f, attacker, null);
         }

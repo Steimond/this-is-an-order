@@ -44,6 +44,8 @@ namespace Order.Presentation
         void Focus(Vector2 point);
         void FocusWorker();
         void FocusSelection();
+        // Ground point in the middle of the view: where cheat units appear.
+        Vector2 CameraFocus { get; }
         void FocusBase();
         void OrderTo(Vector2 point);
         void AddPin(Vector2 point);
@@ -84,8 +86,12 @@ namespace Order.Presentation
         private readonly List<VisualElement> unitTiles = new List<VisualElement>(), tabs = new List<VisualElement>(), queueTiles = new List<VisualElement>();
         // The building whose production queue is shown.
         private PrototypeBuilding queue;
+#if UNITY_EDITOR
+        // Cheat menu of the test ground; editor only.
+        private readonly CheatPanel cheats;
+#endif
         private readonly HudBar health, shields, progress;
-        private readonly Label commandsTitle, banner;
+        private readonly Label commandsTitle, banner, modeLabel;
         private readonly Button[] buttons = new Button[Slots];
         private readonly HudAction[] actions = new HudAction[Slots];
         private readonly VisualElement tooltip;
@@ -96,7 +102,7 @@ namespace Order.Presentation
         private readonly HudModal exitDialog;
         private readonly PhrasebookPanel phrasebookPanel;
         private readonly Queue<(float time, int minerals, int gas)> income = new Queue<(float, int, int)>();
-        private int lastMinerals = -1, lastGas = -1, gainedMinerals, gainedGas, closedFrame = -1, openedFrame = -1;
+        private int gainedMinerals, gainedGas, closedFrame = -1, openedFrame = -1;
         private string lastMessage, lastHint, theme, speech = "";
         private float eventUntil, speechStart, speechDone, subtitleUntil;
         private int shown;
@@ -129,7 +135,8 @@ namespace Order.Presentation
             left.Add(Hud.Button("В ШТАБ", Leave, "hud-button--ghost"));
             var title = Hud.Box("match-top__title");
             title.Add(Hud.Text("TEMPLE BASIN", "match-top__map"));
-            title.Add(Hud.Text("ПОЛИГОН · " + PrototypeCatalog.FactionLabel(FactionId.Expedition).ToUpperInvariant(), "match-top__mode"));
+            modeLabel = Hud.Text("", "match-top__mode");
+            title.Add(modeLabel);
             left.Add(title);
             top.Add(left);
             var resources = Hud.Box("match-resources");
@@ -143,6 +150,9 @@ namespace Order.Presentation
             right.Add(timer);
             top.Add(right);
             layout.Add(top);
+#if UNITY_EDITOR
+            cheats = new CheatPanel(screen, left, host, Refresh);
+#endif
 
             eventLine = Hud.Text("", "match-event");
             layout.Add(eventLine);
@@ -344,6 +354,9 @@ namespace Order.Presentation
             var lineOpen = commandLine.resolvedStyle.display == DisplayStyle.Flex;
             if ((keys.enterKey.wasPressedThisFrame || keys.numpadEnterKey.wasPressedThisFrame) && !lineOpen && closedFrame != Time.frameCount && !(options?.IsOpen ?? false)) OpenLine();
             if (KeyboardCaptured) return;
+#if UNITY_EDITOR
+            if (keys.f9Key.wasPressedThisFrame) cheats.Toggle();
+#endif
             if (keys.spaceKey.wasPressedThisFrame) host.FocusSelection();
             for (var i = 0; i < Slots; i++)
             {
@@ -363,6 +376,8 @@ namespace Order.Presentation
             var used = match.SupplyUsed; var limit = match.SupplyLimit;
             supply.text = $"{used} / {limit}";
             supply.EnableInClassList("is-full", used >= limit);
+            modeLabel.text = "ПОЛИГОН · " + PrototypeCatalog.FactionLabel(FactionId.Expedition).ToUpperInvariant() + CheatLabel(match);
+            modeLabel.EnableInClassList("is-cheating", match.Cheated);
             banner.style.display = match.Winner < 0 ? DisplayStyle.None : DisplayStyle.Flex;
             banner.text = match.Winner == PrototypeMatch.Player ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
             banner.EnableInClassList("is-defeat", match.Winner == PrototypeMatch.Enemy);
@@ -372,6 +387,9 @@ namespace Order.Presentation
             RefreshSelection();
             RefreshGroups(match);
             RefreshCommands();
+#if UNITY_EDITOR
+            cheats.Refresh();
+#endif
             minimap.Refresh();
             assistantName.text = "АССИСТЕНТ  ·  " + PrototypeCatalog.FactionLabel(services?.App?.Settings.AssistantFaction ?? FactionId.Expedition).ToUpperInvariant();
             core.Faction = services?.App?.Settings.AssistantFaction ?? FactionId.Expedition;
@@ -397,9 +415,8 @@ namespace Order.Presentation
         private void TrackIncome(PrototypeMatch match)
         {
             var now = Time.realtimeSinceStartup;
-            if (lastMinerals >= 0 && match.Minerals > lastMinerals) gainedMinerals += match.Minerals - lastMinerals;
-            if (lastGas >= 0 && match.Gas > lastGas) gainedGas += match.Gas - lastGas;
-            lastMinerals = match.Minerals; lastGas = match.Gas;
+            // Only what workers deliver counts: refunds and cheats are not income.
+            gainedMinerals = match.MineralsHarvested; gainedGas = match.GasHarvested;
             income.Enqueue((now, gainedMinerals, gainedGas));
             while (income.Count > 1 && now - income.Peek().time > 60) income.Dequeue();
             var oldest = income.Peek();
@@ -497,6 +514,18 @@ namespace Order.Presentation
                 selectionStatus.text = "ЛКМ — выбрать  ·  ПКМ — приказ";
                 selectionEmpty.text = "Выберите юнит, здание или залежь. Пробел — камера к выделенным.";
             }
+        }
+
+        // Active cheats after the mode, so a test run never passes for a fair one.
+        private static string CheatLabel(PrototypeMatch match)
+        {
+            if (!match.Cheated) return "";
+            var on = new List<string>();
+            if (match.FastBuild) on.Add("×" + PrototypeMatch.FastFactor.ToString("0"));
+            if (match.NoSupply) on.Add("БЕЗ ЛИМИТА");
+            if (match.Revealed) on.Add("КАРТА");
+            if (match.Invulnerable) on.Add("БЕССМЕРТИЕ");
+            return "  ·  ЧИТЫ" + (on.Count > 0 ? ": " + string.Join(", ", on) : "");
         }
 
         private void RefreshQueue(PrototypeBuilding building)
@@ -809,6 +838,9 @@ namespace Order.Presentation
         private void Escape()
         {
             if (commandLine.resolvedStyle.display == DisplayStyle.Flex) { CloseLine(); return; }
+#if UNITY_EDITOR
+            if (cheats.IsOpen) { cheats.Close(); return; }
+#endif
             var app = services?.App;
             if (app != null && app.ExitPending) { Send(AppCommand.CancelExit()); return; }
             if (app != null && app.Screen.IsSettings()) { Send(AppCommand.Back()); return; }

@@ -58,13 +58,13 @@ namespace Order.Simulation
                 var stats = Balance.Unit(b.queue[0]);
                 if (!b.started)
                 {
-                    bool blocked = Supply(b.Owner) + stats.Supply > Limit(b.Owner);
+                    bool blocked = !(NoSupply && b.Owner == Player) && Supply(b.Owner) + stats.Supply > Limit(b.Owner);
                     if (blocked && !b.SupplyBlocked && b.Owner == Player) Message = "Не хватает снабжения: постройте узел снабжения.";
                     b.SupplyBlocked = blocked;
                     if (blocked) continue;
                     b.started = true;
                 }
-                b.Training += dt;
+                b.Training += dt * (FastBuild && b.Owner == Player ? FastFactor : 1);
                 if (b.Training < stats.TrainSeconds) continue;
                 if (!ExitSpot(b, stats, out float x, out float z)) { b.Training = stats.TrainSeconds; continue; }
                 var kind = b.queue[0];

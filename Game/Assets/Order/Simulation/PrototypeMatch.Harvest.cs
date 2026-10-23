@@ -14,6 +14,9 @@ namespace Order.Simulation
     {
         const float DropReach = .7f, NeighbourReach = 3.2f, SwitchReach = 9;
         readonly Dictionary<ResourceDeposit, PrototypeUnit> miners = new Dictionary<ResourceDeposit, PrototypeUnit>();
+        // Everything delivered by workers in this match: the income, without refunds or cheats.
+        public int MineralsHarvested { get; private set; }
+        public int GasHarvested { get; private set; }
 
         void TickHarvest(float dt)
         {
@@ -29,7 +32,7 @@ namespace Order.Simulation
                     var drop = DropOff(u);
                     if (drop == null) { StopHarvest(u); continue; }
                     if (Gap(u, drop) > DropReach) { Haul(u); continue; }
-                    if (u.CarriesGas) Gas += u.Carrying; else Minerals += u.Carrying;
+                    if (u.CarriesGas) { Gas += u.Carrying; GasHarvested += u.Carrying; } else { Minerals += u.Carrying; MineralsHarvested += u.Carrying; }
                     u.Carrying = 0; u.delivering = false;
                     GatherFrom(u, deposit.Remaining > 0 ? deposit : Nearby(deposit, u, SwitchReach, false));
                     continue;

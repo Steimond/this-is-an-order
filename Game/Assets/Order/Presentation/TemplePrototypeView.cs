@@ -840,6 +840,7 @@ namespace Order.Presentation
             selectedBuilding=null;selectedDeposit=null;hud?.Refresh();
         }
         public void Focus(Vector2 point)=>focus=new Vector3(Mathf.Clamp(point.x,0,64),0,Mathf.Clamp(point.y,0,64));
+        public Vector2 CameraFocus=>new Vector2(focus.x,focus.z);
         public void FocusWorker(){var worker=Match.Units.Find(u=>u.Owner==PrototypeMatch.Player&&u.Kind==UnitKind.Worker);if(worker!=null)focus=new Vector3(worker.X,0,worker.Z);}
         // Camera to the middle of the selected units; without a selection, to the worker.
         public void FocusSelection()
