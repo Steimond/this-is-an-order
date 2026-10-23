@@ -43,7 +43,41 @@ namespace Order.Tests.EditMode
             a.Health=0;Run(match,.1f);
             Assert.That(match.Buildings,Has.No.Member(a));Assert.That(b.Powered,Is.True,"Still linked to the core through the other relay");
             c.Health=0;Run(match,.1f);
-            Assert.That(b.Powered,Is.False,"No path to a core is left");
+            Assert.That(b.Linked,Is.False,"No path to a core is left");Assert.That(b.Powered,Is.True,"It still works on its grace");
+            Run(match,PrototypeMatch.NetworkGrace);
+            Assert.That(b.Powered,Is.False,"Then it goes dark");
+        }
+        [Test] public void ACutOffBuildingWorksOnItsGraceAndANewLinkLightsItAgain()
+        {
+            var match=Machines();
+            var relay=Finished(match,17,17,Relay);
+            // A compute node only the relay covers.
+            var node=Finished(match,21,20,0);
+            Assert.That(match.Covered(PrototypeMatch.Player,22,21),Is.True);int limit=match.SupplyLimit;
+            Assert.That(match.CanBuild(21,17,0,out var reason),Is.True,reason);
+            relay.Health=0;Run(match,PrototypeMatch.NetworkGrace-1);
+            Assert.That(node.Linked,Is.False);Assert.That(node.Powered,Is.True);Assert.That(match.SupplyLimit,Is.EqualTo(limit),"Supply holds on the grace");
+            Assert.That(match.CanBuild(21,17,0,out reason),Is.False,"A cut-off zone takes no new buildings");Assert.That(reason,Is.EqualTo("Вне покрытия сети"));
+            Run(match,1.2f);
+            Assert.That(node.Powered,Is.False);Assert.That(match.SupplyLimit,Is.EqualTo(limit-node.Stats.Supply),"Dark, it gives no supply");
+            Finished(match,17,17,Relay);Run(match,.1f);
+            Assert.That(node.Linked,Is.True);Assert.That(node.Powered,Is.True);Assert.That(node.DarkFor,Is.Zero);
+        }
+        [Test] public void MachineBotLinksItsTwoCoresWithARelay()
+        {
+            // The bot takes its second base by itself from the sixth minute (ExpansionTests); the player cannot be hurt.
+            var match=new PrototypeMatch(null,FactionId.Expedition,FactionId.Resonance);match.AddEnemyBase();match.ToggleInvulnerable();match.StartBot();
+            Run(match,400);
+            PrototypeBuilding second=null;
+            for(int i=0;i<200&&(second==null||second.Ready<1);i++){Run(match,1);second=match.Buildings.Find(b=>b.Owner==PrototypeMatch.Enemy&&b.Kind==FactionBalance.Main&&b.X!=51);}
+            Assert.That(second,Is.Not.Null);Assert.That(second.Ready,Is.EqualTo(1),"The second core is up");
+            var first=match.Buildings.Find(b=>b.Owner==PrototypeMatch.Enemy&&b.Kind==FactionBalance.Main&&b!=second);
+            float Away(PrototypeBuilding a,PrototypeBuilding b)=>new UnityEngine.Vector2(a.X+a.Width*.5f-b.X-b.Width*.5f,a.Z+a.Width*.5f-b.Z-b.Width*.5f).magnitude;
+            Assert.That(Away(first,second),Is.GreaterThan(first.Stats.Coverage),"The cores do not reach each other");
+            Run(match,30);
+            var relay=match.Buildings.Find(b=>b.Owner==PrototypeMatch.Enemy&&b.Kind==Relay&&Away(b,first)<=first.Stats.Coverage&&Away(b,second)<=second.Stats.Coverage);
+            Assert.That(relay,Is.Not.Null,"A relay within reach of both cores");
+            Assert.That(relay.Ready,Is.EqualTo(1));Assert.That(relay.Linked,Is.True);
         }
         [Test] public void UncoveredBuildingsStopRisingTrainingAndGivingSupply()
         {
@@ -51,11 +85,11 @@ namespace Order.Tests.EditMode
             var relay=Finished(match,17,4,Relay);
             var site=Sites.Place(match,18,1,0);
             Run(match,1);float ready=site.Ready;Assert.That(ready,Is.GreaterThan(0));
-            relay.Health=0;Run(match,2);
+            relay.Health=0;Run(match,PrototypeMatch.NetworkGrace+.2f);ready=site.Ready;Run(match,2);
             Assert.That(site.Powered,Is.False);Assert.That(site.Ready,Is.EqualTo(ready),"A site outside the network does not rise");
             var node=Finished(match,15,14,0);var assembler=Finished(match,14,17,1);
             Assert.That(match.SupplyLimit,Is.EqualTo(18));Assert.That(match.Train(assembler,UnitKind.Ranged),Is.True);
-            var core=match.Buildings.Find(b=>b.Kind==FactionBalance.Main);core.Health=0;Run(match,.1f);
+            var core=match.Buildings.Find(b=>b.Kind==FactionBalance.Main);core.Health=0;Run(match,PrototypeMatch.NetworkGrace+.2f);
             Assert.That(node.Powered,Is.False);Assert.That(match.SupplyLimit,Is.Zero,"A dark compute node gives no supply");
             float trained=assembler.Training;Run(match,2);Assert.That(assembler.Training,Is.EqualTo(trained),"Training stops");
             Assert.That(match.Train(assembler,UnitKind.Ranged),Is.False);Assert.That(match.Message,Does.Contain("сигнала"));

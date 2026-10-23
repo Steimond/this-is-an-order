@@ -59,7 +59,7 @@ namespace Order.Tests.EditMode
             var (match,lab)=Lab(FactionId.Resonance);
             Assert.That(lab.Stats.Name,Is.EqualTo("Узел прошивки"));
             Assert.That(match.Research(lab,Upgrade.Weapons),Is.True);
-            match.Buildings.Find(b=>b.Kind==FactionBalance.Main).Health=0;Run(match,.2f);
+            match.Buildings.Find(b=>b.Kind==FactionBalance.Main).Health=0;Run(match,PrototypeMatch.NetworkGrace+.2f);
             float time=lab.ResearchTime;Run(match,2);
             Assert.That(lab.ResearchTime,Is.EqualTo(time),"No research without the network");
             Assert.That(match.ResearchBlocked(lab,Upgrade.Armor),Is.EqualTo("Нет сигнала сети."));

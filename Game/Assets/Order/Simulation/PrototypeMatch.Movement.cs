@@ -407,6 +407,7 @@ namespace Order.Simulation
             foreach (var u in Units) { if (!u.leaping) UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
             TickConstruction(dt);
             TickRepair(dt);
+            TickAutoRepair(dt);
             // Before mining: it counts the time since the last hit, which the nanite cocoon waits for too.
             TickMending(dt);
             TickHarvest(dt);

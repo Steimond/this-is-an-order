@@ -230,7 +230,7 @@ namespace Order.Presentation
                             if(enemy!=null&&selection.Own)AttackSelection(enemy,queue);else if(structure!=null&&selection.Own)AttackSelection(structure,queue);
                             else if(site!=null&&ResumeSelection(site)){}
                             // Workers on own damaged buildings and machinery repair them, as SCVs do.
-                            else if(!queue&&Repairers(null).Count>0&&RepairTargetAt(p,true,out var mend,out var machine)&&RepairSelection(mend,machine)){}
+                            else if(Repairers(null).Count>0&&RepairTargetAt(p,true,out var mend,out var machine)&&(queue?QueueRepairSelection(mend,machine):RepairSelection(mend,machine))){}
                             else MoveSelection(ExtractorPoint(p,point),queue);
                         }
                     }
@@ -249,7 +249,10 @@ namespace Order.Presentation
                         else if(Mode==MatchMode.Repair)
                         {
                             // A wrong target keeps the mode on, as in StarCraft.
+                            // With Shift the repair is queued and the mode stays on for the next target.
+                            bool queue=Queueing();
                             if(!RepairTargetAt(p,false,out var mend,out var machine)){Match.Message="Укажите своё здание или технику.";hud?.Refresh();}
+                            else if(queue)QueueRepairSelection(mend,machine);
                             else if(RepairSelection(mend,machine))SetMode(MatchMode.None);
                         }
                         else if(Mode!=MatchMode.None)OrderTo(point);
@@ -480,6 +483,9 @@ namespace Order.Presentation
                 if(!view.Model.activeSelf||(b.Owner!=PrototypeMatch.Player&&!Match.SeenBy(PrototypeMatch.Player,b)))continue;
                 if(b.Health<stats.Health||selectedBuilding==b)
                     combat.Bar(new Vector3(b.X+b.Width*.5f,Match.Map.Height(b.X,b.Z)+stats.Height+.45f,b.Z+b.Width*.5f),b.Width*.8f,b.Health/(float)stats.Health);
+                // A machine building cut off from the network blinks amber on its grace, then a dark one gives a faint grey pulse.
+                if(!b.Linked&&b.Ready>=1&&UnityEngine.Random.value<Time.deltaTime*(b.Powered?2.5f:.7f))
+                    combat.Flash(new Vector3(b.X+b.Width*.5f,Match.Map.Height(b.X,b.Z)+stats.Height+.15f,b.Z+b.Width*.5f),b.Powered?new Color(1,.7f,.28f)*2:new Color(.5f,.52f,.58f),.22f*b.Width,.35f,1.6f);
                 // A machine building mending in the network glints here and there over its body.
                 if(b.Mending&&UnityEngine.Random.value<Time.deltaTime*3*b.Width)
                 {
@@ -997,7 +1003,7 @@ namespace Order.Presentation
                     ring.positionCount=CoverageSegments;ring.loop=true;ring.widthMultiplier=.07f;ring.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
                     coverageRings.Add(ring);
                 }
-                var line=coverageRings[shown++];line.enabled=true;line.sharedMaterial=b.Powered?coverageMaterial:darkCoverageMaterial;
+                var line=coverageRings[shown++];line.enabled=true;line.sharedMaterial=b.Linked?coverageMaterial:darkCoverageMaterial;
                 float cx=b.X+b.Width*.5f,cz=b.Z+b.Width*.5f,r=b.Stats.Coverage;
                 for(int i=0;i<CoverageSegments;i++)
                 {
@@ -1127,6 +1133,23 @@ namespace Order.Presentation
             if(rest.Count>0)Match.MoveGroup(rest,cx,cz);
             Match.Message=message;Mark(new Vector2(cx,cz),true);hud?.Refresh();
             return true;
+        }
+        // Shift: every selected worker repairs the target after what it is doing now.
+        bool QueueRepairSelection(PrototypeBuilding building,PrototypeUnit unit)
+        {
+            var workers=Repairers(unit);int queued=0;string reason=null;
+            foreach(var w in workers){if(building!=null?Match.QueueRepair(w,building):Match.QueueRepair(w,unit))queued++;else reason??=Match.Message;}
+            if(queued==0){if(reason!=null)Match.Message=reason;hud?.Refresh();return false;}
+            Match.Message=$"Ремонт добавлен в очередь: {(building!=null?building.Stats.Name:unit.Stats.Name)}.";
+            Mark(building!=null?new Vector2(building.X+building.Width*.5f,building.Z+building.Width*.5f):new Vector2(unit.X,unit.Z),true);hud?.Refresh();
+            return true;
+        }
+        public void ToggleAutoRepair()
+        {
+            var workers=Repairers(null);if(workers.Count==0)return;
+            bool on=!workers.TrueForAll(u=>u.AutoRepair);
+            foreach(var w in workers)Match.SetAutoRepair(w,on);
+            Match.Message=$"Авторемонт {(on?"включён":"выключен")}.";hud?.Refresh();
         }
         // Right click on an own extractor means its rift: the ray past the model would hit the ground behind it.
         Vector2 ExtractorPoint(Vector2 screen,Vector2 point)

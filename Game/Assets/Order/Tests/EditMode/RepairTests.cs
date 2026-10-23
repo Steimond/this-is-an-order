@@ -73,6 +73,33 @@ namespace Order.Tests.EditMode
             int health=factory.Health;Assert.That(match.Move(worker,20.5f,20.5f),Is.True);
             Assert.That(worker.Repairing,Is.Null,"Any new order ends the repair");Run(match,2);Assert.That(factory.Health,Is.EqualTo(health));
         }
+        [Test] public void AQueuedRepairStartsWhenTheCurrentOneIsDone()
+        {
+            var match=Humans();var factory=Sites.Place(match,15,14,1,finish:true);var supply=Sites.Place(match,15,18,0,finish:true);var worker=Worker(match);
+            factory.Health=factory.Stats.Health-400;supply.Health=supply.Stats.Health-100;
+            Assert.That(match.Repair(worker,factory),Is.True);
+            Assert.That(match.QueueRepair(worker,supply),Is.True);Assert.That(worker.Queued.Count,Is.EqualTo(1));Assert.That(match.Message,Does.Contain("в очередь"));
+            Run(match,4);Assert.That(worker.Repairing,Is.SameAs(factory),"The current repair goes on");
+            Run(match,16);
+            Assert.That(factory.Health,Is.EqualTo(factory.Stats.Health));Assert.That(supply.Health,Is.EqualTo(supply.Stats.Health),"Then the queued one");
+            Assert.That(worker.Queued.Count,Is.Zero);
+        }
+        [Test] public void AutoRepairMendsWhatIsDamagedNearAnIdleWorker()
+        {
+            var match=Humans();var worker=Worker(match);var hq=match.Buildings.Find(b=>b.Kind==FactionBalance.Main);
+            hq.Health-=300;Run(match,2);
+            Assert.That(worker.Repairing,Is.Null,"Without autocast an idle worker waits for orders");
+            Assert.That(match.SetAutoRepair(worker,true),Is.True);Assert.That(worker.AutoRepair,Is.True);
+            Run(match,1);Assert.That(worker.Repairing,Is.SameAs(hq),"With it the worker sets to work by itself");
+            Run(match,25);Assert.That(hq.Health,Is.EqualTo(hq.Stats.Health));
+            var far=Sites.Place(match,30,30,0,finish:true);far.Health-=100;
+            Assert.That(match.Move(worker,13.5f,15.5f),Is.True);Run(match,8);
+            Assert.That(worker.Repairing,Is.Null,"Nothing within reach");
+            var gunship=match.Spawn(UnitKind.Air,15,16);gunship.Health=60;Run(match,1.5f);
+            Assert.That(worker.RepairingUnit,Is.SameAs(gunship),"Machinery near it too");
+            var machines=new PrototypeMatch(null,FactionId.Resonance,FactionId.Expedition);
+            Assert.That(machines.SetAutoRepair(Worker(machines),true),Is.False,"Machines mend themselves");
+        }
         [Test] public void MachinesMendInsideTheNetworkOnceLeftAlone()
         {
             var match=Machines();

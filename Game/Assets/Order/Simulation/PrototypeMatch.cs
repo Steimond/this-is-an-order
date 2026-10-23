@@ -78,7 +78,7 @@ namespace Order.Simulation
         public float HeightAt(float x,float z)=>Map.Height((int)x,(int)z,x-(int)x);
         public void Tick(float dt)
         {
-            UpdateNetwork();
+            UpdateNetwork(dt);
             TickBuildings(dt);
             Clock+=dt;
             TickProduction(dt);
@@ -157,6 +157,8 @@ namespace Order.Simulation
         public PrototypeBuilding Repairing { get; internal set; }
         public PrototypeUnit RepairingUnit { get; internal set; }
         public bool Welding { get; internal set; }
+        // Automatic repair (autocast): an idle worker mends damaged things of its side nearby by itself.
+        public bool AutoRepair { get; internal set; }
         internal float repairHealth, repairMetal, repairPlasma, repairTimer;
         // Machines: whether it mends inside the network right now, and how far it is taken apart (0 while it is not).
         public bool Mending { get; internal set; }
@@ -208,8 +210,13 @@ namespace Order.Simulation
         // The owner faction's numbers for this kind; a machine building rises by itself once its site is placed.
         public BuildingStats Stats{get;internal set;}
         public bool SelfBuilt{get;internal set;}
-        // Machines: whether the network covers it (a core always is); humans always are. See PrototypeMatch.Network.cs.
+        // Machines: whether it works, covered by the network or still on its grace (a core always is); humans always are.
+        // See PrototypeMatch.Network.cs.
         public bool Powered{get;internal set;}=true;
+        // Whether the network reaches it right now, and for how long it has been cut off: it stays powered on a grace of
+        // NetworkGrace seconds.
+        public bool Linked{get;internal set;}=true;
+        public float DarkFor{get;internal set;}
         // Seconds since it was last hit, and the health a machine building mends in fractions between steps.
         internal float sinceHit=float.MaxValue,mended;
         public bool Mending{get;internal set;}

@@ -8,7 +8,7 @@ namespace Order.Simulation
     // - keeps its workers mining and trains more: humans up to a dozen (ten more per extra base), two on each of its
     //   extractors once it has eight; machines one on each deposit round its bases, one on plasma once it has five;
     // - humans put an extractor on the rift by each base from eight workers, and mend damaged buildings once the
-    //   enemy has left;
+    //   enemy has left; machines link their two bases with a relay, and add one when the coverage has no room left;
     // - from the sixth minute takes a second base: the free base spot nearest its first one;
     // - adds a supply node before supply runs out and, after its first wave, a second factory once it has metal to spare
     //   and a research building, where it upgrades weapons and armour in turn;
@@ -163,6 +163,7 @@ namespace Order.Simulation
             if (raising) return;
             if (Supply(Enemy) + 6 >= Limit(Enemy) && Limit(Enemy) < 200) { if (BotPlace(hq, 0)) return; }
             if (BotExtractor()) return;
+            if (BotRelay(hq)) return;
             if (BotExpand(hq)) return;
             int factories = Buildings.FindAll(b => b.Owner == Enemy && Trains(b, UnitKind.Ranged)).Count;
             if (factories < 2 && Waves >= 1 && metalStock[Enemy] >= 400) { if (BotPlace(hq, 1)) return; }
@@ -209,9 +210,50 @@ namespace Order.Simulation
                 if (d >= best || d < 9 || !Room(x, z, w, level) || !CanBuild(x, z, kind, out _, Enemy)) continue;
                 best = d; bestX = x; bestZ = z;
             }
-            if (best == float.MaxValue) return false;
+            // No room inside the coverage: a machine bot extends it with a relay next.
+            if (best == float.MaxValue) { cramped = Roster(Enemy).Network; return false; }
             var builder = BotBuilder(bestX + w * .5f, bestZ + w * .5f);
             return builder != null && Build(builder, bestX, bestZ, kind);
+        }
+        // Machines tie their bases into one network: a relay between two cores that do not reach each other, so each base
+        // has a second path to a core (SETTING.md). With no room left for a building inside the coverage, a relay at its edge
+        // toward the middle of the map makes more.
+        bool cramped;
+        bool BotRelay(PrototypeBuilding hq)
+        {
+            if (!Roster(Enemy).Network || RelaysLeft(Enemy) <= 0 || metalStock[Enemy] < Roster(Enemy).Buildings[FactionBalance.Relay].Metal) return false;
+            var cores = Buildings.FindAll(b => b.Owner == Enemy && b.Kind == FactionBalance.Main && b.Ready >= 1 && b.Linked);
+            for (int i = 0; i < cores.Count; i++)
+            for (int j = i + 1; j < cores.Count; j++)
+            {
+                PrototypeBuilding a = cores[i], c = cores[j];
+                if (Distance(a, c) <= a.Stats.Coverage || Distance(a, c) > a.Stats.Coverage + c.Stats.Coverage) continue;
+                if (Buildings.Exists(r => r.Owner == Enemy && r.Kind == FactionBalance.Relay && Distance(r, a) <= a.Stats.Coverage && Distance(r, c) <= c.Stats.Coverage)) continue;
+                float mx = (a.X + c.X) * .5f + 1.5f, mz = (a.Z + c.Z) * .5f + 1.5f;
+                if (BotRelayAt(mx, mz, r => Near(r, a) && Near(r, c))) return true;
+            }
+            if (!cramped) return false;
+            cramped = false;
+            float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f, dx = 32 - cx, dz = 32 - cz, d = (float)Math.Sqrt(dx * dx + dz * dz), reach = hq.Stats.Coverage - 1.5f;
+            return d > 0 && BotRelayAt(cx + dx / d * reach, cz + dz / d * reach, r => Near(r, hq));
+            bool Near(PrototypeBuilding relay, PrototypeBuilding core) => Distance(relay, core) <= core.Stats.Coverage;
+        }
+        // A relay on a free spot near the point that passes the check: a stand-in building tells where it would stand.
+        bool BotRelayAt(float x, float z, Func<PrototypeBuilding, bool> fits)
+        {
+            var stats = Roster(Enemy).Buildings[FactionBalance.Relay];
+            int bestX = 0, bestZ = 0; float best = float.MaxValue;
+            for (int zz = (int)z - 3; zz <= (int)z + 3; zz++)
+            for (int xx = (int)x - 3; xx <= (int)x + 3; xx++)
+            {
+                float d = (xx + .5f - x) * (xx + .5f - x) + (zz + .5f - z) * (zz + .5f - z);
+                if (d >= best || !Map.Inside(xx, zz) || !CanBuild(xx, zz, FactionBalance.Relay, out _, Enemy)) continue;
+                if (!fits(new PrototypeBuilding { X = xx, Z = zz, Width = 1, Stats = stats })) continue;
+                best = d; bestX = xx; bestZ = zz;
+            }
+            if (best == float.MaxValue) return false;
+            var builder = BotBuilder(bestX + .5f, bestZ + .5f);
+            return builder != null && Build(builder, bestX, bestZ, FactionBalance.Relay);
         }
         // A side that mines plasma through extractors puts one on the rift by each finished base once it has eight workers.
         bool BotExtractor()

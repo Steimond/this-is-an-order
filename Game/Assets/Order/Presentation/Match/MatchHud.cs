@@ -43,6 +43,8 @@ namespace Order.Presentation
         void DisassembleSelection();
         // Humans: the selected workers mend the building or machinery; false when none of them can.
         bool RepairSelection(PrototypeBuilding building, PrototypeUnit unit);
+        // Automatic repair on for all selected workers, or off when all of them have it.
+        void ToggleAutoRepair();
         bool Train(UnitKind kind);
         void CancelTraining(int index);
         void SetRallyPoint(Vector2 point);
@@ -509,7 +511,7 @@ namespace Order.Presentation
                 // A machine building outside the network stops: no rising, training or supply.
                 var rising = building.Powered && (building.SelfBuilt || (builder != null && PrototypeMatch.Gap(builder, building) <= PrototypeMatch.BuildReach));
                 var own = building.Owner == PrototypeMatch.Player;
-                selectionStatus.text = (own ? "" : "ПРОТИВНИК · ") + (!building.Powered ? "НЕТ СИГНАЛА СЕТИ" : !ready ? rising ? "СТРОИТЕЛЬСТВО" : builder != null ? "РАБОЧИЙ ИДЁТ К СТРОЙКЕ" : "СТРОЙКА ОСТАНОВЛЕНА"
+                selectionStatus.text = (own ? "" : "ПРОТИВНИК · ") + (!building.Powered ? "НЕТ СИГНАЛА СЕТИ" : !building.Linked ? $"СИГНАЛ ПОТЕРЯН · ГАСНЕТ ЧЕРЕЗ {Mathf.CeilToInt(PrototypeMatch.NetworkGrace - building.DarkFor)} С" : !ready ? rising ? "СТРОИТЕЛЬСТВО" : builder != null ? "РАБОЧИЙ ИДЁТ К СТРОЙКЕ" : "СТРОЙКА ОСТАНОВЛЕНА"
                     : building.Researching.HasValue ? "ИССЛЕДОВАНИЕ · " + PrototypeMatch.UpgradeName(building.Researching.Value).ToUpperInvariant() + " " + (match.Level(building.Owner, building.Researching.Value) + 1)
                     : training != null ? building.SupplyBlocked ? "ЖДЁТ СНАБЖЕНИЯ" : "ОБУЧЕНИЕ · " + training.Name.ToUpperInvariant()
                     : building.Mending ? "ВОССТАНАВЛИВАЕТСЯ В СЕТИ"
@@ -636,7 +638,8 @@ namespace Order.Presentation
             if (unit.Moving) return deposit != null ? "НАПРАВЛЯЕТСЯ К ЗАЛЕЖИ" : "ДВИЖЕНИЕ";
             if (deposit != null && unit.Wrap > 0 && unit.Wrap < 1) return $"ОБВИВАЕТ ЗАЛЕЖЬ · {unit.Wrap * 100:0}%";
             if (deposit != null && !unit.Mining && deposit.Remaining > 0) return "ЖДЁТ ОЧЕРЕДИ У ЗАЛЕЖИ";
-            return deposit != null && deposit.Remaining > 0 ? "ДОБЫЧА · " + (deposit.Plasma ? "ПЛАЗМА" : "МЕТАЛЛ") : unit.Mending ? "ВОССТАНАВЛИВАЕТСЯ В СЕТИ" : "ОЖИДАЕТ ПРИКАЗА";
+            return deposit != null && deposit.Remaining > 0 ? "ДОБЫЧА · " + (deposit.Plasma ? "ПЛАЗМА" : "МЕТАЛЛ") : unit.Mending ? "ВОССТАНАВЛИВАЕТСЯ В СЕТИ"
+                : unit.AutoRepair ? "ОЖИДАЕТ ПРИКАЗА · АВТОРЕМОНТ" : "ОЖИДАЕТ ПРИКАЗА";
         }
 
         // Tiles are reused; each keeps its unit in userData. Click: only this unit; Shift: drop it; Ctrl: keep only its kind.
@@ -786,6 +789,13 @@ namespace Order.Presentation
                         actions[3] = new HudAction { Title = "Ремонт", Hotkey = "R", Key = Key.R, Icon = HudIconKind.Repair, Active = host.Mode == MatchMode.Repair,
                             Description = $"ЛКМ по своему повреждённому зданию или технике (рабочий, винтокрыл). Полный ремонт стоит {PrototypeMatch.RepairShare * 100:0}% цены и идёт, как стройка, но не меньше {PrototypeMatch.MinRepairSeconds:0} с. Также: ПКМ рабочим по цели.",
                             Run = () => host.SetMode(MatchMode.Repair) };
+                    if (match.Roster(unit.Owner).Repairs)
+                    {
+                        var on = host.Selection.Orderable.Where(u => u.Kind == UnitKind.Worker).All(u => u.AutoRepair);
+                        actions[4] = new HudAction { Title = on ? "Авторемонт: вкл." : "Авторемонт: выкл.", Hotkey = "T", Key = Key.T, Icon = HudIconKind.Repair, Active = on,
+                            Description = $"Свободный рабочий сам чинит повреждённые здания и технику своей стороны в {PrototypeMatch.AutoRepairReach:0} клетках от себя. Нажмите, чтобы {(on ? "выключить" : "включить")} у выделенных рабочих.",
+                            Run = host.ToggleAutoRepair };
+                    }
                 }
                 else
                 {
@@ -1173,6 +1183,17 @@ namespace Order.Presentation
                 ok = match.Move(harvester, deposit.X + .5f, deposit.Z + .5f) && harvester.HarvestTarget == deposit;
                 if (!ok) { reply = match.Message; return true; }
                 reply = ok ? $"{harvester.Stats.Name}: добыча {(deposit.Plasma ? "плазмы" : "металла")} в {MapGrid.Name(deposit.X + .5f, deposit.Z + .5f, TempleMap.Size)}." : match.Message;
+                return true;
+            }
+            if (Is(@"^(?:авторемонт|автоматический ремонт|автопочинка)\b"))
+            {
+                var workers = host.Selection.Orderable.Where(u => u.Kind == UnitKind.Worker).ToList();
+                if (workers.Count == 0) { host.SelectWorker(); workers = host.Selection.Orderable.Where(u => u.Kind == UnitKind.Worker).ToList(); }
+                if (workers.Count == 0 || !match.Roster(PrototypeMatch.Player).Repairs) { ok = false; reply = "Авторемонт есть только у рабочих людей."; return true; }
+                // "авторемонт вкл/выкл" sets it, the bare word toggles it.
+                bool on = Is(@"\b(?:вкл\w*|on|да)\b") ? true : Is(@"\b(?:выкл\w*|off|нет|отключ\w*)\b") ? false : !workers.All(u => u.AutoRepair);
+                foreach (var w in workers) match.SetAutoRepair(w, on);
+                reply = $"Авторемонт {(on ? "включён" : "выключен")}: {(workers.Count > 1 ? $"рабочие ×{workers.Count}" : workers[0].Stats.Name.ToLowerInvariant())}.";
                 return true;
             }
             if (Is(@"^(?:почини\w*|чини\w*|отремонтируй\w*|ремонт\w*)\b"))

@@ -224,7 +224,7 @@ namespace Order.Presentation
                     {
                         if (b.Owner != PrototypeMatch.Player || b.Stats.Coverage <= 0 || b.Ready < 1) continue;
                         var center = M(b.X + b.Width * .5f, b.Z + b.Width * .5f);
-                        p.strokeColor = b.Powered ? HudPaint.Alpha(Accent, .7f) : new Color(.55f, .55f, .6f, .5f);
+                        p.strokeColor = b.Linked ? HudPaint.Alpha(Accent, .7f) : new Color(.55f, .55f, .6f, .5f);
                         p.BeginPath(); HudPaint.Circle(p, center, b.Stats.Coverage / size * r.width); p.Stroke();
                     }
                 }

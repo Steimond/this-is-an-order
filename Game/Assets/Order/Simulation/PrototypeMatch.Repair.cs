@@ -7,7 +7,8 @@ namespace Order.Simulation
     // Humans repair, the way SCVs do in StarCraft: a worker mends a finished building or a piece of machinery of its side
     // (the drone, the gunship) while it stands by it. A full repair takes as long as building or training the target, but
     // never less than MinRepairSeconds, and costs RepairShare of its price, paid as the health comes back; several
-    // workers can mend one target, and a side out of metal or plasma stops repairing.
+    // workers can mend one target, and a side out of metal or plasma stops repairing. A repair can wait in the Shift queue,
+    // and a worker with automatic repair on mends what is damaged near it whenever it stands idle.
     // Machines mend themselves instead: inside the coverage of their network a unit or building that has not been hit
     // for MendCalm seconds recovers a share of its health every second. A machine unit can also be taken apart there:
     // after DisassemblySeconds it is gone and the side gets back half its price, less the share of health it had lost.
@@ -16,10 +17,16 @@ namespace Order.Simulation
         public const float RepairShare = .25f, MinRepairSeconds = 20, RepairReach = .6f;
         public const float MendCalm = 5, MendUnits = .02f, MendBuildings = .005f, DisassemblySeconds = 2, DisassemblyRefund = .5f;
 
+        // Why the worker cannot repair this target now, or null.
+        public string RepairBlocked(PrototypeUnit worker, PrototypeBuilding building) =>
+            RepairBlocked(worker, building?.Owner ?? -1, building == null ? 0 : building.Health, building?.Stats.Health ?? 0)
+            ?? (building.Ready < 1 ? "Здание ещё строится: ПКМ рабочим — продолжить стройку." : null);
+        public string RepairBlocked(PrototypeUnit worker, PrototypeUnit target) =>
+            RepairBlocked(worker, target?.Owner ?? -1, target?.Health ?? 0, target?.Stats.Health ?? 0)
+            ?? (target == worker ? "Рабочий не может чинить сам себя." : !target.Stats.Mechanical ? $"{target.Stats.Name} — не техника: ремонт не нужен." : null);
         public bool Repair(PrototypeUnit worker, PrototypeBuilding building)
         {
-            var reason = RepairBlocked(worker, building?.Owner ?? -1, building == null ? 0 : building.Health, building?.Stats.Health ?? 0)
-                ?? (building.Ready < 1 ? "Здание ещё строится: ПКМ рабочим — продолжить стройку." : null);
+            var reason = RepairBlocked(worker, building);
             if (reason != null) { if (worker == null || worker.Owner == Player) Message = reason; return false; }
             StartRepair(worker);
             worker.Repairing = building;
@@ -30,14 +37,61 @@ namespace Order.Simulation
         }
         public bool Repair(PrototypeUnit worker, PrototypeUnit target)
         {
-            var reason = RepairBlocked(worker, target?.Owner ?? -1, target?.Health ?? 0, target?.Stats.Health ?? 0)
-                ?? (target == worker ? "Рабочий не может чинить сам себя." : !target.Stats.Mechanical ? $"{target.Stats.Name} — не техника: ремонт не нужен." : null);
+            var reason = RepairBlocked(worker, target);
             if (reason != null) { if (worker == null || worker.Owner == Player) Message = reason; return false; }
             StartRepair(worker);
             worker.RepairingUnit = target;
             WalkTo(worker, target);
             if (worker.Owner == Player) Message = $"{worker.Stats.Name}: ремонт — {target.Stats.Name}.";
             return true;
+        }
+        // Shift: the worker repairs it after what it is doing now; the target is checked again when its turn comes.
+        public bool QueueRepair(PrototypeUnit worker, PrototypeBuilding building) => QueueRepair(worker, RepairBlocked(worker, building), new QueuedOrder(building, true), building?.Stats.Name);
+        public bool QueueRepair(PrototypeUnit worker, PrototypeUnit target) => QueueRepair(worker, RepairBlocked(worker, target), new QueuedOrder(target, true), target?.Stats.Name);
+        bool QueueRepair(PrototypeUnit worker, string reason, QueuedOrder order, string name)
+        {
+            if (reason != null) { if (worker == null || worker.Owner == Player) Message = reason; return false; }
+            int waiting = worker.queued.Count;
+            Enqueue(worker, order);
+            if (worker.Owner == Player && worker.queued.Count > waiting) Message = $"Ремонт добавлен в очередь: {name}.";
+            return true;
+        }
+
+        // Autocast, as SCVs have it: an idle worker with automatic repair on mends the nearest damaged building or machinery
+        // of its side within AutoRepairReach, without a word in the event line.
+        public const float AutoRepairReach = 6;
+        float autoRepairTimer;
+        public bool SetAutoRepair(PrototypeUnit worker, bool on)
+        {
+            if (worker == null || worker.Kind != UnitKind.Worker || !Roster(worker.Owner).Repairs) return false;
+            worker.AutoRepair = on;
+            return true;
+        }
+        void TickAutoRepair(float dt)
+        {
+            if ((autoRepairTimer += dt) < .5f) return;
+            autoRepairTimer = 0;
+            foreach (var u in Units)
+            {
+                if (!u.AutoRepair || !u.Alive || u.Order != UnitOrder.Idle || u.Moving || u.HarvestTarget != null || Busy(u) || u.queued.Count > 0) continue;
+                PrototypeBuilding building = null; PrototypeUnit machine = null; float best = AutoRepairReach;
+                foreach (var b in Buildings)
+                {
+                    if (b.Owner != u.Owner || b.Ready < 1 || b.Health <= 0 || b.Health >= b.Stats.Health) continue;
+                    float gap = Gap(u, b);
+                    if (gap <= best) { best = gap; building = b; }
+                }
+                foreach (var v in Units)
+                {
+                    if (v == u || v.Owner != u.Owner || !v.Alive || !v.Stats.Mechanical || v.Health >= v.Stats.Health) continue;
+                    float gap = Gap(u, v);
+                    if (gap <= best) { best = gap; machine = v; building = null; }
+                }
+                if (building == null && machine == null) continue;
+                var message = Message;
+                if (machine != null) Repair(u, machine); else Repair(u, building);
+                Message = message;
+            }
         }
         string RepairBlocked(PrototypeUnit worker, int owner, int health, int max)
         {
@@ -83,7 +137,8 @@ namespace Order.Simulation
                     else EndRepair(u, "К зданию не подойти.");
                     continue;
                 }
-                if (u.Moving) { u.route.Clear(); u.hasGoal = false; }
+                // At the target the worker has arrived: its move is over, so orders queued after the repair can start.
+                if (u.Moving) Arrive(u);
                 u.Welding = true;
                 float seconds = Math.Max(MinRepairSeconds, b != null ? b.Stats.BuildSeconds : target.Stats.TrainSeconds);
                 int metal = b != null ? b.Stats.Metal : target.Stats.Metal, plasma = b != null ? b.Stats.Plasma : target.Stats.Plasma;
@@ -125,7 +180,7 @@ namespace Order.Simulation
             {
                 b.sinceHit += dt;
                 // A powered machine building stands in the network; one still rising gains its health as it rises.
-                b.Mending = Roster(b.Owner).Mends && b.Health > 0 && b.Ready >= 1 && b.Powered && b.Health < b.Stats.Health && b.sinceHit >= MendCalm;
+                b.Mending = Roster(b.Owner).Mends && b.Health > 0 && b.Ready >= 1 && b.Linked && b.Health < b.Stats.Health && b.sinceHit >= MendCalm;
                 if (!b.Mending) { b.mended = 0; continue; }
                 b.mended += b.Stats.Health * MendBuildings * dt;
                 int points = (int)b.mended; b.mended -= points;
