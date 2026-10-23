@@ -422,11 +422,52 @@
     color: var(--hud-muted);
 }
 
-/* Several selected units: one tile each, health strip under the icon */
+/* Several selected units: page numbers on the left, one tile per unit with a health strip under the icon */
+.match-unit-area {
+    flex-direction: row;
+    margin-top: 10px;
+}
+
+.match-unit-pages {
+    flex-direction: column;
+    width: 24px;
+    margin-right: 6px;
+}
+
+.match-unit-page {
+    height: 24px;
+    margin-bottom: 4px;
+    align-items: center;
+    justify-content: center;
+    border-width: 1px;
+    border-color: var(--hud-line-bright);
+    background-color: var(--hud-control);
+}
+
+.match-unit-page:hover {
+    border-color: var(--hud-accent);
+    background-color: var(--hud-accent-soft);
+}
+
+.match-unit-page.is-active {
+    border-color: var(--hud-accent);
+    background-color: var(--hud-accent);
+}
+
+.match-unit-page__number {
+    font-size: 12px;
+    -unity-font-style: bold;
+    color: var(--hud-text);
+}
+
+.match-unit-page.is-active .match-unit-page__number { color: var(--hud-bg); }
+
 .match-unit-grid {
+    flex-grow: 1;
+    flex-shrink: 1;
     flex-direction: row;
     flex-wrap: wrap;
-    margin-top: 10px;
+    align-content: flex-start;
 }
 
 .match-unit-tile {

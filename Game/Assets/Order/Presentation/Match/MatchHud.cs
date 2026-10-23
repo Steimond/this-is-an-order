@@ -82,8 +82,14 @@ namespace Order.Presentation
         private readonly Label assistantName, subtitle;
         private readonly HudIcon selectionIcon;
         private readonly Label selectionName, selectionStatus, selectionStats, selectionEmpty;
-        private readonly VisualElement upgrades, selectionBody, unitGrid, groupTabs, selectionBox, queueRow;
-        private readonly List<VisualElement> unitTiles = new List<VisualElement>(), tabs = new List<VisualElement>(), queueTiles = new List<VisualElement>();
+        private readonly VisualElement upgrades, selectionPanel, selectionBody, unitArea, unitPages, unitGrid, groupTabs, selectionBox, queueRow;
+        private readonly List<VisualElement> unitTiles = new List<VisualElement>(), tabs = new List<VisualElement>(), queueTiles = new List<VisualElement>(), pageButtons = new List<VisualElement>();
+        // A big selection is shown a page at a time, as in StarCraft II: up to three rows of tiles, as many as the panel
+        // has room for, and as many columns as fit.
+        private const int TileRows = 3;
+        private const float TileStep = 46, TileStepY = 50, PageStrip = 30;
+        private int unitPage;
+        private PrototypeUnit pagedFirst;
         // The building whose production queue is shown.
         private PrototypeBuilding queue;
 #if UNITY_EDITOR
@@ -179,7 +185,7 @@ namespace Order.Presentation
             portrait.Add(hint);
             deck.Add(portrait);
 
-            var selection = Hud.Box("match-selection"); selection.AddToClassList("match-hit");
+            var selection = selectionPanel = Hud.Box("match-selection"); selection.AddToClassList("match-hit");
             selection.Add(new HudFrame(12, 12));
             subtitle = Hud.Text("", "match-subtitle");
             selection.Add(subtitle);
@@ -219,9 +225,12 @@ namespace Order.Presentation
             selection.Add(selectionBody);
             selectionEmpty = Hud.Text("", "match-selection__empty");
             selection.Add(selectionEmpty);
-            // Several units: one tile per unit with its health, as in StarCraft.
+            // Several units: one tile per unit with its health, as in StarCraft; pages of three rows when they do not fit.
+            unitArea = Hud.Box("match-unit-area");
+            unitPages = Hud.Box("match-unit-pages");
             unitGrid = Hud.Box("match-unit-grid");
-            selection.Add(unitGrid);
+            unitArea.Add(unitPages); unitArea.Add(unitGrid);
+            selection.Add(unitArea);
             // Control groups as tabs on the top edge of the panel.
             groupTabs = Hud.Box("match-groups"); groupTabs.pickingMode = PickingMode.Ignore;
             for (var i = 0; i < UnitSelection.Groups; i++)
@@ -505,7 +514,7 @@ namespace Order.Presentation
             health.Q<Label>(className: "hud-bar__caption").text = host.SelectedDeposit != null && unit == null && host.SelectedBuilding == null ? "ЗАПАС" : "ПРОЧНОСТЬ";
             selectionBody.style.display = any && !many ? DisplayStyle.Flex : DisplayStyle.None;
             upgrades.style.display = any && !many ? DisplayStyle.Flex : DisplayStyle.None;
-            unitGrid.style.display = many ? DisplayStyle.Flex : DisplayStyle.None;
+            unitArea.style.display = many ? DisplayStyle.Flex : DisplayStyle.None;
             selectionEmpty.style.display = any ? DisplayStyle.None : DisplayStyle.Flex;
             if (!any)
             {
@@ -560,8 +569,38 @@ namespace Order.Presentation
         }
 
         // Tiles are reused; each keeps its unit in userData. Click: only this unit; Shift: drop it; Ctrl: keep only its kind.
+        // A selection that does not fit is split into pages, switched with the numbers left of the tiles; a new selection
+        // starts on the first page.
         private void RefreshTiles(IReadOnlyList<PrototypeUnit> selected)
         {
+            // Rows: what the panel has room for below the header. The page numbers take a strip on the left only when there is
+            // more than one page.
+            var room = selectionPanel.resolvedStyle.height - selectionPanel.resolvedStyle.paddingBottom - unitArea.layout.y;
+            var rows = float.IsNaN(room) || room < TileStepY ? TileRows : Mathf.Clamp((int)((room + 4) / TileStepY), 1, TileRows);
+            var width = unitArea.resolvedStyle.width;
+            int Fit(float w) => float.IsNaN(w) || w < TileStep ? 12 : Mathf.Max(1, (int)((w + 4) / TileStep));
+            var columns = Fit(width);
+            if (selected.Count > columns * rows) columns = Fit(width - PageStrip);
+            var pageSize = columns * rows;
+            var pages = (selected.Count + pageSize - 1) / pageSize;
+            if (selected.Count == 0 || selected[0] != pagedFirst) { unitPage = 0; pagedFirst = selected.Count > 0 ? selected[0] : null; }
+            unitPage = Mathf.Clamp(unitPage, 0, Mathf.Max(0, pages - 1));
+            while (pageButtons.Count < pages)
+            {
+                var index = pageButtons.Count;
+                var button = Hud.Box("match-unit-page");
+                button.Add(Hud.Text((index + 1).ToString(), "match-unit-page__number"));
+                button.RegisterCallback<PointerDownEvent>(evt => { if (evt.button != 0) return; unitPage = index; evt.StopPropagation(); Refresh(); });
+                unitPages.Add(button); pageButtons.Add(button);
+            }
+            unitPages.style.display = pages > 1 ? DisplayStyle.Flex : DisplayStyle.None;
+            for (var i = 0; i < pageButtons.Count; i++)
+            {
+                pageButtons[i].style.display = i < pages ? DisplayStyle.Flex : DisplayStyle.None;
+                pageButtons[i].EnableInClassList("is-active", i == unitPage);
+            }
+            var first = unitPage * pageSize;
+            selected = selected.Skip(first).Take(pageSize).ToList();
             while (unitTiles.Count < selected.Count)
             {
                 var tile = Hud.Box("match-unit-tile");
