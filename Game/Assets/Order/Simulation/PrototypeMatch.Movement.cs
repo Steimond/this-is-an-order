@@ -20,7 +20,7 @@ namespace Order.Simulation
         readonly bool[] blocked = new bool[4096];
         int blockedVersion = -1, blockedBuildings = -1;
         readonly Dictionary<int, sbyte[]> edges = new Dictionary<int, sbyte[]>();
-        int edgesVersion = -1, edgesBuildings = -1;
+        // Cached edges are forgotten only round the spot that changed (see NavigationChanged).
         readonly float[] pathCost = new float[4096];
         readonly int[] cameFrom = new int[4096], seen = new int[4096], done = new int[4096];
         int searchStamp;
@@ -38,6 +38,16 @@ namespace Order.Simulation
                 blockedVersion = navigationVersion; blockedBuildings = Buildings.Count;
             }
             return blocked[z * 64 + x];
+        }
+        // A building placed or gone, or a deposit mined out: the blocked-cell cache is rebuilt and the cached edges round
+        // the spot are forgotten; edges elsewhere stay valid, so the next long path does not pay for the whole map again.
+        void NavigationChanged(int x, int z, int width)
+        {
+            navigationVersion++;
+            foreach (var table in edges.Values)
+                for (int cz = Math.Max(0, z - 2); cz <= Math.Min(63, z + width + 1); cz++)
+                for (int cx = Math.Max(0, x - 2); cx <= Math.Min(63, x + width + 1); cx++)
+                    for (int dir = 0; dir < 8; dir++) table[(cz * 64 + cx) * 8 + dir] = 0;
         }
         public bool CanStep(int x, int z, int nx, int nz) => Map.Inside(nx, nz) && !Occupied(nx, nz) && !RampSide(x, z, nx, nz) && Math.Abs(Map.Height(x, z) - Map.Height(nx, nz)) <= .51f;
         // Ramps are entered and left only at their ends: their sides are walls along the whole length, even where the drop is
@@ -82,14 +92,22 @@ namespace Order.Simulation
             return PlanPath(unit, targetX, targetZ);
         }
         static bool InMap(float x, float z) => !float.IsNaN(x) && !float.IsNaN(z) && x >= 0 && z >= 0 && x < 64 && z < 64;
+        const string Unreachable = "Точка недоступна: двигаюсь как можно ближе.";
         // Route to a point without touching the order: used by orders, chasing, re-planning and returning to place.
         bool PlanPath(PrototypeUnit unit, float targetX, float targetZ)
         {
             if (!InMap(targetX, targetZ)) return false;
             int tx = (int)targetX, tz = (int)targetZ;
             unit.HarvestTarget = null; unit.arrived = false; unit.stuckTime = 0; unit.bestDistance = float.MaxValue; unit.replans = 0;
-            var deposit = Explored[tx, tz] ? Map.ResourceAt(tx, tz) : null;
+            var deposit = unit.Owner != Player || Explored[tx, tz] ? Map.ResourceAt(tx, tz) : null;
             float radius = unit.Stats.Radius;
+            // A point inside a building means the free ground next to it on the unit's side: searching for the building's own
+            // cell would explore the whole map before settling for the nearest reachable one.
+            bool beside = false;
+            if (!unit.Stats.Flying && deposit == null && Occupied(tx, tz) && NearestFree(unit, tx, tz, out float fx, out float fz))
+            {
+                targetX = fx; targetZ = fz; tx = (int)fx; tz = (int)fz; beside = true;
+            }
             if (unit.Stats.Flying)
             {
                 // Air units fly straight over cliffs, buildings and deposits.
@@ -99,25 +117,51 @@ namespace Order.Simulation
             if (deposit == null && CanTravel(unit.X, unit.Z, targetX, targetZ, radius))
             {
                 SetRoute(unit, new List<Waypoint> { new Waypoint(targetX, targetZ) });
-                Message = "Приказ: движение."; return true;
+                Message = beside ? Unreachable : "Приказ: движение."; return true;
             }
             var cells = FindPath(Cell(unit.X, unit.Z), tz * 64 + tx, deposit, targetX, targetZ, radius, out bool reached);
             var points = new List<Waypoint> { new Waypoint(unit.X, unit.Z) };
             foreach (var c in cells) points.Add(new Waypoint(c % 64 + .5f, c / 64 + .5f));
             if (deposit == null && reached && CanTravel(points[points.Count - 1].X, points[points.Count - 1].Z, targetX, targetZ, radius)) points.Add(new Waypoint(targetX, targetZ));
-            // Pull the string: from each point jump to the farthest point still reachable in a straight line.
+            // Pull the string: from each point jump to the farthest point still reachable in a straight line. It is found by
+            // doubling the step while the line stays clear and then halving between the last clear and the first blocked
+            // point, so a long path costs a few line checks per corner instead of one per cell.
             var route = new List<Waypoint>(); int anchor = 0;
             while (anchor < points.Count - 1)
             {
-                int next = points.Count - 1;
-                while (next > anchor + 1 && !CanTravel(points[anchor].X, points[anchor].Z, points[next].X, points[next].Z, radius)) next--;
-                route.Add(points[next]); anchor = next;
+                var a = points[anchor];
+                bool Clear(int k) => CanTravel(a.X, a.Z, points[k].X, points[k].Z, radius);
+                int clear = anchor + 1, blocked = -1, step = 1;
+                while (clear < points.Count - 1)
+                {
+                    int k = Math.Min(points.Count - 1, clear + step);
+                    if (Clear(k)) { clear = k; step *= 2; } else { blocked = k; break; }
+                }
+                while (blocked > clear + 1) { int mid = (clear + blocked) / 2; if (Clear(mid)) clear = mid; else blocked = mid; }
+                route.Add(points[clear]); anchor = clear;
             }
             SetRoute(unit, route);
             bool harvest = deposit != null && reached && unit.Stats.HarvestAmount > 0;
             unit.HarvestTarget = harvest ? deposit : null;
-            Message = harvest ? "Приказ: добыча ресурса." : reached ? "Приказ: движение." : "Точка недоступна: двигаюсь как можно ближе.";
+            Message = harvest ? "Приказ: добыча ресурса." : reached && !beside ? "Приказ: движение." : Unreachable;
             return true;
+        }
+        // The free cell nearest a blocked one; of the equally near, the one on the side of the unit or group.
+        bool NearestFree(PrototypeUnit unit, int x, int z, out float fx, out float fz) => NearestFree(unit.Stats.Radius, unit.X, unit.Z, x, z, out fx, out fz);
+        bool NearestFree(float radius, float fromX, float fromZ, int x, int z, out float fx, out float fz)
+        {
+            fx = fz = 0; float best = float.MaxValue;
+            for (int ring = 1; ring <= 6 && best == float.MaxValue; ring++)
+                for (int cz = z - ring; cz <= z + ring; cz++)
+                for (int cx = x - ring; cx <= x + ring; cx++)
+                {
+                    if (Math.Max(Math.Abs(cx - x), Math.Abs(cz - z)) != ring || !Map.Inside(cx, cz) || Occupied(cx, cz) || Map.Ramp(cx, cz)) continue;
+                    float px = cx + .5f, pz = cz + .5f;
+                    if (!CanTravel(px, pz, px, pz, radius)) continue;
+                    float score = (px - x - .5f) * (px - x - .5f) + (pz - z - .5f) * (pz - z - .5f) + ((px - fromX) * (px - fromX) + (pz - fromZ) * (pz - fromZ)) * .001f;
+                    if (score < best) { best = score; fx = px; fz = pz; }
+                }
+            return best < float.MaxValue;
         }
         void SetRoute(PrototypeUnit unit, List<Waypoint> route)
         {
@@ -145,16 +189,45 @@ namespace Order.Simulation
             float mx = 0, mz = 0, minX = 64, minZ = 64, maxX = 0, maxZ = 0, spread = 0;
             foreach (var u in units) { mx += u.X; mz += u.Z; minX = Math.Min(minX, u.X); maxX = Math.Max(maxX, u.X); minZ = Math.Min(minZ, u.Z); maxZ = Math.Max(maxZ, u.Z); }
             mx /= units.Count; mz /= units.Count;
+            // A click on a building sends the group to the free ground next to it on the group's side.
+            if (!deposit && Map.Inside(cx, cz) && Occupied(cx, cz) && NearestFree(.45f, mx, mz, cx, cz, out float fx, out float fz)) { x = fx; z = fz; cx = (int)x; cz = (int)z; }
             foreach (var u in units) spread = Math.Max(spread, (float)Math.Sqrt((u.X - mx) * (u.X - mx) + (u.Z - mz) * (u.Z - mz)));
             bool formation = !deposit && spread <= 5 && (x < minX - .5f || x > maxX + .5f || z < minZ - .5f || z > maxZ + .5f);
             float level = Map.Inside(cx, cz) ? HeightAt(x, z) : 0;
             bool any = false; var message = Message;
-            foreach (var u in units)
+            (float, float) Spot(PrototypeUnit u)
             {
                 float gx = x + u.X - mx, gz = z + u.Z - mz;
-                bool keep = formation && FreeSpot(u, gx, gz, level);
-                float px = keep ? gx : x, pz = keep ? gz : z;
+                return formation && FreeSpot(u, gx, gz, level) ? (gx, gz) : (x, z);
+            }
+            // One path search serves the group: the largest ground unit nearest the middle finds the way, and the other
+            // ground units near it on its level follow that way's corners when they can reach the first one and their own
+            // spot from the last one in a straight line; otherwise they search for themselves.
+            PrototypeUnit leader = null; List<Waypoint> corners = null;
+            if (!queue && !deposit)
+            {
+                float best = float.MaxValue;
+                foreach (var u in units)
+                {
+                    if (u.Stats.Flying) continue;
+                    float score = -u.Stats.Radius * 1000 + (u.X - mx) * (u.X - mx) + (u.Z - mz) * (u.Z - mz);
+                    if (score < best) { best = score; leader = u; }
+                }
+                if (leader != null)
+                {
+                    var (lx, lz) = Spot(leader);
+                    any |= attack ? AttackMove(leader, lx, lz) : Move(leader, lx, lz);
+                    if (any) message = Message;
+                    corners = new List<Waypoint>(leader.route);
+                    if (corners.Count > 0) corners.RemoveAt(corners.Count - 1);
+                }
+            }
+            foreach (var u in units)
+            {
+                if (u == leader) continue;
+                var (px, pz) = Spot(u);
                 if (queue) { Enqueue(u, new QueuedOrder(attack ? UnitOrder.AttackMove : UnitOrder.Move, px, pz)); any = true; message = "Приказ добавлен в очередь."; continue; }
+                if (corners != null && corners.Count > 0 && Follows(u, leader, corners, px, pz)) { OrderAlong(u, corners, px, pz, attack); any = true; continue; }
                 any |= attack ? AttackMove(u, px, pz) : Move(u, px, pz);
                 if (any) message = Message;
             }
@@ -213,6 +286,29 @@ namespace Order.Simulation
             }
         }
         static readonly float[] Shares = { 1, .75f, .5f, .25f, 0 };
+        bool Follows(PrototypeUnit u, PrototypeUnit leader, List<Waypoint> corners, float x, float z)
+        {
+            if (u.Stats.Flying || Math.Abs(HeightAt(u.X, u.Z) - HeightAt(leader.X, leader.Z)) > .5f) return false;
+            if ((u.X - leader.X) * (u.X - leader.X) + (u.Z - leader.Z) * (u.Z - leader.Z) > 36) return false;
+            float r = u.Stats.Radius;
+            return CanTravel(u.X, u.Z, corners[0].X, corners[0].Z, r) && CanTravel(corners[corners.Count - 1].X, corners[corners.Count - 1].Z, x, z, r);
+        }
+        // The same order as Move or AttackMove, along corners found for another unit.
+        void OrderAlong(PrototypeUnit u, List<Waypoint> corners, float x, float z, bool attack)
+        {
+            attack &= u.Stats.Damage > 0;
+            GiveOrder(u, attack ? UnitOrder.AttackMove : UnitOrder.Move);
+            if (attack) { u.attackX = x; u.attackZ = z; }
+            u.HarvestTarget = null; u.arrived = false; u.stuckTime = 0; u.bestDistance = float.MaxValue; u.replans = 0;
+            SetRoute(u, new List<Waypoint>(corners) { new Waypoint(x, z) });
+        }
+        // Fills the cached edges for every ground unit size at once, so the first long path of the match does not stall it.
+        public void PrepareNavigation()
+        {
+            var radii = new HashSet<float>();
+            foreach (var stats in Balance.Units) if (!stats.Flying) radii.Add(stats.Radius);
+            foreach (var radius in radii) for (int cell = 0; cell < 4096; cell++) for (int dir = 0; dir < 8; dir++) Passable(cell, dir, radius);
+        }
         bool FreeSpot(PrototypeUnit unit, float x, float z, float level)
         {
             float r = unit.Stats.Radius;
@@ -279,10 +375,9 @@ namespace Order.Simulation
             int dx = Math.Abs(cell % 64 - goal % 64), dz = Math.Abs(cell / 64 - goal / 64);
             return dx + dz - .58579f * Math.Min(dx, dz);
         }
-        // Edge between neighbouring cell centres for a radius, cached until buildings or deposits change.
+        // Edge between neighbouring cell centres for a radius, cached until a building or deposit near it changes.
         bool Passable(int cell, int dir, float radius)
         {
-            if (edgesVersion != navigationVersion || edgesBuildings != Buildings.Count) { edges.Clear(); edgesVersion = navigationVersion; edgesBuildings = Buildings.Count; }
             int key = (int)Math.Round(radius * 1000);
             if (!edges.TryGetValue(key, out var table)) edges[key] = table = new sbyte[4096 * 8];
             int index = cell * 8 + dir;

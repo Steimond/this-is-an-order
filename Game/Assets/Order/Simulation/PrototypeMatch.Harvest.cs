@@ -32,7 +32,8 @@ namespace Order.Simulation
                     var drop = DropOff(u);
                     if (drop == null) { StopHarvest(u); continue; }
                     if (Gap(u, drop) > DropReach) { Haul(u); continue; }
-                    if (u.CarriesGas) { Gas += u.Carrying; GasHarvested += u.Carrying; } else { Minerals += u.Carrying; MineralsHarvested += u.Carrying; }
+                    if (u.CarriesGas) gasStock[u.Owner] += u.Carrying; else mineralStock[u.Owner] += u.Carrying;
+                    if (u.Owner == Player) { if (u.CarriesGas) GasHarvested += u.Carrying; else MineralsHarvested += u.Carrying; }
                     u.Carrying = 0; u.delivering = false;
                     GatherFrom(u, deposit.Remaining > 0 ? deposit : Nearby(deposit, u, SwitchReach, false));
                     continue;
@@ -54,7 +55,7 @@ namespace Order.Simulation
                 int amount = Math.Min(u.Stats.HarvestAmount, deposit.Remaining);
                 deposit.Remaining -= amount;
                 // A depleted deposit no longer blocks movement.
-                if (deposit.Remaining == 0) navigationVersion++;
+                if (deposit.Remaining == 0) NavigationChanged(deposit.X, deposit.Z, 1);
                 u.Carrying = amount; u.CarriesGas = deposit.Gas;
                 if (!Haul(u)) StopHarvest(u);
             }
@@ -106,7 +107,7 @@ namespace Order.Simulation
             ResourceDeposit best = null; float bestDistance = reach * reach;
             foreach (var r in Map.Resources)
             {
-                if (r == from || r.Gas != from.Gas || r.Remaining <= 0 || !Explored[r.X, r.Z]) continue;
+                if (r == from || r.Gas != from.Gas || r.Remaining <= 0 || (u.Owner == Player && !Explored[r.X, r.Z])) continue;
                 if (free && miners.TryGetValue(r, out var other) && Holds(other, r)) continue;
                 float dx = r.X - from.X, dz = r.Z - from.Z, d = dx * dx + dz * dz;
                 if (d <= bestDistance) { bestDistance = d; best = r; }

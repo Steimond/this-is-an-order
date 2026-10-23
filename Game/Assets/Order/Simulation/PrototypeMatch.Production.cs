@@ -18,6 +18,7 @@ namespace Order.Simulation
             var stats = Balance.Buildings[kind];
             var building = new PrototypeBuilding { X = x, Z = z, Width = stats.Width, Kind = kind, Owner = owner, Ready = ready, Health = ready >= 1 ? stats.Health : Math.Max(1, stats.Health / 10) };
             Buildings.Add(building);
+            NavigationChanged(x, z, stats.Width);
             return building;
         }
         public bool Trains(PrototypeBuilding b, UnitKind kind) => Array.IndexOf(Balance.Buildings[b.Kind].Trains, kind) >= 0;
@@ -26,11 +27,11 @@ namespace Order.Simulation
         {
             var stats = Balance.Unit(kind);
             string reason = b.Ready < 1 ? "Здание ещё строится." : !Trains(b, kind) ? $"{Balance.Buildings[b.Kind].Name} не обучает: {stats.Name}."
-                : b.queue.Count >= QueueSize ? "Очередь заполнена." : Minerals < stats.Minerals ? "Недостаточно минералов." : Gas < stats.Gas ? "Недостаточно газа." : null;
-            if (reason != null) { Message = reason; return false; }
-            Minerals -= stats.Minerals; Gas -= stats.Gas;
+                : b.queue.Count >= QueueSize ? "Очередь заполнена." : mineralStock[b.Owner] < stats.Minerals ? "Недостаточно минералов." : gasStock[b.Owner] < stats.Gas ? "Недостаточно газа." : null;
+            if (reason != null) { if (b.Owner == Player) Message = reason; return false; }
+            mineralStock[b.Owner] -= stats.Minerals; gasStock[b.Owner] -= stats.Gas;
             b.queue.Add(kind);
-            Message = $"Обучение: {stats.Name}.";
+            if (b.Owner == Player) Message = $"Обучение: {stats.Name}.";
             return true;
         }
         // Cancels a queued unit and returns its cost; the unit in training gives its supply back too.
@@ -38,16 +39,16 @@ namespace Order.Simulation
         {
             if (index < 0 || index >= b.queue.Count) return false;
             var stats = Balance.Unit(b.queue[index]);
-            Minerals += stats.Minerals; Gas += stats.Gas;
+            mineralStock[b.Owner] += stats.Minerals; gasStock[b.Owner] += stats.Gas;
             b.queue.RemoveAt(index);
             if (index == 0) { b.started = false; b.Training = 0; b.SupplyBlocked = false; }
-            Message = $"Отменено: {stats.Name}.";
+            if (b.Owner == Player) Message = $"Отменено: {stats.Name}.";
             return true;
         }
         public void SetRally(PrototypeBuilding b, float x, float z)
         {
             b.HasRally = InMap(x, z); b.RallyX = x; b.RallyZ = z;
-            Message = b.HasRally ? "Точка сбора задана." : Message;
+            if (b.Owner == Player && b.HasRally) Message = "Точка сбора задана.";
         }
 
         void TickProduction(float dt)
@@ -70,14 +71,15 @@ namespace Order.Simulation
                 var kind = b.queue[0];
                 b.queue.RemoveAt(0); b.started = false; b.Training = 0;
                 var unit = Spawn(kind, x, z, b.Owner);
-                var message = $"Готов: {stats.Name}.";
+                var before = Message;
                 if (b.HasRally)
                 {
                     int cx = (int)b.RallyX, cz = (int)b.RallyZ;
-                    var deposit = Explored[cx, cz] ? Map.ResourceAt(cx, cz) : null;
+                    var deposit = b.Owner != Player || Explored[cx, cz] ? Map.ResourceAt(cx, cz) : null;
                     if (deposit != null) Move(unit, deposit.X + .5f, deposit.Z + .5f); else Move(unit, b.RallyX, b.RallyZ);
                 }
-                if (b.Owner == Player) Message = message;
+                // Only the player hears about its own new units.
+                Message = b.Owner == Player ? $"Готов: {stats.Name}." : before;
             }
         }
         // Free spot next to the footprint, on the building's level, nearest the rally point (by default the south-east

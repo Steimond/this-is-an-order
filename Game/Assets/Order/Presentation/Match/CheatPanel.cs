@@ -8,14 +8,15 @@ using UnityEngine.UIElements;
 namespace Order.Presentation
 {
     // Editor-only cheat menu of the test ground: the "ЧИТЫ" button (F9) in the top bar opens a panel of buttons for
-    // resources, fast construction and training, unlimited supply, the whole map, invulnerability, an instant win and
+    // resources, fast construction and training, unlimited supply, the whole map, invulnerability, an instant win, the
+    // enemy bot (on or off, or an attack wave right now) and
     // units of either side in the middle of the view. Builds of the game have neither the button nor the panel.
     sealed class CheatPanel
     {
         readonly IMatchHost host;
         readonly Action refresh;
         readonly VisualElement panel;
-        readonly Button toggle, fast, supply, map, immortal;
+        readonly Button toggle, fast, supply, map, immortal, bot;
         readonly List<Button> counts = new List<Button>();
         static readonly int[] Counts = { 1, 5, 10 };
         int count = 5;
@@ -36,6 +37,9 @@ namespace Order.Presentation
             map = Add(world, "ВСЯ КАРТА", m => m.ToggleReveal());
             immortal = Add(world, "БЕССМЕРТИЕ", m => m.ToggleInvulnerable());
             world.Add(Hud.Button("ПОБЕДА", () => Run(m => m.WinNow())));
+            var enemy = Row(body, "БОТ");
+            bot = Add(enemy, "ВКЛЮЧЁН", m => m.ToggleBot());
+            enemy.Add(Hud.Button("ВОЛНА СЕЙЧАС", () => Run(m => m.SendWaveNow())));
             var amount = Row(body, "СКОЛЬКО");
             foreach (var n in Counts) { var value = n; var button = Hud.Button("×" + n, () => { count = value; refresh(); }); amount.Add(button); counts.Add(button); }
             Spawn(Row(body, "СВОИ"), PrototypeMatch.Player);
@@ -54,6 +58,7 @@ namespace Order.Presentation
             supply.EnableInClassList("is-active", match.NoSupply);
             map.EnableInClassList("is-active", match.Revealed);
             immortal.EnableInClassList("is-active", match.Invulnerable);
+            bot.EnableInClassList("is-active", match.BotEnabled);
             for (int i = 0; i < counts.Count; i++) counts[i].EnableInClassList("is-active", Counts[i] == count);
         }
 

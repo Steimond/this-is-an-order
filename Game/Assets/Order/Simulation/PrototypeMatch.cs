@@ -19,13 +19,21 @@ namespace Order.Simulation
         public readonly List<PrototypeBuilding> Buildings = new List<PrototypeBuilding>();
         public readonly List<PrototypeUnit> Units = new List<PrototypeUnit>();
         public readonly MatchBalance Balance;
-        public int Minerals, Gas;
+        // Resources of each side; Minerals and Gas are the player's.
+        readonly int[] mineralStock=new int[2],gasStock=new int[2];
+        public int Minerals{get=>mineralStock[Player];set=>mineralStock[Player]=value;}
+        public int Gas{get=>gasStock[Player];set=>gasStock[Player]=value;}
+        public int MineralsOf(int side)=>mineralStock[side];
+        public int GasOf(int side)=>gasStock[side];
+        // Seconds of play since the match began.
+        public float Clock{get;private set;}
         public string Message = "Рабочий готов. ПКМ — движение / добыча.";
         int nextUnitId = 1;
         float visionTimer;
         public PrototypeMatch(MatchBalance balance=null)
         {
-            Balance=balance??new MatchBalance();Minerals=Balance.StartingMinerals;Gas=Balance.StartingGas;
+            Balance=balance??new MatchBalance();
+            for(int side=0;side<2;side++){mineralStock[side]=Balance.StartingMinerals;gasStock[side]=Balance.StartingGas;}
             foreach(var r in Map.Resources)r.Remaining=r.Gas?Balance.GasDeposit:Balance.MineralDeposit;
             AddBuilding(2,10,10,Player,1);
             Spawn(UnitKind.Worker,13.5f,13.5f);UpdateVision();
@@ -62,14 +70,15 @@ namespace Order.Simulation
         public int SupplyLimit=>Limit(Player);
         int Limit(int owner){int limit=0;foreach(var b in Buildings)if(b.Owner==owner&&b.Ready>=1)limit+=Balance.Buildings[b.Kind].Supply;return limit;}
         public float HeightAt(float x,float z)=>Map.Height((int)x,(int)z,x-(int)x);
-        public bool CanBuild(int x,int z,int kind,out string reason)
+        // The player builds only where it sees; the bot builds anywhere on its own ground.
+        public bool CanBuild(int x,int z,int kind,out string reason,int owner=Player)
         {
             if(kind<0||kind>1){reason="Неизвестный тип здания";return false;}
             var stats=Balance.Buildings[kind];int w=stats.Width;float h=Map.Inside(x,z)?Map.Height(x,z):0;
             for(int zz=z;zz<z+w;zz++)for(int xx=x;xx<x+w;xx++)
             {
                 if(!Map.Inside(xx,zz)){reason="За границей карты";return false;}
-                if(!Visible[xx,zz]){reason="Нужна текущая видимость";return false;}
+                if(owner==Player&&!Visible[xx,zz]){reason="Нужна текущая видимость";return false;}
                 if(Map.Ramp(xx,zz)||Map.Height(xx,zz)!=h||Occupied(xx,zz)){reason="Занято, рампа или перепад высот";return false;}
                 foreach(var u in Units)
                 {
@@ -78,16 +87,17 @@ namespace Order.Simulation
                     if((u.X-nx)*(u.X-nx)+(u.Z-nz)*(u.Z-nz)<u.Stats.Radius*u.Stats.Radius){reason="Здесь стоит юнит";return false;}
                 }
             }
-            if(Minerals<stats.Minerals||Gas<stats.Gas){reason="Недостаточно ресурсов";return false;}
+            if(mineralStock[owner]<stats.Minerals||gasStock[owner]<stats.Gas){reason="Недостаточно ресурсов";return false;}
             reason="ЛКМ — построить";return true;
         }
-        public bool Build(int x,int z,int kind)
+        public bool Build(int x,int z,int kind,int owner=Player)
         {
-            if(!CanBuild(x,z,kind,out var reason)){Message=reason;return false;}
-            var stats=Balance.Buildings[kind];Minerals-=stats.Minerals;Gas-=stats.Gas;
-            AddBuilding(kind,x,z,Player,0);
-            navigationVersion++;RouteAroundNewBuildings();
-            Message="Строительство начато.";UpdateVision();return true;
+            if(!CanBuild(x,z,kind,out var reason,owner)){if(owner==Player)Message=reason;return false;}
+            var stats=Balance.Buildings[kind];mineralStock[owner]-=stats.Minerals;gasStock[owner]-=stats.Gas;
+            AddBuilding(kind,x,z,owner,0);
+            RouteAroundNewBuildings();
+            if(owner==Player)Message="Строительство начато.";
+            UpdateVision();return true;
         }
         public void Tick(float dt)
         {
@@ -98,7 +108,9 @@ namespace Order.Simulation
                 var stats=Balance.Buildings[b.Kind];float rate=FastBuild&&b.Owner==Player?FastFactor:1,step=Math.Min(dt*rate/stats.BuildSeconds,1-b.Ready);
                 b.Ready=Math.Min(1,b.Ready+step);b.Health=Math.Min(stats.Health,b.Health+(int)Math.Ceiling(stats.Health*.9f*step));
             }
+            Clock+=dt;
             TickProduction(dt);
+            TickBot(dt);
             // Movement runs in fixed steps, so a long frame and many short ones end in the same place.
             for(float left=dt;left>1e-6f;left-=Step)StepUnits(Math.Min(Step,left));
             visionTimer+=dt;if(visionTimer>=.15f){visionTimer=0;UpdateVision();}

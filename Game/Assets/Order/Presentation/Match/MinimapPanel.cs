@@ -12,6 +12,9 @@ namespace Order.Presentation
     // pins, coordinate grid) and a tool rail. Left click/drag moves the camera, right click orders the worker.
     public sealed class MinimapPanel
     {
+        // As in StarCraft, the minimap shows sides, not factions: own units and buildings are always green, enemies red,
+        // whatever the races and the HUD theme. Both resources share one neutral blue so a deposit never reads as a side.
+        public static readonly Color Own = new Color(.3f, .92f, .38f), Enemy = new Color(1f, .27f, .22f), Resource = new Color(.35f, .75f, 1f);
         public readonly VisualElement Root;
         public bool GridVisible { get; private set; } = true;
         private readonly IMatchHost host;
@@ -211,13 +214,25 @@ namespace Order.Presentation
                     p.BeginPath(); HudPaint.Polygon(p, pin, 5 * pulse, 4, 0); p.Fill(); p.Stroke();
                 }
 
-                // Ground units are dots, air units diamonds; selected ones get a ring. Enemies are red and only shown in sight.
+                // Attacks off screen: a red ring widening from the spot, three times over the alert's life.
+                var now = Time.unscaledTime;
+                foreach (var (point, time) in host.Alerts)
+                {
+                    var age = (now - time) / TemplePrototypeView.AlertSeconds;
+                    if (age < 0 || age >= 1) continue;
+                    var at = M(point.x, point.y); var wave = age * 3 % 1;
+                    p.strokeColor = HudPaint.Alpha(Enemy, (1 - wave) * (1 - age * .5f)); p.lineWidth = 2;
+                    p.BeginPath(); HudPaint.Circle(p, at, 4 + wave * 14); p.Stroke();
+                    p.fillColor = HudPaint.Alpha(Enemy, .9f * (1 - age)); p.BeginPath(); HudPaint.Circle(p, at, 3); p.Fill();
+                }
+
+                // Ground units are dots, air units diamonds; selected ones get a ring. Own green, enemies red and only in sight.
                 foreach (var unit in match.Units)
                 {
                     var own = unit.Owner == PrototypeMatch.Player;
                     if (!own && !match.SeenBy(PrototypeMatch.Player, unit)) continue;
                     var at = M(unit.X, unit.Z);
-                    p.fillColor = own ? Hot : TemplePrototypeView.EnemyColor * 1.15f; p.BeginPath();
+                    p.fillColor = own ? Own : Enemy; p.BeginPath();
                     if (unit.Stats.Flying) HudPaint.Polygon(p, at, 3.4f, 4, 0); else HudPaint.Circle(p, at, unit.Kind == UnitKind.Worker ? 2.2f : 2.6f);
                     p.Fill();
                 }

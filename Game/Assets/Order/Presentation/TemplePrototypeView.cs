@@ -22,6 +22,9 @@ namespace Order.Presentation
         public PrototypeBuilding SelectedBuilding => selectedBuilding;
         public ResourceDeposit SelectedDeposit => selectedDeposit;
         public IReadOnlyList<Vector2> Pins => pins;
+        public IReadOnlyList<(Vector2 point, float time)> Alerts => alerts;
+        readonly List<(Vector2 point, float time)> alerts = new List<(Vector2, float)>();
+        public const float AlertSeconds = 4;
         public Texture MinimapTexture => miniTexture;
         public string ModeHint { get; private set; } = "";
         public UnitSelection Selection => selection;
@@ -148,7 +151,8 @@ namespace Order.Presentation
             combat=new CombatEffects(scenery,worldRoot.transform,MapCamera,shadowMesh,ringMesh);
             Match.Attacked+=(attacker,target)=>strikes.Add((attacker,target));Match.Died+=deaths.Add;
             Match.AttackedBuilding+=(attacker,target)=>buildingStrikes.Add((attacker,target));Match.Destroyed+=ruins.Add;
-            Match.AddTestSquad();Match.AddEnemySquad();Match.AddEnemyBase();SelectWorker();
+            Match.UnderAttack+=OnUnderAttack;
+            Match.AddTestSquad();Match.AddEnemySquad();Match.AddEnemyBase();Match.StartBot();Match.PrepareNavigation();SelectWorker();
             var square=new MeshBuilder();square.Quad(new Vector3(-.5f,0,-.5f),new Vector3(-.5f,0,.5f),new Vector3(.5f,0,.5f),new Vector3(.5f,0,-.5f));
             footprint=scenery.Model("Placement footprint",scenery.Own(square.ToMesh("Footprint")),footprintMaterial,worldRoot.transform,false);footprint.SetActive(false);
             UpdateCamera();RefreshWorld();
@@ -800,18 +804,18 @@ namespace Order.Presentation
         void RefreshMinimap()
         {
             const int t=TempleScenery.FogTexels;int n=TempleMap.Size*t;
-            var pixels=new Color[n*n];var own=hud?.OwnColor??Color.white;
+            var pixels=new Color[n*n];
             for(int z=0;z<n;z++)for(int x=0;x<n;x++)
             {
                 float lit=Match.Visible[x/t,z/t]?1:Match.Explored[x/t,z/t]?.32f:.05f;
                 var c=miniBase[z*n+x]*lit;c.a=1;pixels[z*n+x]=c;
             }
             void Cell(int cx,int cz,Color color){for(int z=cz*t;z<cz*t+t;z++)for(int x=cx*t;x<cx*t+t;x++)pixels[z*n+x]=color;}
-            foreach(var r in Match.Map.Resources)if(Match.Explored[r.X,r.Z]&&r.Remaining>0)Cell(r.X,r.Z,(r.Gas?new Color(.3f,.9f,.6f):new Color(.35f,.75f,1))*(Match.Visible[r.X,r.Z]?1:.4f));
+            foreach(var r in Match.Map.Resources)if(Match.Explored[r.X,r.Z]&&r.Remaining>0)Cell(r.X,r.Z,MinimapPanel.Resource*(Match.Visible[r.X,r.Z]?1:.4f));
             foreach(var b in Match.Buildings)
             {
                 if(!BuildingShown(b))continue;
-                var color=(b.Owner==PrototypeMatch.Player?own:EnemyColor)*(b.Ready>=1?1:.6f);color.a=1;
+                var color=(b.Owner==PrototypeMatch.Player?MinimapPanel.Own:MinimapPanel.Enemy)*(b.Ready>=1?1:.6f);color.a=1;
                 for(int z=b.Z;z<b.Z+b.Width;z++)for(int x=b.X;x<b.X+b.Width;x++)Cell(x,z,color);
             }
             miniTexture.SetPixels(pixels);miniTexture.Apply(false);
@@ -947,6 +951,23 @@ namespace Order.Presentation
             foreach(var view in pinViews)if(view!=null)Destroy(view);
             pinViews.Clear();pins.Clear();hud?.Refresh();
         }
+        // An attack the player cannot see on screen: a line in the event log with the grid square, and a ping on the minimap.
+        void OnUnderAttack(float x,float z,bool building)
+        {
+            var frame=ViewportOnGround();var point=new Vector2(x,z);
+            if(frame!=null&&Inside(frame,point))return;
+            alerts.RemoveAll(a=>Time.unscaledTime-a.time>AlertSeconds);
+            alerts.Add((point,Time.unscaledTime));
+            Match.Message=(building?"Атакована база: ":"Наши войска под атакой: ")+MapGrid.Name(x,z,TempleMap.Size)+".";
+            hud?.Refresh();
+        }
+        static bool Inside(Vector2[] polygon,Vector2 p)
+        {
+            bool inside=false;
+            for(int i=0,j=polygon.Length-1;i<polygon.Length;j=i++)
+                if((polygon[i].y>p.y)!=(polygon[j].y>p.y)&&p.x<(polygon[j].x-polygon[i].x)*(p.y-polygon[i].y)/(polygon[j].y-polygon[i].y)+polygon[i].x)inside=!inside;
+            return inside;
+        }
         // Camera view projected onto the ground plane, as (x, z) points for the minimap frame.
         public Vector2[] ViewportOnGround()
         {
@@ -967,7 +988,7 @@ namespace Order.Presentation
             scenery?.Dispose();scenery=null;
             if(miniTexture!=null){Destroy(miniTexture);miniTexture=null;}
             buildingViews.Clear();depositViews.Clear();pinViews.Clear();pins.Clear();Match=null;
-            combat?.Dispose();combat=null;strikes.Clear();deaths.Clear();buildingStrikes.Clear();ruins.Clear();waypointLines.Clear();waypointDots.Clear();
+            combat?.Dispose();combat=null;strikes.Clear();deaths.Clear();buildingStrikes.Clear();ruins.Clear();waypointLines.Clear();waypointDots.Clear();alerts.Clear();
             unitViews.Clear();unitModels.Clear();selectionRings.Clear();hoverRings.Clear();hovered.Clear();markers.Clear();
             selection=new UnitSelection();lastClickUnit=null;lastGroup=-1;pressing=dragging=false;
             Array.Clear(buildingMeshes,0,buildingMeshes.Length);

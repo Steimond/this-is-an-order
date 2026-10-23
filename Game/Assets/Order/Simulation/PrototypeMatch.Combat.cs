@@ -17,6 +17,11 @@ namespace Order.Simulation
         public event Action<PrototypeUnit, PrototypeBuilding> AttackedBuilding;
         public event Action<PrototypeUnit> Died;
         public event Action<PrototypeBuilding> Destroyed;
+        // The player's units or buildings came under enemy fire at (x, z); `building` tells which. At most once in
+        // AlertInterval seconds for each.
+        public event Action<float, float, bool> UnderAttack;
+        const float AlertInterval = 10;
+        float lastBaseAlert = -AlertInterval, lastArmyAlert = -AlertInterval;
         // -1 while the match goes on, then the side that won.
         public int Winner { get; private set; } = -1;
         // Acquire range is the attack range plus this much; a current target is kept this much farther still.
@@ -90,7 +95,7 @@ namespace Order.Simulation
             if (unit.Stats.Damage <= 0) return Move(unit, x, z);
             GiveOrder(unit, UnitOrder.AttackMove); unit.attackX = x; unit.attackZ = z;
             if (!PlanPath(unit, x, z)) return false;
-            if (!Message.StartsWith("Точка недоступна")) Message = "Приказ: атака с движением.";
+            if (Message != Unreachable) Message = "Приказ: атака с движением.";
             return true;
         }
         public bool AttackMoveGroup(IReadOnlyList<PrototypeUnit> units, float x, float z) => GroupOrder(units, x, z, true, false);
@@ -331,13 +336,21 @@ namespace Order.Simulation
             Attacked?.Invoke(attacker, target);
             if (!target.Alive) return;
             target.aggressor = attacker;
+            if (target.Owner == Player && attacker.Owner != Player) Alert(target.X, target.Z, false);
             CallForHelp(target.Owner, target.X, target.Z, attacker, target);
         }
         void Hit(PrototypeUnit attacker, PrototypeBuilding target)
         {
             if (!(Invulnerable && target.Owner == Player)) target.Health = Math.Max(0, target.Health - attacker.Stats.Damage);
             AttackedBuilding?.Invoke(attacker, target);
+            if (target.Owner == Player && attacker.Owner != Player) Alert(target.X + target.Width * .5f, target.Z + target.Width * .5f, true);
             if (target.Health > 0) CallForHelp(target.Owner, target.X + target.Width * .5f, target.Z + target.Width * .5f, attacker, null);
+        }
+        void Alert(float x, float z, bool building)
+        {
+            if (building) { if (Clock - lastBaseAlert < AlertInterval) return; lastBaseAlert = Clock; }
+            else { if (Clock - lastArmyAlert < AlertInterval) return; lastArmyAlert = Clock; }
+            UnderAttack?.Invoke(x, z, building);
         }
         // Idle allies near the spot that can hit the attacker come to help.
         void CallForHelp(int side, float x, float z, PrototypeUnit attacker, PrototypeUnit victim)
@@ -370,7 +383,7 @@ namespace Order.Simulation
             foreach (var u in dead) { u.route.Clear(); u.Target = null; u.TargetBuilding = null; Died?.Invoke(u); }
             if (ruined.Count == 0) return;
             // Freed cells change paths and vision.
-            navigationVersion++;
+            foreach (var b in ruined) NavigationChanged(b.X, b.Z, b.Width);
             foreach (var b in ruined) { b.queue.Clear(); b.started = false; Destroyed?.Invoke(b); }
             if (Winner < 0)
             {
@@ -391,7 +404,7 @@ namespace Order.Simulation
         public void AddEnemyBase()
         {
             AddBuilding(2, 51, 51, Enemy, 1); AddBuilding(0, 46, 48, Enemy, 1); AddBuilding(1, 55, 46, Enemy, 1);
-            navigationVersion++; UpdateVision();
+            UpdateVision();
         }
     }
 }

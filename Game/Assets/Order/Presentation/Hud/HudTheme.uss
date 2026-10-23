@@ -1,5 +1,6 @@
 /* Order HUD kit: theme tokens and shared controls.
    .hud-theme-command styles the main menu; faction themes are for the match HUD.
+   Resonance is mercury and ice; its shield is a saturated blue so it does not merge with the pale ice accent.
    Tokens are repeated on .hud-graphic so vector elements can read them as custom properties. */
 
 .hud-theme-command,
@@ -52,26 +53,26 @@
 
 .hud-theme-resonance,
 .hud-theme-resonance .hud-graphic {
-    --hud-bg: #14161A;
-    --hud-panel: rgba(30, 31, 36, 0.86);
-    --hud-panel-strong: rgba(28, 29, 34, 0.97);
-    --hud-line: #4A3A3C;
-    --hud-line-bright: #8A5A57;
-    --hud-accent: #FF5E4F;
-    --hud-accent-soft: rgba(255, 94, 79, 0.09);
-    --hud-accent-dim: rgba(255, 94, 79, 0.42);
-    --hud-accent-faint: rgba(255, 94, 79, 0.045);
-    --hud-control: rgba(20, 21, 25, 0.78);
-    --hud-hot: #FFD9CF;
-    --hud-warn: #F4D06F;
-    --hud-warn-soft: rgba(244, 208, 111, 0.06);
-    --hud-danger: #FF3B30;
-    --hud-text: #ECE5D5;
-    --hud-muted: #9C948A;
-    --hud-faint: #3A3436;
-    --hud-health: #8FD98A;
-    --hud-shield: #7CC8E8;
-    --hud-energy: #D59BFF;
+    --hud-bg: #06090C;
+    --hud-panel: rgba(14, 20, 26, 0.86);
+    --hud-panel-strong: rgba(13, 19, 25, 0.97);
+    --hud-line: #2A3640;
+    --hud-line-bright: #7D93A6;
+    --hud-accent: #A9D8FF;
+    --hud-accent-soft: rgba(169, 216, 255, 0.09);
+    --hud-accent-dim: rgba(169, 216, 255, 0.42);
+    --hud-accent-faint: rgba(169, 216, 255, 0.045);
+    --hud-control: rgba(6, 10, 13, 0.76);
+    --hud-hot: #FFFFFF;
+    --hud-warn: #FFB347;
+    --hud-warn-soft: rgba(255, 179, 71, 0.06);
+    --hud-danger: #FF4A3D;
+    --hud-text: #E8F0F6;
+    --hud-muted: #8597A6;
+    --hud-faint: #2A3640;
+    --hud-health: #7FDB8F;
+    --hud-shield: #3C9DFF;
+    --hud-energy: #C79BFF;
 }
 
 .hud-root {

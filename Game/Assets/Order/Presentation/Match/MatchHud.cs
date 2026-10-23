@@ -26,6 +26,8 @@ namespace Order.Presentation
         PrototypeBuilding SelectedBuilding { get; }
         ResourceDeposit SelectedDeposit { get; }
         IReadOnlyList<Vector2> Pins { get; }
+        // Recent attacks on the player away from the camera: where and when (unscaled time), for the minimap.
+        IReadOnlyList<(Vector2 point, float time)> Alerts { get; }
         UnitSelection Selection { get; }
         Texture MinimapTexture { get; }
         string ModeHint { get; }
@@ -534,6 +536,7 @@ namespace Order.Presentation
             if (match.NoSupply) on.Add("БЕЗ ЛИМИТА");
             if (match.Revealed) on.Add("КАРТА");
             if (match.Invulnerable) on.Add("БЕССМЕРТИЕ");
+            if (!match.BotEnabled) on.Add("БОТ ВЫКЛ");
             return "  ·  ЧИТЫ" + (on.Count > 0 ? ": " + string.Join(", ", on) : "");
         }
 
