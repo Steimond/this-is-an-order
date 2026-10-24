@@ -21,4 +21,8 @@ MonoBehaviour:
   Vision: 7
   ConstructionSeconds: 8
   ModelHeight: 2.2
-  Trains: 010000000200000003000000i
+  Trains: 010000000200000003000000050000000600000007000000i
+  Coverage: 0
+  Relays: 0
+  Researches: 0
+  Extracts: 0

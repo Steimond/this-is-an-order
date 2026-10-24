@@ -73,5 +73,25 @@ namespace Order.Tests.EditMode
             Assert.That(target.Health,Is.EqualTo(target.Stats.Health));
             Assert.That(leaper.Moving,Is.True,"It walks round instead");
         }
+        [Test] public void EmitterBeamGrowsOnOneTargetAndStartsOverOnANewOneOrAfterAPause()
+        {
+            var match=new PrototypeMatch(null,FactionId.Resonance,FactionId.Expedition);match.ToggleReveal();match.AddEnemyBase();
+            var emitter=match.Spawn(UnitKind.Ranged,48.8f,49.5f);var stats=emitter.Stats;match.UpdateVision();
+            Assert.That(stats.Ramp,Is.EqualTo(3));Assert.That(stats.Name,Is.EqualTo("Излучатель"));
+            var supply=match.Buildings.Find(b=>b.Owner==Enemy&&b.Kind==0);var hq=match.Buildings.Find(b=>b.Owner==Enemy&&b.Kind==FactionBalance.Main);
+            // The size of the next blow on the building.
+            int Blow(PrototypeBuilding b){int health=b.Health;for(int i=0;i<40&&b.Health==health;i++)match.Tick(.05f);return health-b.Health;}
+            Assert.That(match.Attack(emitter,supply),Is.True);
+            Assert.That(Blow(supply),Is.EqualTo(stats.Damage),"The beam starts weak");
+            Run(match,stats.RampSeconds+.2f);
+            Assert.That(Blow(supply),Is.EqualTo((int)(stats.Damage*stats.Ramp)),"Held on one target it grows to three times");
+            Assert.That(match.Focus(emitter),Is.EqualTo(1).Within(1e-3f));
+            Assert.That(match.Attack(emitter,hq),Is.True);
+            Assert.That(Blow(hq),Is.EqualTo(stats.Damage),"A new target starts it over");
+            // A real pause: it walks off out of reach (left alone next to a building, an idle unit goes on striking it).
+            Run(match,2);Assert.That(match.Move(emitter,40.5f,44.5f),Is.True);Run(match,1.5f);
+            Assert.That(match.Focus(emitter),Is.Zero,"A pause drops it");
+            Assert.That(match.Attack(emitter,hq),Is.True);Assert.That(Blow(hq),Is.EqualTo(stats.Damage));
+        }
     }
 }

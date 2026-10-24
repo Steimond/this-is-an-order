@@ -309,7 +309,7 @@ namespace Order.Simulation
         public void PrepareNavigation()
         {
             var radii = new HashSet<float>();
-            foreach (var roster in new[] { Balance.Expedition, Balance.Resonance }) foreach (var stats in roster.Units) if (!stats.Flying) radii.Add(stats.Radius);
+            foreach (var roster in new[] { Balance.Expedition, Balance.Resonance }) foreach (var stats in roster.Units) if (stats != null && !stats.Flying) radii.Add(stats.Radius);
             foreach (var radius in radii) for (int cell = 0; cell < 4096; cell++) for (int dir = 0; dir < 8; dir++) Passable(cell, dir, radius);
         }
         bool FreeSpot(PrototypeUnit unit, float x, float z, float level)
@@ -397,14 +397,14 @@ namespace Order.Simulation
             foreach (var u in Units) { u.levelY = HeightAt(u.X, u.Z); u.touchedArrived = false; u.startX = u.X; u.startZ = u.Z; }
             foreach (var u in Units) Fight(u, dt);
             FillBuckets();
-            foreach (var u in Units) if (u.leaping) StepLeap(u, dt); else Follow(u, dt);
+            foreach (var u in Units) if (u.leaping) StepLeap(u, dt); else if (!Anchored(u)) Follow(u, dt);
             for (int i = 0; i < 2; i++) { FillBuckets(); Separate(); }
             foreach (var u in Units)
             {
                 if (!u.Stats.Flying) { KeepOutOfObstacles(u); continue; }
                 float r = u.Stats.Radius; u.X = Math.Max(r, Math.Min(64 - r, u.X)); u.Z = Math.Max(r, Math.Min(64 - r, u.Z));
             }
-            foreach (var u in Units) { if (!u.leaping) UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
+            foreach (var u in Units) { if (!u.leaping && !Anchored(u)) UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
             TickConstruction(dt);
             TickRepair(dt);
             TickAutoRepair(dt);
@@ -557,7 +557,8 @@ namespace Order.Simulation
             }
         }
         static bool Firm(PrototypeUnit u, PrototypeUnit other) =>
-            !u.Moving && (u.Order == UnitOrder.Hold || u.Constructing != null || u.Welding || u.Owner != other.Owner || (u.engaged && (u.Target != null || u.TargetBuilding != null)));
+            // A howitzer that is not packed is anchored to the ground.
+            Anchored(u) || (!u.Moving && (u.Order == UnitOrder.Hold || u.Constructing != null || u.Welding || u.Owner != other.Owner || (u.engaged && (u.Target != null || u.TargetBuilding != null))));
         // Only the other unit gives way; a mover pressing into a firm unit also slips sideways, so it goes round it.
         // (nx, nz) points from the firm unit to the one that gives way. A ground unit slips to the side that is free of walls and
         // standing units, so a line of units hitting a wall is passed on the open side instead of being pressed into the crowd.

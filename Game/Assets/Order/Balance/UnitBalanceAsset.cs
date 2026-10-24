@@ -25,6 +25,15 @@ namespace Order.Balance
         [Min(.1f)] public float AttackCooldown=1;
         public bool HitsGround=true, HitsAir;
         [Tooltip("Атакует прыжком сквозь цель: дальность — длина прыжка, перезарядка — время между прыжками.")] public bool Leap;
+        [Tooltip("Броня: столько снимается с каждого полученного удара (но не меньше 1); улучшения брони прибавляют к ней.")] [Min(0)] public int Armor;
+        [Header("Развёртывание — гаубица")]
+        [Tooltip("Стреляет только развернувшись; развёртывание и сворачивание занимают DeploySeconds.")] public bool Siege;
+        [Tooltip("Мёртвая зона: ближе этого (от края до края) не стреляет.")] [Min(0)] public float MinRange;
+        [Tooltip("Радиус, в котором другие наземные враги вокруг цели получают половину удара; 0 — без урона по площади.")] [Min(0)] public float Splash;
+        [Min(0)] public float DeploySeconds;
+        [Header("Луч — излучатель машин")]
+        [Tooltip("Во сколько раз растёт удар, пока луч держит одну цель; 1 — обычное оружие.")] [Min(1)] public float Ramp=1;
+        [Tooltip("За сколько секунд на одной цели удар дорастает до полного.")] [Min(0)] public float RampSeconds;
         [Header("Производство")]
         [Min(0), FormerlySerializedAs("Minerals")] public int Metal=50;
         [Min(0), FormerlySerializedAs("Gas")] public int Plasma;
@@ -33,6 +42,7 @@ namespace Order.Balance
             Vision=Mathf.Clamp(Vision,1,64),HarvestAmount=Mathf.Max(0,HarvestAmount),HarvestInterval=Mathf.Max(.1f,HarvestInterval),Supply=Mathf.Max(0,Supply),Flying=Flying,
             Damage=Mathf.Max(0,Damage),AttackRange=Mathf.Max(0,AttackRange),AttackCooldown=Mathf.Max(.1f,AttackCooldown),HitsGround=HitsGround,HitsAir=HitsAir,
             Metal=Mathf.Max(0,Metal),Plasma=Mathf.Max(0,Plasma),TrainSeconds=Mathf.Max(.1f,TrainSeconds),
-            WrapSeconds=Mathf.Max(0,WrapSeconds),Cocoon=Mathf.Max(0,Cocoon),CocoonRegen=Mathf.Max(0,CocoonRegen),Leap=Leap,Mechanical=Mechanical};
+            WrapSeconds=Mathf.Max(0,WrapSeconds),Cocoon=Mathf.Max(0,Cocoon),CocoonRegen=Mathf.Max(0,CocoonRegen),Leap=Leap,Mechanical=Mechanical,
+            Armor=Mathf.Max(0,Armor),Siege=Siege,MinRange=Mathf.Max(0,MinRange),Splash=Mathf.Max(0,Splash),DeploySeconds=Mathf.Max(0,DeploySeconds),Ramp=Mathf.Max(1,Ramp),RampSeconds=Mathf.Max(0,RampSeconds)};
     }
 }

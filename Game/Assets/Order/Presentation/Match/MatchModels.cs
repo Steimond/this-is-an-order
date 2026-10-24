@@ -3,11 +3,14 @@ using UnityEngine;
 
 namespace Order.Presentation
 {
-    // Unit model split into animated parts: legs swing around their hips, rotors spin around their hubs.
+    // Unit model split into animated parts: legs swing around their hips, rotors spin around their hubs, and a gun on its
+    // pivot lifts by GunLift degrees as a howitzer deploys.
     public sealed class UnitModel
     {
-        public Mesh Body, Leg, Rotor;
+        public Mesh Body, Leg, Rotor, Gun;
         public Vector3[] Hips = new Vector3[0], Rotors = new Vector3[0];
+        public Vector3 GunPivot;
+        public float GunLift, GunLength;
         // Height is the visible top of a ground unit before Scale; it bounds clicks on the model.
         public float Hover, Scale = 1, Height = 1;
     }
@@ -27,6 +30,9 @@ namespace Order.Presentation
                 case UnitKind.Melee: return Assault();
                 case UnitKind.Ranged: return Rifleman();
                 case UnitKind.Air: return Gunship();
+                case UnitKind.Tank: return Tank();
+                case UnitKind.Artillery: return Howitzer();
+                case UnitKind.Fighter: return Interceptor();
                 default: return new UnitModel { Body = Worker(), Scale = 1.25f, Height = .75f };
             }
         }
@@ -111,6 +117,78 @@ namespace Order.Presentation
                 rotor.Box(new Vector3(0, .03f, .23f), new Vector3(.07f, .012f, .42f));
             }
             return new UnitModel { Body = b.ToMesh("Gunship"), Rotor = rotor.ToMesh("Gunship rotor"), Rotors = rotors, Hover = 2.4f };
+        }
+
+        // Tracks with guards and road wheels on both sides, shared by the tank and the howitzer.
+        static void Tracks(MeshBuilder b, float length)
+        {
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Box(b, Dark, new Vector3(side * .3f, .11f, 0), new Vector3(.17f, .2f, length));
+                Box(b, Metal, new Vector3(side * .3f, .22f, 0), new Vector3(.2f, .035f, length + .04f));
+                int wheels = Mathf.RoundToInt(length / .22f);
+                for (int i = 0; i < wheels; i++) Box(b, Metal, new Vector3(side * .392f, .1f, -length * .5f + .11f + i * (length - .22f) / Mathf.Max(1, wheels - 1)), new Vector3(.02f, .11f, .11f));
+            }
+        }
+        // Main battle tank: tracks, a low hull with a sloped nose, a turret wearing the team stripe and a long gun.
+        static UnitModel Tank()
+        {
+            var b = new MeshBuilder();
+            Tracks(b, .92f);
+            Box(b, Plate, new Vector3(0, .27f, -.04f), new Vector3(.46f, .16f, .8f));
+            Box(b, Plate, new Vector3(0, .23f, .4f), new Vector3(.42f, .09f, .1f));
+            Box(b, Light, new Vector3(0, .43f, -.07f), new Vector3(.36f, .14f, .42f), 1);
+            Box(b, Metal, new Vector3(0, .44f, -.3f), new Vector3(.3f, .1f, .08f));
+            Box(b, Metal, new Vector3(0, .44f, .17f), new Vector3(.17f, .11f, .08f));
+            b.Paint = Metal; b.Team = 0; b.Glow = 0; b.Place(new Vector3(0, .445f, .2f), Quaternion.Euler(90, 0, 0), Vector3.one);
+            b.Prism(8, .034f, .03f, 0, .56f);
+            Box(b, Metal, new Vector3(0, .445f, .73f), new Vector3(.08f, .08f, .07f));
+            Box(b, Metal, new Vector3(.09f, .53f, -.12f), new Vector3(.12f, .04f, .12f));
+            Box(b, Cyan, new Vector3(-.1f, .52f, .06f), new Vector3(.08f, .03f, .03f), 0, 1);
+            b.Paint = Metal; b.Place(new Vector3(-.14f, .5f, -.22f), Quaternion.identity, Vector3.one); b.Prism(4, .008f, .005f, 0, .3f);
+            return new UnitModel { Body = b.ToMesh("Tank"), Height = .62f, Scale = 1.05f };
+        }
+        // Self-propelled howitzer: a longer tracked hull, a tall armoured turret at the back, a recoil spade, and the long
+        // barrel that the view lifts as it deploys.
+        static UnitModel Howitzer()
+        {
+            var b = new MeshBuilder();
+            Tracks(b, 1.02f);
+            Box(b, Plate, new Vector3(0, .27f, .02f), new Vector3(.48f, .16f, .96f));
+            Box(b, Light, new Vector3(0, .47f, -.12f), new Vector3(.42f, .24f, .5f), 1);
+            Box(b, Metal, new Vector3(0, .6f, -.12f), new Vector3(.3f, .03f, .38f));
+            Box(b, Metal, new Vector3(0, .15f, -.56f), new Vector3(.38f, .1f, .06f));
+            Box(b, Metal, new Vector3(0, .47f, .15f), new Vector3(.2f, .16f, .06f));
+            Box(b, Cyan, new Vector3(.12f, .55f, .13f), new Vector3(.08f, .03f, .02f), 0, 1);
+            var gun = new MeshBuilder();
+            gun.Paint = Metal; gun.Place(Vector3.zero, Quaternion.Euler(90, 0, 0), Vector3.one); gun.Prism(8, .045f, .036f, 0, .92f);
+            Box(gun, Metal, new Vector3(0, 0, .92f), new Vector3(.11f, .07f, .1f));
+            Box(gun, Plate, new Vector3(0, 0, .12f), new Vector3(.11f, .11f, .2f));
+            return new UnitModel { Body = b.ToMesh("Howitzer"), Gun = gun.ToMesh("Howitzer gun"), GunPivot = new Vector3(0, .5f, .16f), GunLift = 38, GunLength = .97f, Height = .7f, Scale = 1.05f };
+        }
+        // VTOL interceptor: a slim fuselage with a glowing canopy, swept wings with the team stripe, twin fins, and a
+        // lift fan in each wingtip nacelle: why it can hang in the air.
+        static UnitModel Interceptor()
+        {
+            var b = new MeshBuilder();
+            b.Paint = Plate; b.Place(Vector3.zero, Quaternion.identity, new Vector3(.2f, .15f, .82f)); b.Blob(17, .03f);
+            b.Paint = Metal; b.Team = 0; b.Glow = 0; b.Place(new Vector3(0, 0, .38f), Quaternion.Euler(90, 0, 0), Vector3.one); b.Prism(8, .075f, 0, 0, .26f);
+            b.Paint = Cyan; b.Glow = .6f; b.Place(new Vector3(0, .08f, .2f), Quaternion.identity, new Vector3(.1f, .08f, .22f)); b.Blob(19, .02f); b.Glow = 0;
+            Box(b, Light, new Vector3(0, -.01f, -.06f), new Vector3(.96f, .03f, .26f), 1);
+            Box(b, Light, new Vector3(0, .01f, -.4f), new Vector3(.4f, .025f, .12f), 1);
+            for (int side = -1; side <= 1; side += 2) Box(b, Metal, new Vector3(side * .1f, .12f, -.38f), new Vector3(.02f, .2f, .14f));
+            Box(b, Blade, new Vector3(0, 0, -.43f), new Vector3(.09f, .06f, .03f), 0, 1);
+            var fans = new[] { new Vector3(-.56f, .02f, -.06f), new Vector3(.56f, .02f, -.06f) };
+            foreach (var at in fans)
+            {
+                b.Paint = Metal; b.Team = 0; b.Glow = 0; b.Place(at, Quaternion.identity, Vector3.one);
+                b.Prism(10, .15f, .15f, -.05f, .05f);
+                b.Paint = Cyan; b.Glow = .8f; b.Disc(.05f, 8, -.052f, true); b.Glow = 0;
+            }
+            var fan = new MeshBuilder();
+            fan.Paint = Dark;
+            for (int i = 0; i < 5; i++) { fan.Place(Vector3.zero, i * 72, 1); fan.Box(new Vector3(0, .055f, .07f), new Vector3(.04f, .01f, .13f)); }
+            return new UnitModel { Body = b.ToMesh("Interceptor"), Rotor = fan.ToMesh("Interceptor fan"), Rotors = fans, Hover = 2.7f };
         }
 
         // Hovering drone; the mesh origin is on the ground, the body floats above it.

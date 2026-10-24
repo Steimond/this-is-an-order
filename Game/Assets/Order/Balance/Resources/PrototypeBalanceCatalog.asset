@@ -16,6 +16,9 @@ MonoBehaviour:
   Melee: {fileID: 11400000, guid: 4ee428848480e7b47b9ae39697ab4d0b, type: 2}
   Ranged: {fileID: 11400000, guid: e63c78fbb3b57404aa621d3d6dd8c82b, type: 2}
   Air: {fileID: 11400000, guid: c89cf2d5e623db24aa64aedee6d3ee3d, type: 2}
+  Tank: {fileID: 11400000, guid: 564a02a809d47c94fadb571afc71435f, type: 2}
+  Artillery: {fileID: 11400000, guid: beaf4362739ad984b8495f89d569664e, type: 2}
+  Fighter: {fileID: 11400000, guid: 2fbb3606b9b713a4eb72be1bc69990f6, type: 2}
   Supply: {fileID: 11400000, guid: de12dedff54d1024f8387dbc99d37c19, type: 2}
   Factory: {fileID: 11400000, guid: 56c846026e24ee34e8d601a7f0d15708, type: 2}
   Headquarters: {fileID: 11400000, guid: 720d5115959f754438e353af438d1006, type: 2}
@@ -33,4 +36,7 @@ MonoBehaviour:
     Relay: {fileID: 11400000, guid: b34b76a0f67b7aa45a5a773f50fdd487, type: 2}
     Leaper: {fileID: 11400000, guid: 08e02e863b3b1204b95a19bf7bcae976, type: 2}
     Extractor: {fileID: 0}
+    Tank: {fileID: 0}
+    Artillery: {fileID: 0}
+    Fighter: {fileID: 0}
   Economy: {fileID: 11400000, guid: 96c7291b177d491458539ac1f77f7a24, type: 2}

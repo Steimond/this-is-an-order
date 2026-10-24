@@ -54,7 +54,7 @@ namespace Order.Presentation
     {
         Gear, Power, Mic, ChevronLeft, ChevronRight, Close, Lock, Back, Check, Grid,
         Worker, Headquarters, Supply, Factory, Metal, Plasma, Move, Stop, Harvest, Pin, Base, Target, Armor, Menu, ClearPins, Train, Build,
-        Assault, Rifleman, Gunship, Hold, Relay, Spider, Leaper, Upgrade, Repair, Disassemble, Extractor
+        Assault, Rifleman, Gunship, Hold, Relay, Spider, Leaper, Upgrade, Repair, Disassemble, Extractor, Tank, Howitzer, Fighter, Deploy, Emitter
     }
 
     public sealed class HudIcon : HudVector
@@ -128,6 +128,40 @@ namespace Order.Presentation
                     // A mast with signal arcs on both sides.
                     Shape(p, P, .5f, .36f, .5f, .86f); Shape(p, P, .36f, .86f, .64f, .86f);
                     HudPaint.Arc(p, P(.5f, .36f), size * .14f, 200, 340); HudPaint.Arc(p, P(.5f, .36f), size * .26f, 205, 335);
+                    break;
+                case HudIconKind.Tank:
+                    // Side view: tracks, hull, turret and a level gun.
+                    Shape(p, P, .1f, .74f, .9f, .74f, .84f, .86f, .16f, .86f, .1f, .74f);
+                    Shape(p, P, .16f, .74f, .2f, .6f, .82f, .6f, .86f, .74f);
+                    Shape(p, P, .32f, .6f, .36f, .46f, .62f, .46f, .66f, .6f);
+                    Shape(p, P, .62f, .52f, .94f, .5f);
+                    break;
+                case HudIconKind.Howitzer:
+                    // Tracks, a tall turret at the back and a long barrel raised to fire.
+                    Shape(p, P, .1f, .74f, .9f, .74f, .84f, .86f, .16f, .86f, .1f, .74f);
+                    Shape(p, P, .14f, .74f, .18f, .62f, .84f, .62f, .88f, .74f);
+                    Shape(p, P, .18f, .62f, .22f, .4f, .56f, .4f, .6f, .62f);
+                    Shape(p, P, .52f, .46f, .9f, .14f);
+                    break;
+                case HudIconKind.Fighter:
+                    // From above: fuselage, swept wings with a lift fan in each tip, the tail.
+                    Shape(p, P, .5f, .1f, .5f, .88f);
+                    Shape(p, P, .12f, .58f, .5f, .38f, .88f, .58f);
+                    Shape(p, P, .36f, .88f, .5f, .78f, .64f, .88f);
+                    HudPaint.Circle(p, P(.2f, .56f), size * .08f); HudPaint.Circle(p, P(.8f, .56f), size * .08f);
+                    break;
+                case HudIconKind.Emitter:
+                    // A mast on spread legs throwing a widening beam to the right.
+                    Shape(p, P, .2f, .88f, .34f, .56f, .48f, .88f);
+                    Shape(p, P, .34f, .56f, .34f, .3f);
+                    HudPaint.Circle(p, P(.34f, .24f), size * .08f);
+                    Shape(p, P, .44f, .22f, .9f, .12f); Shape(p, P, .44f, .27f, .9f, .38f);
+                    break;
+                case HudIconKind.Deploy:
+                    // A barrel rising over two braced feet.
+                    Shape(p, P, .2f, .86f, .36f, .62f, .64f, .62f, .8f, .86f);
+                    Shape(p, P, .5f, .62f, .78f, .2f);
+                    Shape(p, P, .62f, .3f, .74f, .14f);
                     break;
                 case HudIconKind.Repair:
                     // A wrench: the open jaw up and to the right, the handle down to the left.

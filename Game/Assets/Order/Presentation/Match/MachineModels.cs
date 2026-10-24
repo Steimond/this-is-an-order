@@ -4,8 +4,8 @@ using UnityEngine;
 namespace Order.Presentation
 {
     // Generated low-poly models of the machine faction, "mercury and ice": polished grey metal, dark steel and cold
-    // glowing seams; parts flagged Team take the player's colour. The combat roles keep the humans' models until the
-    // machines get their own units.
+    // glowing seams; parts flagged Team take the player's colour. The glider keeps the humans' gunship model until the
+    // machines get their own air units.
     public static class MachineModels
     {
         static readonly Color Mercury = new Color(.42f, .45f, .51f), Steel = new Color(.14f, .16f, .19f), Pale = new Color(.62f, .67f, .74f),
@@ -13,7 +13,28 @@ namespace Order.Presentation
 
         public static UnitModel Unit(UnitKind kind) =>
             kind == UnitKind.Worker ? new UnitModel { Body = Weaver(), Scale = 1.25f, Height = .75f }
-            : kind == UnitKind.Melee ? Spider() : kind == UnitKind.Leaper ? Leaper() : MatchModels.Unit(kind);
+            : kind == UnitKind.Melee ? Spider() : kind == UnitKind.Leaper ? Leaper() : kind == UnitKind.Ranged ? Emitter() : MatchModels.Unit(kind);
+
+        // Emitter: a tall faceted mast on two pairs of thin legs, a glowing collar, and a lens at the front of its head that
+        // throws the beam.
+        static UnitModel Emitter()
+        {
+            var b = new MeshBuilder();
+            b.Paint = Mercury; b.Place(new Vector3(0, .42f, 0)); b.Prism(6, .13f, .09f, 0, .34f, 0, .5f, true);
+            b.Paint = Pale; b.Team = 1; b.Place(new Vector3(0, .6f, 0)); b.Prism(6, .12f, .12f, 0, .06f, 0, .5f); b.Team = 0;
+            b.Paint = Steel; b.Place(new Vector3(0, .8f, .02f), Quaternion.identity, new Vector3(.18f, .14f, .2f)); b.Blob(31, .04f, 0);
+            b.Paint = Steel; b.Place(new Vector3(0, .8f, .1f), Quaternion.Euler(90, 0, 0), Vector3.one); b.Prism(8, .065f, .075f, 0, .1f);
+            b.Paint = Ice; b.Glow = 1; b.Place(new Vector3(0, .8f, .2f), Quaternion.Euler(90, 0, 0), Vector3.one); b.Disc(.06f, 8, 0); b.Glow = 0;
+            b.Paint = Ice; b.Glow = .7f; b.Transform = Matrix4x4.identity; b.Box(new Vector3(0, .63f, .125f), new Vector3(.06f, .02f, .02f)); b.Glow = 0;
+            var leg = new MeshBuilder();
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Limb(leg, Steel, new Vector3(side * .06f, 0, 0), new Vector3(side * .22f, .05f, 0), .035f);
+                Limb(leg, Mercury, new Vector3(side * .22f, .05f, 0), new Vector3(side * .27f, -.42f, 0), .028f);
+            }
+            return new UnitModel { Body = b.ToMesh("Emitter"), Leg = leg.ToMesh("Emitter legs"),
+                Hips = new[] { new Vector3(0, .44f, .08f), new Vector3(0, .44f, -.08f) }, Scale = 1.05f, Height = .92f };
+        }
 
         // A straight limb between two points, a thin four-sided bar.
         static void Limb(MeshBuilder b, Color color, Vector3 from, Vector3 to, float thickness, float glow = 0)

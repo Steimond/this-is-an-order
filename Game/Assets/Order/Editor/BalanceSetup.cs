@@ -16,6 +16,9 @@ namespace Order.Editor
             catalog.Melee=Unit("Faction1","Assault",humans.Unit(UnitKind.Melee));
             catalog.Ranged=Unit("Faction1","Rifleman",humans.Unit(UnitKind.Ranged));
             catalog.Air=Unit("Faction1","Gunship",humans.Unit(UnitKind.Air));
+            catalog.Tank=Unit("Faction1","Tank",humans.Unit(UnitKind.Tank));
+            catalog.Artillery=Unit("Faction1","Howitzer",humans.Unit(UnitKind.Artillery));
+            catalog.Fighter=Unit("Faction1","Interceptor",humans.Unit(UnitKind.Fighter));
             catalog.Supply=Building("Faction1","Supply",humans.Buildings[0]);
             catalog.Factory=Building("Faction1","Factory",humans.Buildings[1]);
             catalog.Headquarters=Building("Faction1","Headquarters",humans.Buildings[2]);
@@ -45,6 +48,7 @@ namespace Order.Editor
             {
                 asset.DisplayName=defaults.Name;asset.MoveSpeed=defaults.Speed;asset.CollisionRadius=defaults.Radius;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.HarvestAmount=defaults.HarvestAmount;asset.HarvestInterval=defaults.HarvestInterval;asset.Supply=defaults.Supply;asset.Flying=defaults.Flying;asset.Damage=defaults.Damage;asset.AttackRange=defaults.AttackRange;asset.AttackCooldown=defaults.AttackCooldown;asset.HitsGround=defaults.HitsGround;asset.HitsAir=defaults.HitsAir;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.TrainSeconds=defaults.TrainSeconds;
                 asset.WrapSeconds=defaults.WrapSeconds;asset.Cocoon=defaults.Cocoon;asset.CocoonRegen=defaults.CocoonRegen;asset.Leap=defaults.Leap;asset.Mechanical=defaults.Mechanical;
+                asset.Armor=defaults.Armor;asset.Siege=defaults.Siege;asset.MinRange=defaults.MinRange;asset.Splash=defaults.Splash;asset.DeploySeconds=defaults.DeploySeconds;asset.Ramp=defaults.Ramp;asset.RampSeconds=defaults.RampSeconds;
                 EditorUtility.SetDirty(asset);
             }
             return asset;

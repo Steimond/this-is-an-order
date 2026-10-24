@@ -313,7 +313,7 @@ namespace Order.Presentation
         sealed class UnitView
         {
             public GameObject Root;
-            public Transform Body, Shadow;
+            public Transform Body, Shadow, Gun;
             public Transform[] Legs, Rotors;
             public UnitModel Model;
             public LineRenderer Beam, Nanites;
@@ -333,7 +333,7 @@ namespace Order.Presentation
             if(!unitModels.TryGetValue(key,out var model))
             {
                 model=key.Item1==FactionId.Resonance?MachineModels.Unit(unit.Kind):MatchModels.Unit(unit.Kind);unitModels[key]=model;
-                scenery.Own(model.Body);if(model.Leg!=null)scenery.Own(model.Leg);if(model.Rotor!=null)scenery.Own(model.Rotor);
+                scenery.Own(model.Body);if(model.Leg!=null)scenery.Own(model.Leg);if(model.Rotor!=null)scenery.Own(model.Rotor);if(model.Gun!=null)scenery.Own(model.Gun);
             }
             var view=new UnitView{Model=model,Root=new GameObject(unit.Stats.Name+" #"+unit.Id),Height=Match.HeightAt(unit.X,unit.Z)};
             view.Root.transform.SetParent(worldRoot.transform);view.Root.transform.localScale=Vector3.one*model.Scale;
@@ -345,6 +345,7 @@ namespace Order.Presentation
             for(int i=0;i<view.Legs.Length;i++){view.Legs[i]=scenery.Model("Leg",model.Leg,material,view.Body).transform;view.Legs[i].localPosition=model.Hips[i];}
             view.Rotors=new Transform[model.Rotors.Length];
             for(int i=0;i<view.Rotors.Length;i++){view.Rotors[i]=scenery.Model("Rotor",model.Rotor,material,view.Body).transform;view.Rotors[i].localPosition=model.Rotors[i];}
+            if(model.Gun!=null){view.Gun=scenery.Model("Gun",model.Gun,material,view.Body).transform;view.Gun.localPosition=model.GunPivot;}
             if(unit.Stats.Flying){view.Shadow=scenery.Model("Shadow",shadowMesh,shadowMaterial,worldRoot.transform,false).transform;view.Shadow.localScale=Vector3.one*unit.Stats.Radius*3.2f;}
             return view;
         }
@@ -444,6 +445,8 @@ namespace Order.Presentation
                     view.Kick=Mathf.Max(0,view.Kick-dt*(unit.Stats.AttackRange<1?5:9));
                 }
                 for(int i=0;i<view.Rotors.Length;i++)view.Rotors[i].localRotation=Quaternion.Euler(0,time*1300*(i%2==0?1:-1)+i*40,0);
+                // A howitzer lifts its barrel as it deploys and lowers it to travel.
+                if(view.Gun!=null)view.Gun.localRotation=Quaternion.Euler(-view.Model.GunLift*unit.DeployShare,0,0);
                 if(view.Shadow!=null)view.Shadow.position=new Vector3(unit.X,ground+.06f,unit.Z);
                 bool beam=(mining&&!nanite)||welding;
                 if(beam&&view.Beam==null)
@@ -724,10 +727,7 @@ namespace Order.Presentation
                 if(!Match.SeenBy(PrototypeMatch.Player,attacker)&&!Match.SeenBy(PrototypeMatch.Player,target))continue;
                 a.Kick=1;
                 var hit=Center(target,t)+UnityEngine.Random.insideUnitSphere*target.Stats.Radius*.4f;
-                if(attacker.Stats.AttackRange<1||attacker.Stats.Leap)combat.Slash(hit,hit-Center(attacker,a),new Color(.75f,.9f,1));
-                else if(attacker.Stats.Flying)
-                    for(int side=-1;side<=1;side+=2)combat.Tracer(a.Body.TransformPoint(new Vector3(side*.34f,-.1f,.32f)),hit+a.Body.right*side*.12f,new Color(1,.6f,.28f),.06f);
-                else combat.Tracer(Muzzle(attacker,a),hit,new Color(1,.86f,.5f));
+                Shot(attacker,a,hit);
             }
             strikes.Clear();
             foreach(var (attacker,target) in buildingStrikes)
@@ -738,10 +738,7 @@ namespace Order.Presentation
                 // Hits land on the side facing the attacker, somewhere up the wall.
                 var center=view.Model.GetComponent<MeshRenderer>().bounds.center;var toward=new Vector3(attacker.X-center.x,0,attacker.Z-center.z).normalized;
                 var hit=center+toward*target.Width*.42f+new Vector3(UnityEngine.Random.Range(-.4f,.4f),UnityEngine.Random.Range(-.3f,.4f),UnityEngine.Random.Range(-.4f,.4f));
-                if(attacker.Stats.AttackRange<1||attacker.Stats.Leap)combat.Slash(hit,hit-Center(attacker,a),new Color(.75f,.9f,1));
-                else if(attacker.Stats.Flying)
-                    for(int side=-1;side<=1;side+=2)combat.Tracer(a.Body.TransformPoint(new Vector3(side*.34f,-.1f,.32f)),hit+a.Body.right*side*.12f,new Color(1,.6f,.28f),.06f);
-                else combat.Tracer(Muzzle(attacker,a),hit,new Color(1,.86f,.5f));
+                Shot(attacker,a,hit);
             }
             buildingStrikes.Clear();
             // A destroyed building goes up in a chain of blasts across its footprint.
@@ -764,6 +761,41 @@ namespace Order.Presentation
                     combat.Explosion(Center(unit,view),Match.HeightAt(unit.X,unit.Z),unit.Stats.Flying?1.3f:Mathf.Max(1,unit.Stats.Radius*2.6f));
                 }
             deaths.Clear();
+        }
+        // How a strike looks: melee slashes; the gunship fires a pair of tracers from its wings and the interceptor a pair of
+        // missiles from its wingtips; the tank's gun flashes and throws a heavy tracer; the howitzer's barrel flashes and
+        // the shell bursts on the target a moment later, as wide as its splash; other guns fire a tracer.
+        void Shot(PrototypeUnit attacker,UnitView a,Vector3 hit)
+        {
+            var stats=attacker.Stats;
+            if(stats.AttackRange<1||stats.Leap)combat.Slash(hit,hit-Center(attacker,a),new Color(.75f,.9f,1));
+            else if(stats.Flying&&!stats.HitsGround)
+                for(int side=-1;side<=1;side+=2)combat.Tracer(a.Body.TransformPoint(new Vector3(side*.56f,-.04f,.1f)),hit+a.Body.right*side*.08f,new Color(.75f,.9f,1),.05f);
+            else if(stats.Flying)
+                for(int side=-1;side<=1;side+=2)combat.Tracer(a.Body.TransformPoint(new Vector3(side*.34f,-.1f,.32f)),hit+a.Body.right*side*.12f,new Color(1,.6f,.28f),.06f);
+            else if(stats.Siege)
+            {
+                var muzzle=a.Gun!=null?a.Gun.TransformPoint(new Vector3(0,0,a.Model.GunLength)):Muzzle(attacker,a);
+                combat.Flash(muzzle,new Color(3.2f,1.8f,.7f),.55f,.25f,2.2f);
+                float flight=Mathf.Clamp(Vector3.Distance(muzzle,hit)/22,.15f,.6f),burst=Mathf.Max(.8f,stats.Splash*1.5f);
+                combat.Flash(hit,new Color(3.2f,1.6f,.55f),burst*.6f,.45f,3.2f,flight);
+                combat.Flash(hit+Vector3.up*.2f,new Color(.35f,.33f,.3f),burst*.7f,1.1f,2.2f,flight+.08f);
+            }
+            else if(stats.Ramp>1)
+            {
+                // The emitter's beam thickens and brightens as it builds up on one target.
+                float focus=Match.Focus(attacker);
+                var lens=a.Body.TransformPoint(new Vector3(0,.8f,.22f));
+                combat.Tracer(lens,hit,Color.Lerp(new Color(.62f,.86f,1),Color.white,focus*.6f),.035f+.075f*focus);
+                if(focus>.6f)combat.Flash(hit,NaniteGlow*(1.5f+focus),.12f+.12f*focus,.12f,1.6f);
+            }
+            else if(attacker.Kind==UnitKind.Tank)
+            {
+                var muzzle=a.Body.TransformPoint(new Vector3(0,.445f,.78f));
+                combat.Flash(muzzle,new Color(3,1.8f,.7f),.35f,.18f,2);
+                combat.Tracer(muzzle,hit,new Color(1,.78f,.42f),.11f);
+            }
+            else combat.Tracer(Muzzle(attacker,a),hit,new Color(1,.86f,.5f));
         }
         // A unit is inside the box when any of its feet, middle or top is.
         void UnitsIn(Rect box,List<PrototypeUnit> result)
@@ -1143,6 +1175,15 @@ namespace Order.Presentation
             Match.Message=$"Ремонт добавлен в очередь: {(building!=null?building.Stats.Name:unit.Stats.Name)}.";
             Mark(building!=null?new Vector2(building.X+building.Width*.5f,building.Z+building.Width*.5f):new Vector2(unit.X,unit.Z),true);hud?.Refresh();
             return true;
+        }
+        // Any packed howitzer in the selection deploys where it stands; when all of them are deployed, they pack up.
+        public void ToggleDeploySelection()
+        {
+            var guns=new List<PrototypeUnit>(selection.Orderable).FindAll(u=>u.Stats.Siege);if(guns.Count==0)return;
+            bool deploy=guns.Exists(u=>u.SiegeMode==SiegeState.Packed||u.SiegeMode==SiegeState.Packing);
+            foreach(var g in guns)if((g.SiegeMode==SiegeState.Packed||g.SiegeMode==SiegeState.Packing)==deploy)Match.ToggleDeploy(g);
+            if(guns.Count>1)Match.Message=$"Гаубицы ×{guns.Count}: {(deploy?"развёртывание":"сворачиваются")}.";
+            hud?.Refresh();
         }
         public void ToggleAutoRepair()
         {

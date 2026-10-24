@@ -112,7 +112,7 @@ namespace Order.Simulation
             // Any new order takes a worker off its construction: the building waits, a planned site is dropped. It also
             // ends a repair and stops a machine being taken apart.
             unit.Constructing = null; unit.SiteKind = -1;
-            unit.Repairing = null; unit.RepairingUnit = null; unit.Welding = false; unit.Disassembling = false; unit.Disassembly = 0;
+            unit.Repairing = null; unit.RepairingUnit = null; unit.Welding = false; unit.Disassembling = false; unit.Disassembly = 0; unit.packedByHand = false;
         }
 
         // ---------- Steps ----------
@@ -121,6 +121,7 @@ namespace Order.Simulation
         {
             if (u.cooldown > 0) u.cooldown -= dt;
             if (u.leaping) return;
+            if (u.Stats.Siege) { FightDeployed(u, dt); return; }
             if (!u.Alive || u.Stats.Damage <= 0 || u.Order == UnitOrder.Move || u.HarvestTarget != null || u.Disassembling) { u.Target = null; u.TargetBuilding = null; return; }
             var target = PickTarget(u);
             var building = target == null ? PickBuilding(u) : null;
@@ -338,22 +339,25 @@ namespace Order.Simulation
         }
         void Hit(PrototypeUnit attacker, PrototypeUnit target)
         {
-            if (!(Invulnerable && target.Owner == Player))
-            {
-                // A machine worker's nanite cocoon takes the blow first.
-                int damage = Damage(attacker, target), absorbed = Math.Min(target.Cocoon, damage);
-                target.Cocoon -= absorbed; target.Health = Math.Max(0, target.Health - (damage - absorbed));
-                target.sinceHit = 0;
-            }
+            Wound(target, Damage(attacker, target));
+            if (attacker.Stats.Splash > 0) Splash(attacker, target);
             Attacked?.Invoke(attacker, target);
             if (!target.Alive) return;
             target.aggressor = attacker;
             if (target.Owner == Player && attacker.Owner != Player) Alert(target.X, target.Z, false);
             CallForHelp(target.Owner, target.X, target.Z, attacker, target);
         }
+        // A blow, armour already taken off, lands here: a machine worker's nanite cocoon takes it first.
+        void Wound(PrototypeUnit target, int damage)
+        {
+            if (Invulnerable && target.Owner == Player) return;
+            int absorbed = Math.Min(target.Cocoon, damage);
+            target.Cocoon -= absorbed; target.Health = Math.Max(0, target.Health - (damage - absorbed));
+            target.sinceHit = 0;
+        }
         void Hit(PrototypeUnit attacker, PrototypeBuilding target)
         {
-            if (!(Invulnerable && target.Owner == Player)) { target.Health = Math.Max(0, target.Health - Damage(attacker)); target.sinceHit = 0; }
+            if (!(Invulnerable && target.Owner == Player)) { target.Health = Math.Max(0, target.Health - Strike(attacker, target)); target.sinceHit = 0; }
             AttackedBuilding?.Invoke(attacker, target);
             if (target.Owner == Player && attacker.Owner != Player) Alert(target.X + target.Width * .5f, target.Z + target.Width * .5f, true);
             if (target.Health > 0) CallForHelp(target.Owner, target.X + target.Width * .5f, target.Z + target.Width * .5f, attacker, null);

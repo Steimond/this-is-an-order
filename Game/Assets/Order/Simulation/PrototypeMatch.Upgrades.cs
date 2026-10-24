@@ -66,6 +66,24 @@ namespace Order.Simulation
         // A blow with the attacker's weapon level, less the target's armour.
         public int Damage(PrototypeUnit attacker) => attacker.Stats.Damage + Level(attacker.Owner, Upgrade.Weapons) * Math.Max(1, (int)Math.Round(attacker.Stats.Damage * .1f));
         public int Armor(PrototypeUnit unit) => unit.Stats.Armor + Level(unit.Owner, Upgrade.Armor);
-        int Damage(PrototypeUnit attacker, PrototypeUnit target) => Math.Max(1, Damage(attacker) - Armor(target));
+        int Damage(PrototypeUnit attacker, PrototypeUnit target) => Math.Max(1, Strike(attacker, target) - Armor(target));
+        // The machines' emitter holds its beam on one target: the blow grows from the weapon's damage to Ramp times it over
+        // RampSeconds; a new target, or a pause longer than a shot and FocusPause, starts it over.
+        public const float FocusPause = .6f;
+        int Strike(PrototypeUnit attacker, object target)
+        {
+            int damage = Damage(attacker);
+            var stats = attacker.Stats;
+            if (stats.Ramp <= 1) return damage;
+            if (attacker.focus != target || Clock - attacker.lastFocusHit > stats.AttackCooldown + FocusPause) { attacker.focus = target; attacker.focusStart = Clock; }
+            attacker.lastFocusHit = Clock;
+            return (int)Math.Round(damage * (1 + (stats.Ramp - 1) * Focus(attacker)));
+        }
+        // How far the beam has built up on its target, 0 to 1; 0 once it has paused.
+        public float Focus(PrototypeUnit u)
+        {
+            if (u.Stats.Ramp <= 1 || u.focus == null || Clock - u.lastFocusHit > u.Stats.AttackCooldown + FocusPause) return 0;
+            return Math.Min(1, (Clock - u.focusStart) / Math.Max(.01f, u.Stats.RampSeconds));
+        }
     }
 }

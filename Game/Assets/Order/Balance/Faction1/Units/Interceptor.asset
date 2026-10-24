@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a91781e7ed5a16d498537bdf79177c1c, type: 3}
+  m_Name: Interceptor
+  m_EditorClassIdentifier: Order.Balance::Order.Balance.UnitBalanceAsset
+  DisplayName: "\u041F\u0435\u0440\u0435\u0445\u0432\u0430\u0442\u0447\u0438\u043A"
+  MoveSpeed: 7
+  CollisionRadius: 0.42
+  Health: 120
+  Vision: 11
+  HarvestAmount: 0
+  HarvestInterval: 2
+  WrapSeconds: 0
+  Cocoon: 0
+  CocoonRegen: 0
+  Supply: 2
+  Flying: 1
+  Mechanical: 1
+  Damage: 14
+  AttackRange: 6.5
+  AttackCooldown: 1.3
+  HitsGround: 0
+  HitsAir: 1
+  Leap: 0
+  Armor: 0
+  Siege: 0
+  MinRange: 0
+  Splash: 0
+  DeploySeconds: 0
+  Metal: 125
+  Plasma: 75
+  TrainSeconds: 28

@@ -45,6 +45,8 @@ namespace Order.Presentation
         bool RepairSelection(PrototypeBuilding building, PrototypeUnit unit);
         // Automatic repair on for all selected workers, or off when all of them have it.
         void ToggleAutoRepair();
+        // The selected howitzers deploy where they stand, or pack up when none of them is packed.
+        void ToggleDeploySelection();
         bool Train(UnitKind kind);
         void CancelTraining(int index);
         void SetRallyPoint(Vector2 point);
@@ -493,7 +495,7 @@ namespace Order.Presentation
                 var place = MapGrid.Name(unit.X, unit.Z, TempleMap.Size);
                 var targets = stats.HitsGround && stats.HitsAir ? "наземные и воздушные" : stats.HitsAir ? "только воздушные" : "только наземные";
                 var role = stats.Damage <= 0 ? nanites ? $"Обвивает залежь: {stats.HarvestAmount} каждые {stats.HarvestInterval:0.#} с, кокон {stats.Cocoon}" : $"Груз {stats.HarvestAmount} за рейс, {stats.HarvestInterval:0.#} с у залежи"
-                    : $"Урон {match.Damage(unit)}  ·  {(stats.AttackRange < 1 ? "Ближний бой" : $"Дальность {stats.AttackRange:0.#}")}  ·  Перезарядка {stats.AttackCooldown:0.##} с  ·  Цели: {targets}";
+                    : $"Урон {match.Damage(unit)}  ·  {(stats.AttackRange < 1 ? "Ближний бой" : stats.MinRange > 0 ? $"Дальность {stats.MinRange:0.#}–{stats.AttackRange:0.#}" : $"Дальность {stats.AttackRange:0.#}")}{(stats.Splash > 0 ? $"  ·  По площади {stats.Splash:0.#}" : "")}{(stats.Ramp > 1 ? $"  ·  Луч: до ×{stats.Ramp:0.#} за {stats.RampSeconds:0.#} с на одной цели" + (match.Focus(unit) > 0 ? $", сейчас ×{1 + (stats.Ramp - 1) * match.Focus(unit):0.0}" : "") : "")}  ·  Перезарядка {stats.AttackCooldown:0.##} с  ·  Цели: {targets}";
                 selectionStats.text = $"{role}  ·  Скорость {stats.Speed:0.#}  ·  Обзор {stats.Vision}{(stats.Flying ? "  ·  Воздушный" : "")}  ·  {place}";
                 UpgradeSlot(HudIconKind.Armor, "БРОНЯ", match.Armor(unit));
                 UpgradeSlot(HudIconKind.Target, "ОРУЖИЕ", stats.Damage > 0 ? match.Level(unit.Owner, Order.Simulation.Upgrade.Weapons) : -1);
@@ -605,11 +607,12 @@ namespace Order.Presentation
                 slot.tooltip = filled ? host.Match.Roster(building.Owner).Unit(building.Queue[i]).Name + " · клик — отмена" : "";
             }
         }
-        // Hotkeys of the training buttons: the first letter of the unit's English name, as on StarCraft cards.
-        // Hotkeys of the training buttons: the first letter of the unit's English name, as on StarCraft cards (J for the leaper).
         private static HudIconKind BuildingIcon(int kind, BuildingStats stats) => kind == 0 ? HudIconKind.Supply : kind == 1 ? HudIconKind.Factory : kind == FactionBalance.Main ? HudIconKind.Headquarters
             : stats.Researches ? HudIconKind.Upgrade : stats.Extracts ? HudIconKind.Extractor : HudIconKind.Relay;
-        private static Key TrainKey(UnitKind kind) => kind == UnitKind.Worker ? Key.E : kind == UnitKind.Melee ? Key.A : kind == UnitKind.Ranged ? Key.R : kind == UnitKind.Leaper ? Key.J : Key.G;
+        // Hotkeys of the training buttons: the first letter of the unit's English name, as on StarCraft cards (J for the
+        // leaper, H for the howitzer, V for the VTOL interceptor).
+        private static Key TrainKey(UnitKind kind) => kind == UnitKind.Worker ? Key.E : kind == UnitKind.Melee ? Key.A : kind == UnitKind.Ranged ? Key.R : kind == UnitKind.Leaper ? Key.J
+            : kind == UnitKind.Tank ? Key.T : kind == UnitKind.Artillery ? Key.H : kind == UnitKind.Fighter ? Key.V : Key.G;
 
         // The rift under an extractor.
         private static ResourceDeposit Rift(PrototypeMatch match, PrototypeBuilding b) => match.Map.Resources.Find(r => r.Plasma && r.X >= b.X && r.X < b.X + b.Width && r.Z >= b.Z && r.Z < b.Z + b.Width);
@@ -619,6 +622,9 @@ namespace Order.Presentation
             var deposit = unit.HarvestTarget;
             var site = unit.Constructing;
             if (unit.Disassembling) return $"РАЗБОРКА · {unit.Disassembly * 100:0}%";
+            if (unit.Stats.Siege && unit.SiegeMode != SiegeState.Packed)
+                return unit.SiegeMode == SiegeState.Deploying ? $"РАЗВЁРТЫВАНИЕ · {unit.DeployShare * 100:0}%" : unit.SiegeMode == SiegeState.Packing ? $"СВОРАЧИВАЕТСЯ · {(1 - unit.DeployShare) * 100:0}%"
+                    : unit.Target != null || unit.TargetBuilding != null ? "РАЗВЁРНУТА · ОБСТРЕЛ" : "РАЗВЁРНУТА";
             if (unit.Repairing != null || unit.RepairingUnit != null)
             {
                 var name = (unit.Repairing?.Stats.Name ?? unit.RepairingUnit.Stats.Name).ToUpperInvariant();
@@ -725,7 +731,8 @@ namespace Order.Presentation
         // Machines have their own melee and leaper glyphs; the other roles share the humans' for now.
         private static HudIconKind UnitIcon(UnitKind kind, FactionId faction) =>
             kind == UnitKind.Leaper ? HudIconKind.Leaper : kind == UnitKind.Melee ? (faction == FactionId.Resonance ? HudIconKind.Spider : HudIconKind.Assault)
-            : kind == UnitKind.Ranged ? HudIconKind.Rifleman : kind == UnitKind.Air ? HudIconKind.Gunship : HudIconKind.Worker;
+            : kind == UnitKind.Ranged ? (faction == FactionId.Resonance ? HudIconKind.Emitter : HudIconKind.Rifleman) : kind == UnitKind.Air ? HudIconKind.Gunship
+            : kind == UnitKind.Tank ? HudIconKind.Tank : kind == UnitKind.Artillery ? HudIconKind.Howitzer : kind == UnitKind.Fighter ? HudIconKind.Fighter : HudIconKind.Worker;
 
         // Upgrade slot with level pips; -1 means the entity has no such stat.
         private void UpgradeSlot(HudIconKind icon, string caption, int level)
@@ -805,6 +812,14 @@ namespace Order.Presentation
                     actions[3] = new HudAction { Title = "Держать позицию", Hotkey = "H", Key = Key.H, Icon = HudIconKind.Hold,
                         Description = "Стоять на месте и стрелять только по целям в радиусе атаки. Свои юниты их не сдвигают.", Run = host.HoldSelection };
                 }
+                // The howitzer deploys and packs up by itself; E does it by hand.
+                if (unit.Stats.Siege)
+                {
+                    bool packed = unit.SiegeMode == SiegeState.Packed || unit.SiegeMode == SiegeState.Packing;
+                    actions[4] = new HudAction { Title = packed ? "Развернуть" : "Свернуть", Hotkey = "E", Key = Key.E, Icon = HudIconKind.Deploy, Active = !packed,
+                        Description = $"Гаубица стреляет только развёрнутой: {unit.Stats.DeploySeconds:0.#} с на развёртывание и столько же на сворачивание, развёрнутая не двигается. Цель в зоне огня она находит и разворачивается сама, приказ двигаться её сворачивает. E — {(packed ? "развернуться на месте и стоять" : "свернуться и не разворачиваться до следующего приказа")}.",
+                        Run = host.ToggleDeploySelection };
+                }
                 // Machines take their units apart inside the network.
                 if (match.Roster(unit.Owner).Mends)
                 {
@@ -845,12 +860,14 @@ namespace Order.Presentation
                 title = (building.Owner == PrototypeMatch.Player ? "КОМАНДЫ · " : "ПРОТИВНИК · ") + stats.Name.ToUpperInvariant();
                 if (building.Owner == PrototypeMatch.Player)
                 {
-                    for (var i = 0; i < stats.Trains.Length && i < 4; i++)
+                    // Up to eight units: the top row round the rally point, then the row below.
+                    for (var i = 0; i < stats.Trains.Length && i < 8; i++)
                     {
                         var kind = stats.Trains[i];
                         var unitStats = match.Roster(building.Owner).Unit(kind);
+                        if (unitStats == null) continue;
                         var key = TrainKey(kind);
-                        actions[i] = new HudAction { Title = unitStats.Name, Hotkey = key.ToString(), Key = key, Icon = UnitIcon(kind, match.FactionOf(building.Owner)),
+                        actions[i < 4 ? i : i + 1] = new HudAction { Title = unitStats.Name, Hotkey = key.ToString(), Key = key, Icon = UnitIcon(kind, match.FactionOf(building.Owner)),
                             Metal = unitStats.Metal, Plasma = unitStats.Plasma, Seconds = unitStats.TrainSeconds,
                             Description = $"Снабжение {unitStats.Supply}. Очередь до {PrototypeMatch.QueueSize}; клик по юниту в очереди — отмена с возвратом стоимости.",
                             Locked = building.Ready < 1 ? "Здание ещё строится." : !building.Powered ? "Нет сигнала сети: здание вне покрытия." : null, Run = () => host.Train(kind) };
@@ -1110,12 +1127,13 @@ namespace Order.Presentation
                 host.SelectArmy(); ok = host.Selection.Count > 0;
                 reply = ok ? $"Армия выбрана: {host.Selection.Count}." : "Армии нет."; return true;
             }
-            var kindMatch = Regex.Match(t, @"^(?:выбери|выдели) (?:всех )?(штурмовик\w*|стрел\w*|винтокрыл\w*|паук\w*|паучк\w*|прыгун\w*|излучател\w*|планер\w*)$", RegexOptions.CultureInvariant);
+            var kindMatch = Regex.Match(t, @"^(?:выбери|выдели) (?:всех )?(штурмовик\w*|стрел\w*|винтокрыл\w*|паук\w*|паучк\w*|прыгун\w*|излучател\w*|планер\w*|танк\w*|гаубиц\w*|перехватчик\w*)$", RegexOptions.CultureInvariant);
             if (kindMatch.Success)
             {
                 var word = kindMatch.Groups[1].Value;
                 var kind = word.StartsWith("штурм") || word.StartsWith("паук") || word.StartsWith("паучк") ? UnitKind.Melee : word.StartsWith("прыгун") ? UnitKind.Leaper
-                    : word.StartsWith("стрел") || word.StartsWith("излучател") ? UnitKind.Ranged : UnitKind.Air;
+                    : word.StartsWith("стрел") || word.StartsWith("излучател") ? UnitKind.Ranged : word.StartsWith("танк") ? UnitKind.Tank : word.StartsWith("гаубиц") ? UnitKind.Artillery
+                    : word.StartsWith("перехватчик") ? UnitKind.Fighter : UnitKind.Air;
                 host.SelectKind(kind); ok = host.Selection.Count > 0 && host.Selection.Units[0].Kind == kind;
                 reply = ok ? $"{Who()}: выбрано {host.Selection.Count}." : "Таких юнитов нет."; return true;
             }
@@ -1215,6 +1233,17 @@ namespace Order.Presentation
                 reply = match.Message;
                 return true;
             }
+            if (Is(@"^(?:разверни\w*|развернуть|развёртывание|сверни\w*|свернуть)\b"))
+            {
+                // The selected howitzers, or all of them when none is selected.
+                if (!host.Selection.Own || !host.Selection.Orderable.Any(u => u.Stats.Siege)) host.SelectKind(UnitKind.Artillery);
+                var guns = host.Selection.Orderable.Where(u => u.Stats.Siege).ToList();
+                if (guns.Count == 0) { ok = false; reply = "Нет гаубиц."; return true; }
+                bool deploy = Is(@"^разв");
+                foreach (var g in guns) if ((g.SiegeMode == SiegeState.Packed || g.SiegeMode == SiegeState.Packing) == deploy) match.ToggleDeploy(g);
+                reply = $"{(guns.Count > 1 ? $"Гаубицы ×{guns.Count}" : guns[0].Stats.Name)}: {(deploy ? "развёртывание" : "сворачиваются")}.";
+                return true;
+            }
             if (Is(@"^(?:разбери\w*|разобрать|утилизируй\w*|переработай\w*)\b"))
             {
                 ok = host.Selection.Own && host.Selection.Count > 0;
@@ -1238,13 +1267,15 @@ namespace Order.Presentation
                 reply = match.Message;
                 return true;
             }
-            var trainMatch = Regex.Match(t, @"^(?:обучи|найми|закажи|произведи)\s+(?:(\d)\s+)?(рабоч|ткач|штурмов|паучк|паук|прыгун|стрел|излучател|винтокрыл|планер)\w*(?:\s+(\d))?$", RegexOptions.CultureInvariant);
+            var trainMatch = Regex.Match(t, @"^(?:обучи|найми|закажи|произведи)\s+(?:(\d)\s+)?(рабоч|ткач|штурмов|паучк|паук|прыгун|стрел|излучател|винтокрыл|планер|танк|гаубиц|перехватчик)\w*(?:\s+(\d))?$", RegexOptions.CultureInvariant);
             if (trainMatch.Success)
             {
                 var word = trainMatch.Groups[2].Value;
-                var kind = word == "рабоч" || word == "ткач" ? UnitKind.Worker : word == "штурмов" || word == "паучк" || word == "паук" ? UnitKind.Melee : word == "прыгун" ? UnitKind.Leaper : word == "стрел" || word == "излучател" ? UnitKind.Ranged : UnitKind.Air;
+                var kind = word == "рабоч" || word == "ткач" ? UnitKind.Worker : word == "штурмов" || word == "паучк" || word == "паук" ? UnitKind.Melee : word == "прыгун" ? UnitKind.Leaper : word == "стрел" || word == "излучател" ? UnitKind.Ranged
+                    : word == "танк" ? UnitKind.Tank : word == "гаубиц" ? UnitKind.Artillery : word == "перехватчик" ? UnitKind.Fighter : UnitKind.Air;
                 var digits = trainMatch.Groups[1].Success ? trainMatch.Groups[1].Value : trainMatch.Groups[3].Value;
                 var count = Mathf.Clamp(digits.Length > 0 ? digits[0] - '0' : 1, 1, PrototypeMatch.QueueSize);
+                if (!match.Roster(PrototypeMatch.Player).Has(kind)) { ok = false; reply = "Ваша фракция таких не обучает."; return true; }
                 // The selected building if it trains this unit, otherwise the least busy one that does.
                 var selected = host.SelectedBuilding;
                 var building = selected != null && selected.Owner == PrototypeMatch.Player && selected.Ready >= 1 && match.Trains(selected, kind) ? selected

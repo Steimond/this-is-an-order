@@ -13,24 +13,31 @@ MonoBehaviour:
   m_Name: Emitter
   m_EditorClassIdentifier: Order.Balance::Order.Balance.UnitBalanceAsset
   DisplayName: "\u0418\u0437\u043B\u0443\u0447\u0430\u0442\u0435\u043B\u044C"
-  MoveSpeed: 4.4
+  MoveSpeed: 4.2
   CollisionRadius: 0.3
-  Health: 60
+  Health: 80
   Vision: 9
   HarvestAmount: 0
   HarvestInterval: 2
   WrapSeconds: 0
   Cocoon: 0
   CocoonRegen: 0
-  Supply: 1
+  Supply: 2
   Flying: 0
   Mechanical: 1
-  Damage: 7
-  AttackRange: 5.5
-  AttackCooldown: 0.85
+  Damage: 3
+  AttackRange: 5
+  AttackCooldown: 0.35
   HitsGround: 1
   HitsAir: 1
   Leap: 0
-  Metal: 50
-  Plasma: 0
-  TrainSeconds: 18
+  Armor: 0
+  Siege: 0
+  MinRange: 0
+  Splash: 0
+  DeploySeconds: 0
+  Ramp: 3
+  RampSeconds: 4
+  Metal: 100
+  Plasma: 25
+  TrainSeconds: 22

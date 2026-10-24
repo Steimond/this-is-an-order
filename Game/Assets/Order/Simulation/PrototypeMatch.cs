@@ -175,6 +175,18 @@ namespace Order.Simulation
         internal float leapFromX,leapFromZ,leapToX,leapToZ,leapLength,leapDone,leapPass;
         internal PrototypeUnit leapTarget;
         public bool Leaping=>leaping;
+        // A howitzer: packed, deploying, deployed or packing up, how far along the change is, how long a deployed one on
+        // an attack-move has had nothing to shoot, and whether it was packed by hand (it then stays packed until the next
+        // order). See PrototypeMatch.Siege.cs.
+        // An emitter's beam: what it holds, since when, and when it last struck (PrototypeMatch.Upgrades.cs, Strike).
+        internal object focus;
+        internal float focusStart,lastFocusHit=float.MinValue;
+        public SiegeState SiegeMode{get;internal set;}
+        internal float siegeTimer,siegeIdle;
+        internal bool packedByHand;
+        // 0 packed, 1 deployed, in between while it deploys or packs up.
+        public float DeployShare=>SiegeMode==SiegeState.Deployed?1:SiegeMode==SiegeState.Packed?0
+            :Stats.DeploySeconds<=0?1:SiegeMode==SiegeState.Deploying?siegeTimer/Stats.DeploySeconds:1-siegeTimer/Stats.DeploySeconds;
         public float LeapShare=>leaping?leapDone/leapLength:0;
         // Mining trips: the load a worker carries to a command node, whether it is plasma, and whether it is mining right now.
         public int Carrying { get; internal set; }
