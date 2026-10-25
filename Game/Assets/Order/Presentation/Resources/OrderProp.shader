@@ -24,6 +24,7 @@ Shader "Order/Prop"
         _RevealColor("Reveal edge glow", Color) = (0,0,0,0)
         _RevealNoise("Reveal edge roughness", Float) = 0
         _Wet("Wet film above the edge", Float) = 0
+        _Pool("Liquid pooled on flat tops (middle x, z, radius, depth)", Vector) = (0,0,1,0)
     }
     SubShader
     {
@@ -34,6 +35,7 @@ Shader "Order/Prop"
             half4 _BaseColor;
             half4 _TeamColor;
             half4 _RevealColor;
+            float4 _Pool;
             float _Emission, _Gloss, _Rim, _Panels, _Sway, _Fog, _Opacity, _Cull, _ZWrite, _TeamOverride, _RevealBelow, _RevealNoise, _Wet;
         CBUFFER_END
         struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; half4 color:COLOR; float4 data:TEXCOORD0; };
@@ -44,13 +46,14 @@ Shader "Order/Prop"
             p.xz += float2(sin(phase), cos(phase * .8)) * .05 * input.data.x * _Sway;
             return p;
         }
-        float RevealFront(float3 positionWS) { return NaniteFront(positionWS, _RevealBelow, _RevealNoise); }
-        void Reveal(float3 positionWS) { clip(positionWS.y - RevealFront(positionWS)); }
-        // A thin glowing seam along the edge; on a flat top the edge sweeps across the whole face at once, so it glows
-        // there only faintly.
-        half3 RevealEdge(float3 positionWS, float3 normalWS)
+        // How far above the edge a point is; a flat top in the middle drains last, as the liquid's puddle there (_Pool).
+        // normalWS is the mesh's own normal, the one the liquid takes too.
+        float RevealAbove(float3 positionWS, float3 normalWS) { return NaniteLevel(positionWS, normalize(normalWS), _Pool) - NaniteFront(positionWS, _RevealBelow, _RevealNoise); }
+        void Reveal(float3 positionWS, float3 normalWS) { clip(RevealAbove(positionWS, normalWS)); }
+        // A thin glowing seam along the edge; on a flat top the edge sweeps across the face far faster than down a wall,
+        // so it glows there only faintly.
+        half3 RevealEdge(float above, float3 normalWS)
         {
-            float above = positionWS.y - RevealFront(positionWS);
             return _RevealColor.rgb * (1 - saturate(above / .07)) * (1 - .85 * abs(normalWS.y));
         }
         ENDHLSL
@@ -84,7 +87,8 @@ Shader "Order/Prop"
             }
             half4 frag(Varyings input, bool front : SV_IsFrontFace) : SV_Target
             {
-                Reveal(input.positionWS);
+                float above = RevealAbove(input.positionWS, input.normalWS);
+                clip(above);
                 float3 n = normalize(input.normalWS) * (front ? 1 : -1);
                 // Team colour is the player's (global) unless the material carries another side's colour.
                 half3 team = lerp(_OrderTeamColor.rgb, _TeamColor.rgb, _TeamOverride);
@@ -103,7 +107,6 @@ Shader "Order/Prop"
                 half wet = 0;
                 if (_Wet > 0)
                 {
-                    float above = p.y - RevealFront(p);
                     wet = saturate(1 - above / (_Wet * (.6 + .8 * OrderNoise(NanitePlane(p, n) * float2(9, 1.2)))));
                     albedo *= lerp(1, .22, wet);
                 }
@@ -114,9 +117,11 @@ Shader "Order/Prop"
                 {
                     Light sun = GetMainLight();
                     half nh = saturate(dot(n, normalize(sun.direction + v)));
-                    color += (NaniteSky(reflect(-v, n)) * (.025 + .7 * pow(1 - saturate(dot(n, v)), 5)) + sun.color * pow(nh, 200) * 2.5) * wet;
+                    // The sun on a wet flat face lights it all at once: a soft ceiling keeps it from blooming into a flash.
+                    half3 glint = sun.color * pow(nh, 200) * 2.5;
+                    color += (NaniteSky(reflect(-v, n)) * (.025 + .7 * pow(1 - saturate(dot(n, v)), 5)) + glint / (1 + glint * .4)) * wet;
                 }
-                color += RevealEdge(input.positionWS, n);
+                color += RevealEdge(above, n);
                 if (_Fog > .5) color = OrderApplyWorld(color, input.positionWS);
                 return half4(color, _Opacity);
             }
@@ -131,14 +136,14 @@ Shader "Order/Prop"
             #pragma vertex shadowVert
             #pragma fragment shadowFrag
             float3 _LightDirection;
-            struct ShadowVaryings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; };
+            struct ShadowVaryings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; float3 normalWS:TEXCOORD1; };
             ShadowVaryings shadowVert(Attributes input)
             {
-                ShadowVaryings o; o.positionWS = PropWorld(input);
-                o.positionCS = OrderShadowPosition(o.positionWS, TransformObjectToWorldNormal(input.normalOS), _LightDirection);
+                ShadowVaryings o; o.positionWS = PropWorld(input); o.normalWS = TransformObjectToWorldNormal(input.normalOS);
+                o.positionCS = OrderShadowPosition(o.positionWS, o.normalWS, _LightDirection);
                 return o;
             }
-            half4 shadowFrag(ShadowVaryings input) : SV_Target { Reveal(input.positionWS); return 0; }
+            half4 shadowFrag(ShadowVaryings input) : SV_Target { Reveal(input.positionWS, input.normalWS); return 0; }
             ENDHLSL
         }
         Pass
@@ -149,13 +154,14 @@ Shader "Order/Prop"
             HLSLPROGRAM
             #pragma vertex depthVert
             #pragma fragment depthFrag
-            struct DepthVaryings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; };
+            struct DepthVaryings { float4 positionCS:SV_POSITION; float3 positionWS:TEXCOORD0; float3 normalWS:TEXCOORD1; };
             DepthVaryings depthVert(Attributes input)
             {
                 DepthVaryings o; o.positionWS = PropWorld(input); o.positionCS = TransformWorldToHClip(o.positionWS);
+                o.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 return o;
             }
-            half depthFrag(DepthVaryings input) : SV_Target { Reveal(input.positionWS); return 0; }
+            half depthFrag(DepthVaryings input) : SV_Target { Reveal(input.positionWS, input.normalWS); return 0; }
             ENDHLSL
         }
         Pass
@@ -178,7 +184,7 @@ Shader "Order/Prop"
             }
             half4 normalsFrag(NormalsVaryings input, bool front : SV_IsFrontFace) : SV_Target
             {
-                Reveal(input.positionWS);
+                Reveal(input.positionWS, input.normalWS);
                 float3 normalWS = normalize(input.normalWS) * (front ? 1 : -1);
             #if defined(_GBUFFER_NORMALS_OCT)
                 return half4(PackFloat2To888(saturate(PackNormalOctQuadEncode(normalWS) * .5 + .5)), 0);

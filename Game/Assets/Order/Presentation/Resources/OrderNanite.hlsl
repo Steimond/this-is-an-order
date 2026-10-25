@@ -15,12 +15,30 @@ float NaniteFront(float3 p, float baseHeight, float roughness)
     return baseHeight - (streak - .35) * roughness;
 }
 
+// The height a point of the building's shape is compared with the edge at. A flat face turned up is crossed by a level
+// edge all at once, so its whole area would turn in a blink; instead its middle counts lower while the liquid drains
+// (it lingers there as a puddle shrinking inwards) and higher while it fills (it floods in from the rim). pool is the
+// building's middle (x, z), the radius the pooling fades out at, and its depth (+ drain, - fill, 0 none). The liquid
+// and the building take it at the same points with the same mesh normals, so they part on exactly one line.
+float NaniteLevel(float3 p, float3 n, float4 pool)
+{
+    return p.y - pool.w * saturate(1 - length(p.xz - pool.xy) / pool.z) * smoothstep(.6, .95, n.y);
+}
+
 // Surface coordinates on the face's dominant plane, the vertical one running along the wall, so patterns slide down
 // walls and lie flat on roofs.
 float2 NanitePlane(float3 p, float3 normalWS)
 {
     float3 w = abs(normalWS);
     return w.y > w.x && w.y > w.z ? p.xz : w.x > w.z ? p.zy : p.xy;
+}
+// The world directions of NanitePlane's two coordinates.
+void NanitePlaneAxes(float3 normalWS, out float3 u, out float3 v)
+{
+    float3 w = abs(normalWS);
+    if (w.y > w.x && w.y > w.z) { u = float3(1, 0, 0); v = float3(0, 0, 1); }
+    else if (w.x > w.z) { u = float3(0, 0, 1); v = float3(0, 1, 0); }
+    else { u = float3(1, 0, 0); v = float3(0, 1, 0); }
 }
 
 float NaniteHash3(float3 p)
@@ -38,12 +56,12 @@ float NaniteNoise3(float3 p)
 }
 // How the liquid's own shape moves: slow swells drifting with the flow and a quicker shiver, as an offset per unit of
 // amplitude. It is taken from the world position, so the split vertices of neighbouring faces move together and the
-// surface never cracks.
-float3 NaniteWobble(float3 p, float flow, float t)
+// surface never cracks. shift is how far the flow has carried the liquid so far (see _Shift).
+float3 NaniteWobble(float3 p, float shift, float t)
 {
-    float3 q = p * 1.45 + float3(0, -flow * t * .45, 0);
+    float3 q = p * 1.45 + float3(0, -shift * .45, 0);
     float3 slow = float3(NaniteNoise3(q + float3(11.3, t * .31, 0)), NaniteNoise3(q + float3(27.1, 0, t * .27)), NaniteNoise3(q + float3(3.7, -t * .33, 5.1))) - .5;
-    float3 r = p * 4.1 + t * float3(.6, -.9 * flow, .5);
+    float3 r = p * 4.1 + float3(t * .6, -.9 * shift, t * .5);
     float3 quick = float3(NaniteNoise3(r), NaniteNoise3(r + 17.7), NaniteNoise3(r + 41.3)) - .5;
     return slow * 2 + quick * .5;
 }

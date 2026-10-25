@@ -604,7 +604,8 @@ namespace Order.Presentation
             cameraData.antialiasing = AntialiasingMode.SubpixelMorphologicalAntiAliasing; cameraData.antialiasingQuality = AntialiasingQuality.High;
             var profile = Own(ScriptableObject.CreateInstance<VolumeProfile>());
             profile.Add<Tonemapping>().mode.Override(TonemappingMode.ACES);
-            var bloom = profile.Add<Bloom>(); bloom.threshold.Override(1); bloom.intensity.Override(.6f); bloom.scatter.Override(.68f);
+            // High-quality filtering: a few bright pixels glow round, not as the blocky squares of the coarse mips.
+            var bloom = profile.Add<Bloom>(); bloom.threshold.Override(1); bloom.intensity.Override(.6f); bloom.scatter.Override(.68f); bloom.highQualityFiltering.Override(true);
             var grading = profile.Add<ColorAdjustments>(); grading.postExposure.Override(.35f); grading.contrast.Override(8); grading.saturation.Override(-4);
             var tones = profile.Add<ShadowsMidtonesHighlights>(); tones.shadows.Override(new Vector4(.94f, 1, 1.08f, 0)); tones.highlights.Override(new Vector4(1.05f, 1, .94f, 0));
             var vignette = profile.Add<Vignette>(); vignette.intensity.Override(.26f); vignette.smoothness.Override(.5f);

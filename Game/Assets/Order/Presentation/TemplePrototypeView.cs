@@ -43,7 +43,7 @@ namespace Order.Presentation
         LineRenderer rallyLine;
         int ghostKind=-1;
         // A rising machine building adds its nanite liquid form, under Liquid.
-        sealed class BuildingView{public GameObject Model,Ring,Liquid,Puddle;public bool Revealing;public float DriedAt;}
+        sealed class BuildingView{public GameObject Model,Ring,Liquid,Puddle;public bool Revealing,Spanned;public float DriedAt,Flow,Shift,Front,PuddleRadius;public Vector4 Pool;public Vector3 Span;}
         readonly Dictionary<PrototypeBuilding,BuildingView> buildingViews=new Dictionary<PrototypeBuilding,BuildingView>();
         readonly List<GameObject> selectionRings = new List<GameObject>(), hoverRings = new List<GameObject>();
         readonly List<GameObject> depositViews = new List<GameObject>();
@@ -205,7 +205,13 @@ namespace Order.Presentation
             {
                 Vector2 p=mouse.position.ReadValue();
                 overUI=hud!=null&&hud.IsOverHud(p);
-                if(!overUI)targetZoom=Mathf.Clamp(targetZoom-mouse.scroll.ReadValue().y*.012f,MinZoom,MaxZoom);
+                if(!overUI)
+                {
+                    // Wheel notches: Input System reports ±1 per notch by default, ±120 with platform-specific range.
+                    float notches=mouse.scroll.ReadValue().y;
+                    if(InputSystem.settings.scrollDeltaBehavior==InputSettings.ScrollDeltaBehavior.KeepPlatformSpecificInputRange)notches/=120;
+                    targetZoom=Mathf.Clamp(targetZoom*Mathf.Pow(.85f,Mathf.Clamp(notches,-3,3)),MinZoom,MaxZoom);
+                }
                 bool onGround=GroundPoint(p,out var point);hasHover=!overUI&&onGround;
                 if(hasHover)
                 {
@@ -762,8 +768,9 @@ namespace Order.Presentation
                 {
                     // A machine taken apart leaves no wreck: a last cold flash where its nanites flow away.
                     if(unit.Disassembling){combat.Flash(Center(unit,view),new Color(.62f,.86f,1)*2.6f,Mathf.Max(.5f,unit.Stats.Radius*2),.5f,2.2f);continue;}
-                    // A worker spent on a building melts into it.
-                    if(unit.AbsorbedInto!=null){StartMelt(unit,view);continue;}
+                    // A worker spent on a building melts into it. The building's view comes at once, not with the next refresh,
+                    // so the puddle grows under the worker from its first frame.
+                    if(unit.AbsorbedInto!=null){StartMelt(unit,view);SyncBuildings();continue;}
                     combat.Explosion(Center(unit,view),Match.HeightAt(unit.X,unit.Z),unit.Stats.Flying?1.3f:Mathf.Max(1,unit.Stats.Radius*2.6f));
                 }
             deaths.Clear();
@@ -978,22 +985,88 @@ namespace Order.Presentation
         // The liquid's own shape swells and shivers all the while (the vertex wobble of Order/NaniteLiquid, on a finely
         // split copy of the model). Driven by the progress, so a cancelled site plays its own way back (OnCancelled) and a
         // destroyed one simply disappears with its view.
-        const float LiquidRough=.3f,DryingSeconds=1.6f,MeltSeconds=.9f,LiquidWobble=.06f;
+        // A flat top keeps its liquid longer towards the middle of the building, as deep as this share of the width
+        // (NaniteLevel in OrderNanite.hlsl): it drains off such a face as a shrinking puddle and floods it from the rim,
+        // instead of the whole face turning at once.
+        const float LiquidRough=.3f,DryingSeconds=1.6f,MeltSeconds=.9f,LiquidWobble=.06f,PoolDepth=.25f;
         readonly Dictionary<Mesh,Mesh> liquidMeshes=new Dictionary<Mesh,Mesh>();
         Mesh puddleMesh;
         // Buildings split to 0.3, the small bodies of units finer, so both bend smoothly.
         Mesh LiquidMesh(Mesh mesh,float maxEdge=.3f){if(!liquidMeshes.TryGetValue(mesh,out var liquid))liquidMeshes[mesh]=liquid=scenery.Own(NaniteMeshes.Subdivided(mesh,maxEdge));return liquid;}
         Mesh PuddleMesh()=>puddleMesh??=scenery.Own(NaniteMeshes.Puddle());
-        void LiquidBlock(Renderer renderer,float front,float flow,float ground,float spikes=1)
+        // shift is how far the liquid's flow has gone (+ up, - down): a flow that turns round is integrated by the caller, so
+        // the pattern and the shape slow down and turn instead of jumping.
+        void LiquidBlock(Renderer renderer,float front,float shift,float ground,float spikes=1,float wobble=LiquidWobble,Vector4 pool=default,float rough=LiquidRough)
         {
-            revealBlock.SetFloat("_Front",front);revealBlock.SetFloat("_FrontNoise",LiquidRough);revealBlock.SetFloat("_Flow",flow);
-            revealBlock.SetFloat("_Base",ground);revealBlock.SetFloat("_Wobble",LiquidWobble);revealBlock.SetFloat("_Spikes",spikes);
+            revealBlock.SetFloat("_Front",front);revealBlock.SetFloat("_FrontNoise",rough);revealBlock.SetFloat("_Shift",shift);
+            revealBlock.SetFloat("_Base",ground);revealBlock.SetFloat("_Wobble",wobble);revealBlock.SetFloat("_Spikes",spikes);
+            if(pool.z>0)revealBlock.SetVector("_Pool",pool);
             renderer.SetPropertyBlock(revealBlock);revealBlock.Clear();
+        }
+        // How far the building's shape reaches for the liquid above the ground, with the pooling on flat tops
+        // (NaniteLevel): the lowest level the drain has to uncover (x), the highest it starts from (y), and the highest
+        // the fill has to cover (z), where the pooling raises flat tops instead. Flat tops are sampled over their area,
+        // leaving out what the shape itself covers from above (the floor under a tower) and what is below the ground.
+        // Once per model: every building of a kind shares it.
+        readonly Dictionary<Mesh,Vector3> liquidSpans=new Dictionary<Mesh,Vector3>();
+        Vector3 LiquidSpan(Transform model,Mesh mesh,float radius,float pool)
+        {
+            if(liquidSpans.TryGetValue(mesh,out var known))return known;
+            var vertices=mesh.vertices;var normals=mesh.normals;var triangles=mesh.triangles;var origin=model.position;
+            int count=triangles.Length/3;var corners=new Vector3[count*3];var up=new float[count];var boxes=new Vector4[count];
+            for(int i=0;i<count;i++)
+            {
+                for(int k=0;k<3;k++)
+                {
+                    int j=triangles[i*3+k];corners[i*3+k]=model.TransformPoint(vertices[j])-origin;
+                    float s=Mathf.Clamp01((model.TransformDirection(normals[j]).y-.6f)/.35f);up[i]=Mathf.Max(up[i],s*s*(3-2*s));
+                }
+                Vector3 a=corners[i*3],b=corners[i*3+1],c=corners[i*3+2];
+                boxes[i]=new Vector4(Mathf.Min(a.x,Mathf.Min(b.x,c.x)),Mathf.Max(a.x,Mathf.Max(b.x,c.x)),Mathf.Min(a.z,Mathf.Min(b.z,c.z)),Mathf.Max(a.z,Mathf.Max(b.z,c.z)));
+            }
+            // Whether the shape has a face right above this point.
+            bool Covered(Vector3 p,int self)
+            {
+                for(int i=0;i<count;i++)
+                {
+                    if(i==self||p.x<boxes[i].x||p.x>boxes[i].y||p.z<boxes[i].z||p.z>boxes[i].w)continue;
+                    Vector3 a=corners[i*3],b=corners[i*3+1],c=corners[i*3+2];
+                    float d=(b.x-a.x)*(c.z-a.z)-(c.x-a.x)*(b.z-a.z);if(Mathf.Abs(d)<1e-6f)continue;
+                    float u=((p.x-a.x)*(c.z-a.z)-(c.x-a.x)*(p.z-a.z))/d,v=((b.x-a.x)*(p.z-a.z)-(p.x-a.x)*(b.z-a.z))/d;
+                    if(u<0||v<0||u+v>1)continue;
+                    if(a.y+(b.y-a.y)*u+(c.y-a.y)*v>p.y+.02f)return true;
+                }
+                return false;
+            }
+            float low=float.MaxValue,high=float.MinValue,flooded=float.MinValue;const int Grid=24;
+            for(int i=0;i<count;i++)
+            {
+                Vector3 a=corners[i*3],b=corners[i*3+1],c=corners[i*3+2];
+                float lo=Mathf.Min(a.y,Mathf.Min(b.y,c.y)),hi=Mathf.Max(a.y,Mathf.Max(b.y,c.y));
+                if(hi<0)continue;
+                low=Mathf.Min(low,Mathf.Max(0,lo));high=Mathf.Max(high,hi);flooded=Mathf.Max(flooded,hi);
+                if(up[i]<=0)continue;
+                for(int p=0;p<=Grid;p++)for(int q=0;q<=Grid-p;q++)
+                {
+                    var s=a+(b-a)*(p/(float)Grid)+(c-a)*(q/(float)Grid);
+                    if(s.y<0||Covered(s,i))continue;
+                    float near=pool*up[i]*(1-Mathf.Clamp01(new Vector2(s.x,s.z).magnitude/radius));
+                    low=Mathf.Min(low,s.y-near);flooded=Mathf.Max(flooded,s.y+near);
+                }
+            }
+            return liquidSpans[mesh]=new Vector3(low,high,flooded);
         }
         void Liquid(PrototypeBuilding b,BuildingView view,bool shown,float h,float ground)
         {
-            float w=b.Width,cx=b.X+w*.5f,cz=b.Z+w*.5f,top=ground+h*1.08f+.15f,bottom=ground-LiquidRough-.1f,time=Time.time;
+            float w=b.Width,cx=b.X+w*.5f,cz=b.Z+w*.5f,pool=w*PoolDepth,time=Time.time;
+            var drainPool=new Vector4(cx,cz,w*.5f,pool);
             view.Model.transform.position=new Vector3(cx,ground,cz);
+            if(!view.Spanned){view.Span=LiquidSpan(view.Model.transform,view.Model.GetComponent<MeshFilter>().sharedMesh,w*.5f,pool);view.Spanned=true;}
+            // The fill rises to just over the highest level it has to cover (full); the drain sets off from just over the
+            // highest point it can uncover (top) and ends just under the lowest (bottom). The tongues smooth out as the
+            // filling ends and as the draining ends, and grow back as the draining sets off, so the shape is whole just as
+            // the filling ends, starts to show at once and is bare just as the building is ready.
+            float top=ground+view.Span.y+.03f,bottom=ground+view.Span.x-.03f,full=ground+view.Span.z+.03f;
             view.Ring.SetActive(false);
             var renderer=view.Model.GetComponent<MeshRenderer>();
             float build=b.Stats.BuildSeconds,fill=Mathf.Clamp(3/build,.2f,.45f),drain=(1-fill)*build;
@@ -1007,7 +1080,7 @@ namespace Order.Presentation
                 if(view.Puddle!=null){Destroy(view.Puddle);view.Puddle=null;}
                 float left=view.DriedAt-time;
                 if(left<=0){revealBlock.Clear();renderer.SetPropertyBlock(revealBlock);view.Revealing=false;return;}
-                revealBlock.SetFloat("_RevealBelow",bottom);revealBlock.SetFloat("_RevealNoise",LiquidRough);revealBlock.SetFloat("_Wet",film*left/DryingSeconds);
+                revealBlock.SetFloat("_RevealBelow",bottom);revealBlock.SetFloat("_RevealNoise",0);revealBlock.SetVector("_Pool",drainPool);revealBlock.SetFloat("_Wet",film*left/DryingSeconds);
                 renderer.SetPropertyBlock(revealBlock);revealBlock.Clear();return;
             }
             view.Revealing=true;
@@ -1026,24 +1099,33 @@ namespace Order.Presentation
                 LiquidBlock(view.Puddle.GetComponent<MeshRenderer>(),1000,0,ground-1,2);
             }
             else if(view.Puddle!=null){Destroy(view.Puddle);view.Puddle=null;}
-            float front,flow;
+            view.PuddleRadius=view.Puddle!=null?radius:0;
+            float front,flow,rough;
+            static float Ease(float from,float to,float x){float t=Mathf.Clamp01((x-from)/(to-from));return t*t*(3-2*t);}
             if(b.Ready<fill)
             {
-                // Filling: the front rises fast at first and settles at the top; the building itself is not there yet.
-                float s=Mathf.InverseLerp(melt,fill,b.Ready);
-                front=Mathf.Lerp(ground-.05f,top,1-(1-s)*(1-s));flow=1.1f;
+                // Filling: the front sets off gently, rises fast and settles at the top; the building itself is not there yet.
+                float progress=Mathf.InverseLerp(melt,fill,b.Ready),s=Mathf.SmoothStep(0,1,progress);
+                front=view.Front=Mathf.Lerp(ground-LiquidRough*.35f-.02f,full,1-(1-s)*(1-s));flow=1.1f;view.Pool=new Vector4(cx,cz,w*.5f,-pool);
+                rough=LiquidRough*(1-Ease(.8f,1,progress));
                 revealBlock.SetFloat("_RevealBelow",1000);
             }
             else
             {
-                // Draining: one edge for both, so the building shows exactly where the liquid has left.
-                float s=(b.Ready-fill)/(1-fill);
-                front=Mathf.Lerp(top,bottom,s*s*(3-2*s));flow=-1.2f;
-                revealBlock.SetFloat("_RevealBelow",front);revealBlock.SetFloat("_RevealNoise",LiquidRough);
+                // Draining: one edge for both, so the building shows exactly where the liquid has left. It picks up speed
+                // over the first tenth or so and keeps its pace to the end, so the last of the liquid leaves just as the
+                // building is ready.
+                float s=(b.Ready-fill)/(1-fill);const float Start=.06f;
+                float travelled=(s-Start*(1-Mathf.Exp(-s/Start)))/(1-Start*(1-Mathf.Exp(-1/Start)));
+                front=Mathf.Lerp(top,bottom,travelled);flow=-1.2f;view.Front=top;view.Pool=drainPool;
+                rough=LiquidRough*Ease(0,.15f,s)*(1-Ease(.85f,1,s));
+                revealBlock.SetFloat("_RevealBelow",front);revealBlock.SetFloat("_RevealNoise",rough);revealBlock.SetVector("_Pool",drainPool);
                 revealBlock.SetColor("_RevealColor",NaniteGlow*1.6f);revealBlock.SetFloat("_Wet",film);
             }
             renderer.SetPropertyBlock(revealBlock);revealBlock.Clear();
-            LiquidBlock(view.Liquid.GetComponent<MeshRenderer>(),front,flow,ground);
+            // When the liquid starts to drain its flow slows, stops and runs down, over about a second.
+            view.Flow=Mathf.MoveTowards(view.Flow,flow,Time.deltaTime*2.5f);view.Shift+=view.Flow*Time.deltaTime;
+            LiquidBlock(view.Liquid.GetComponent<MeshRenderer>(),front,view.Shift,ground,pool:view.Pool,rough:rough);
         }
         // A worker spent on a building loses its form where it stands, in the middle of the site: its body turns to the
         // same liquid, sags and spreads, and sinks into the puddle growing under it.
@@ -1065,19 +1147,23 @@ namespace Order.Presentation
                 float sag=Mathf.SmoothStep(0,1,Mathf.Min(1,s*1.6f)),sink=Mathf.SmoothStep(0,1,Mathf.Max(0,s*2.2f-1.2f));
                 m.View.transform.SetPositionAndRotation(m.At+Vector3.down*sink*.25f,m.Turn);
                 m.View.transform.localScale=Vector3.Scale(m.Scale,new Vector3(1+.55f*sag-.4f*sink,Mathf.Lerp(1,.12f,sag),1+.55f*sag-.4f*sink));
-                LiquidBlock(m.View.GetComponent<MeshRenderer>(),1000,-1.5f,m.Ground,1+2*sag);
+                // The shiver and the spikes come in as the body loses its form, so it does not twitch the moment it melts.
+                LiquidBlock(m.View.GetComponent<MeshRenderer>(),1000,-1.5f*(Time.time-m.Start),m.Ground,3*sag,LiquidWobble*Mathf.SmoothStep(0,1,Mathf.Min(1,s*4)));
             }
         }
         // Cancelling a machine site plays it all back, quickly: the liquid shape slumps down into a puddle and the puddle
         // gathers up into the worker, which can be ordered from the start; its model stays hidden until it has formed.
-        sealed class Gather{public GameObject Form,Puddle,Body;public PrototypeUnit Worker;public float Start,Top,Ground,Radius,Scale;public Vector3 Center;}
+        sealed class Gather{public GameObject Form,Puddle,Body;public PrototypeUnit Worker;public float Start,Top,Ground,Radius,Scale,Flow,Shift,PuddleFrom;public Vector3 Center;public Vector4 Pool;}
         readonly List<Gather> gathers=new List<Gather>();
         const float GatherSeconds=.6f;
         void OnCancelled(PrototypeBuilding b,PrototypeUnit worker)
         {
-            if(!b.SelfBuilt||!buildingViews.TryGetValue(b,out var view)||!view.Model.activeSelf)return;
+            // The site's own view goes at once, not with the next refresh: left standing, it would hide the start of the gathering.
+            if(!b.SelfBuilt||!buildingViews.TryGetValue(b,out var view)||!view.Model.activeSelf){SyncBuildings();return;}
             float ground=Match.Map.Height(b.X,b.Z);
-            var g=new Gather{Worker=worker,Start=Time.time,Ground=ground,Top=ground+b.Stats.Height*1.08f+.15f,Radius=b.Width*.42f,Center=new Vector3(b.X+b.Width*.5f,ground,b.Z+b.Width*.5f)};
+            // It starts from where the liquid is: as high as it has filled, flowing as it flowed, the puddle as wide as it was.
+            var g=new Gather{Worker=worker,Start=Time.time,Ground=ground,Top=view.Liquid!=null?view.Front:ground+b.Stats.Height*1.08f+.15f,Radius=b.Width*.42f,
+                Flow=view.Flow,Shift=view.Shift,PuddleFrom=view.PuddleRadius,Pool=view.Pool,Center=new Vector3(b.X+b.Width*.5f,ground,b.Z+b.Width*.5f)};
             g.Form=scenery.Model("Nanite form",LiquidMesh(view.Model.GetComponent<MeshFilter>().sharedMesh),liquidMaterial,worldRoot.transform);
             g.Form.transform.SetPositionAndRotation(view.Model.transform.position,view.Model.transform.rotation);
             g.Puddle=scenery.Model("Nanite puddle",PuddleMesh(),liquidMaterial,worldRoot.transform);
@@ -1092,7 +1178,7 @@ namespace Order.Presentation
                 g.Body=scenery.Model("Gathering "+worker.Stats.Name,LiquidMesh(model.Body,.08f),liquidMaterial,worldRoot.transform);
                 g.Scale=model.Scale;
             }
-            gathers.Add(g);AnimateGathers();
+            gathers.Add(g);SyncBuildings();AnimateGathers();
         }
         bool Gathering(PrototypeUnit unit){foreach(var g in gathers)if(g.Worker==unit)return true;return false;}
         void AnimateGathers()
@@ -1104,12 +1190,13 @@ namespace Order.Presentation
                 // The shape slumps down to the ground in the first half.
                 float slump=Mathf.SmoothStep(0,1,Mathf.Min(1,s*2));
                 g.Form.SetActive(slump<1);
-                LiquidBlock(g.Form.GetComponent<MeshRenderer>(),Mathf.Lerp(g.Top,g.Ground-.4f,slump),-2.5f,g.Ground,2);
+                g.Flow=Mathf.MoveTowards(g.Flow,-2.5f,Time.deltaTime*12);g.Shift+=g.Flow*Time.deltaTime;
+                LiquidBlock(g.Form.GetComponent<MeshRenderer>(),Mathf.Lerp(g.Top,g.Ground-.4f,slump),g.Shift,g.Ground,1+slump,pool:g.Pool);
                 // The puddle spreads as the shape slumps, then draws in under the worker.
                 float spread=Mathf.SmoothStep(0,1,Mathf.Clamp01(s*2.5f-.3f)),draw=Mathf.SmoothStep(0,1,Mathf.Clamp01(s*2-1));
                 var at=g.Worker!=null&&g.Worker.Alive?new Vector3(g.Worker.X,Match.HeightAt(g.Worker.X,g.Worker.Z),g.Worker.Z):g.Center;
                 g.Puddle.transform.position=Vector3.Lerp(g.Center,at,draw)+Vector3.down*.02f;
-                float radius=Mathf.Lerp(g.Radius*spread,.12f,draw);g.Puddle.transform.localScale=new Vector3(radius,1,radius);
+                float radius=Mathf.Lerp(Mathf.Max(g.PuddleFrom,g.Radius*spread),.12f,draw);g.Puddle.transform.localScale=new Vector3(radius,1,radius);
                 LiquidBlock(g.Puddle.GetComponent<MeshRenderer>(),1000,0,g.Ground-1,2);
                 // The worker rises out of it in the second half.
                 if(g.Body==null)continue;
@@ -1117,7 +1204,7 @@ namespace Order.Presentation
                 g.Body.SetActive(rise>0);
                 g.Body.transform.position=at;
                 g.Body.transform.localScale=new Vector3(g.Scale*(1.5f-.5f*rise),g.Scale*Mathf.Lerp(.1f,1,rise),g.Scale*(1.5f-.5f*rise));
-                LiquidBlock(g.Body.GetComponent<MeshRenderer>(),1000,1.5f,at.y,1+2*(1-rise));
+                LiquidBlock(g.Body.GetComponent<MeshRenderer>(),1000,1.5f*(Time.time-g.Start),at.y,1+2*(1-rise));
             }
         }
         // The machines' network, as pylon fields in StarCraft: while the player places a building, has a worker selected or
@@ -1552,7 +1639,7 @@ namespace Order.Presentation
             combat?.Dispose();combat=null;strikes.Clear();deaths.Clear();buildingStrikes.Clear();ruins.Clear();waypointLines.Clear();waypointDots.Clear();alerts.Clear();
             unitViews.Clear();unitModels.Clear();selectionRings.Clear();hoverRings.Clear();hovered.Clear();markers.Clear();
             selection=new UnitSelection();lastClickUnit=null;lastGroup=-1;pressing=dragging=false;
-            Array.Clear(buildingMeshes,0,buildingMeshes.Length);liquidMeshes.Clear();puddleMesh=null;
+            Array.Clear(buildingMeshes,0,buildingMeshes.Length);liquidMeshes.Clear();liquidSpans.Clear();puddleMesh=null;
             ghostModel=null;ghostKind=-1;Mode=MatchMode.None;
         }
         void OnDestroy()=>Shutdown();
