@@ -26,25 +26,25 @@ Material:
     m_Ints: []
     m_Floats:
     - _Base: -1000
-    - _Churn: 1
+    - _Churn: 2.06
     - _Fog: 1
     - _Front: 1000
     - _FrontNoise: 0.25
-    - _Glint: 1
+    - _Glint: 0.696
     - _Meniscus: 1
     - _Mirror: 1
-    - _Ripple: 1
+    - _Ripple: 1.92
     - _Shift: 0
-    - _SpikeDensity: 0.55
-    - _SpikeField: 1
-    - _SpikeHeight: 1
-    - _SpikeSpeed: 1
-    - _SpikeThreshold: 0.22
-    - _SpikeTips: 0.18
-    - _SpikeWidth: 1
+    - _SpikeDensity: 0.421
+    - _SpikeField: 2
+    - _SpikeHeight: 1.6
+    - _SpikeSpeed: 2.3
+    - _SpikeThreshold: 0.175
+    - _SpikeTips: 0.35
+    - _SpikeWidth: 0.56
     - _Spikes: 1
-    - _Swell: 1
-    - _Wobble: 0.06
+    - _Swell: 1.63
+    - _Wobble: 0.077
     - _WobbleFade: 1
     - _WobbleSpeed: 1
     m_Colors:
