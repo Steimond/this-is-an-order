@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Order.Balance::Order.Balance.BuildingBalanceAsset
   DisplayName: "\u042F\u0434\u0440\u043E"
   Footprint: 3
-  Metal: 400
+  Metal: 350
   Plasma: 0
   Supply: 10
   Health: 1500
@@ -24,3 +24,5 @@ MonoBehaviour:
   Trains: 00000000i
   Coverage: 10
   Relays: 3
+  Researches: 0
+  Extracts: 0

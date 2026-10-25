@@ -82,6 +82,8 @@ namespace Order.Tests.EditMode
         [Test] public void UncoveredBuildingsStopRisingTrainingAndGivingSupply()
         {
             var match=Machines();
+            // A unit standing at home, to see it outlast the dark network (the workers are spent on the buildings).
+            var guard=match.Spawn(UnitKind.Melee,13.5f,16.5f);
             var relay=Finished(match,17,4,Relay);
             var site=Sites.Place(match,18,1,0);
             Run(match,1);float ready=site.Ready;Assert.That(ready,Is.GreaterThan(0));
@@ -93,7 +95,7 @@ namespace Order.Tests.EditMode
             Assert.That(node.Powered,Is.False);Assert.That(match.SupplyLimit,Is.Zero,"A dark compute node gives no supply");
             float trained=assembler.Training;Run(match,2);Assert.That(assembler.Training,Is.EqualTo(trained),"Training stops");
             Assert.That(match.Train(assembler,UnitKind.Ranged),Is.False);Assert.That(match.Message,Does.Contain("сигнала"));
-            Assert.That(match.Units.FindAll(u=>u.Owner==PrototypeMatch.Player).Count,Is.GreaterThan(0),"Units are never lost to a dark network");
+            Assert.That(guard.Alive,Is.True,"Units are never lost to a dark network");Assert.That(match.Units,Has.Member(guard));
             Assert.That(match.Winner,Is.EqualTo(-1));
         }
     }

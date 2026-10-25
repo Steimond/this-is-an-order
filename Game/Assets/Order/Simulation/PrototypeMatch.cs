@@ -148,6 +148,8 @@ namespace Order.Simulation
         // Construction: the building this worker raises (it rises only while the worker stands by it), and the site the
         // worker walks to before that building is placed (kind -1: none).
         public PrototypeBuilding Constructing { get; internal set; }
+        // A machine worker spent on a building: it left the match by dissolving into that site, not by dying.
+        public PrototypeBuilding AbsorbedInto { get; internal set; }
         public int SiteKind { get; internal set; } = -1;
         public int SiteX { get; internal set; }
         public int SiteZ { get; internal set; }
@@ -222,6 +224,8 @@ namespace Order.Simulation
         // The owner faction's numbers for this kind; a machine building rises by itself once its site is placed.
         public BuildingStats Stats{get;internal set;}
         public bool SelfBuilt{get;internal set;}
+        // A machine site made of the worker that dissolved into it; cancelling the site gives the worker back.
+        internal bool holdsWorker;
         // Machines: whether it works, covered by the network or still on its grace (a core always is); humans always are.
         // See PrototypeMatch.Network.cs.
         public bool Powered{get;internal set;}=true;

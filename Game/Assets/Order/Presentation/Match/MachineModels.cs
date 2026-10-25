@@ -191,16 +191,6 @@ namespace Order.Presentation
             return b.ToMesh("Machine building " + kind);
         }
 
-        // A piece of the construction grenade: a small double pyramid of mercury with a glowing core band.
-        public static Mesh GrenadePiece()
-        {
-            var b = new MeshBuilder();
-            b.Paint = Mercury; b.Place(Vector3.zero); b.Prism(4, .1f, .1f, 0, 0, .16f, .5f);
-            b.Paint = Pale; b.Team = 1; b.Place(Vector3.zero, Quaternion.Euler(180, 0, 0), Vector3.one); b.Prism(4, .1f, .1f, 0, 0, .12f, .5f); b.Team = 0;
-            b.Paint = Ice; b.Glow = 1; b.Place(Vector3.zero); b.Prism(4, .105f, .105f, -.015f, .015f, 0, .5f);
-            return b.ToMesh("Grenade piece");
-        }
-
         // The nanite cocoon round a wrapped worker: a faceted shell, drawn translucent and glowing.
         public static Mesh Cocoon()
         {

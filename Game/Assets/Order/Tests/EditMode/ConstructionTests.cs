@@ -10,7 +10,13 @@ namespace Order.Tests.EditMode
         // The side's first worker (or the given one) builds the building; the match runs until it is placed, or finished.
         public static PrototypeBuilding Place(PrototypeMatch match,int x,int z,int kind,int owner=PrototypeMatch.Player,bool finish=false,PrototypeUnit worker=null)
         {
-            worker??=match.Units.Find(u=>u.Owner==owner&&u.Kind==UnitKind.Worker);
+            worker??=match.Units.Find(u=>u.Owner==owner&&u.Kind==UnitKind.Worker&&u.SiteKind<0);
+            // A machine worker is spent on every building: a fresh one appears beside the side's main building.
+            if(worker==null&&match.Roster(owner).ConsumesWorker)
+            {
+                var main=match.Buildings.Find(b=>b.Owner==owner&&b.Kind==FactionBalance.Main);
+                worker=match.Spawn(UnitKind.Worker,main.X+main.Width+.6f,main.Z+.5f,owner);
+            }
             Assert.That(match.Build(worker,x,z,kind),Is.True,match.Message);
             PrototypeBuilding building=null;
             for(int i=0;i<1200&&(building=match.Buildings.Find(b=>b.X==x&&b.Z==z&&b.Kind==kind))==null;i++)match.Tick(.05f);

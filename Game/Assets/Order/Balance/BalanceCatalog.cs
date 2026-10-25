@@ -33,7 +33,7 @@ namespace Order.Balance
             return new MatchBalance{Expedition=Roster(expedition,false),Resonance=Roster(Resonance,true),
                 StartingMetal=Mathf.Max(0,Economy.StartingMetal),StartingPlasma=Mathf.Max(0,Economy.StartingPlasma),MetalDeposit=Mathf.Max(1,Economy.MetalDeposit),PlasmaDeposit=Mathf.Max(1,Economy.PlasmaDeposit)};
         }
-        static FactionBalance Roster(FactionAssets a,bool machines)=>new FactionBalance{NaniteMining=machines,SelfBuilding=machines,Network=machines,Mends=machines,Repairs=!machines,
+        static FactionBalance Roster(FactionAssets a,bool machines)=>new FactionBalance{NaniteMining=machines,SelfBuilding=machines,Network=machines,Mends=machines,Repairs=!machines,ConsumesWorker=machines,
             Buildable=machines?new[]{0,1,FactionBalance.Relay,FactionBalance.Main,4}:new[]{0,1,FactionBalance.Main,3,4},Research=machines?4:3,Extractor=machines?-1:4,
             Units=machines?new[]{a.Worker.Snapshot(),a.Melee.Snapshot(),a.Ranged.Snapshot(),a.Air.Snapshot(),a.Leaper.Snapshot()}:new[]{a.Worker.Snapshot(),a.Melee.Snapshot(),a.Ranged.Snapshot(),a.Air.Snapshot(),null,a.Tank.Snapshot(),a.Artillery.Snapshot(),a.Fighter.Snapshot()},
             Buildings=machines?new[]{a.Supply.Snapshot(),a.Factory.Snapshot(),a.Headquarters.Snapshot(),a.Relay.Snapshot(),a.Research.Snapshot()}:new[]{a.Supply.Snapshot(),a.Factory.Snapshot(),a.Headquarters.Snapshot(),a.Research.Snapshot(),a.Extractor.Snapshot()}};

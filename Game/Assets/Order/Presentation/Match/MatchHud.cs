@@ -790,7 +790,9 @@ namespace Order.Presentation
                     actions[2] = new HudAction { Title = "Добыча", Hotkey = "G", Key = Key.G, Icon = HudIconKind.Harvest, Active = host.Mode == MatchMode.Harvest,
                         Description = "Укажите разведанную жилу металла или разлом плазмы.", Run = () => host.SetMode(MatchMode.Harvest) };
                     actions[5] = new HudAction { Title = "Строительство", Hotkey = "B", Key = Key.B, Icon = HudIconKind.Build,
-                        Description = "Открыть список построек. Рабочий идёт к месту и строит сам; ушёл — стройка ждёт. ПКМ рабочим по недостроенному зданию — продолжить.",
+                        Description = match.Roster(unit.Owner).ConsumesWorker
+                            ? $"Открыть список построек. {unit.Stats.Name} идёт к месту, распадается на наниты и сам становится зданием; оно растёт без рабочего. Shift+ЛКМ — следующее здание следующим ткачом из выделения."
+                            : "Открыть список построек. Рабочий идёт к месту и строит сам; ушёл — стройка ждёт. ПКМ рабочим по недостроенному зданию — продолжить.",
                         Run = () => buildPage = true };
                     if (match.Roster(unit.Owner).Repairs)
                         actions[3] = new HudAction { Title = "Ремонт", Hotkey = "R", Key = Key.R, Icon = HudIconKind.Repair, Active = host.Mode == MatchMode.Repair,
@@ -840,7 +842,7 @@ namespace Order.Presentation
                     var lab = stats.Researches;
                     var main = building == FactionBalance.Main;
                     var key = building == 0 ? Key.S : building == 1 ? Key.F : main ? Key.C : lab ? Key.U : stats.Extracts ? Key.E : Key.R;
-                    var network = roster.Network ? " Только в покрытии сети." : "";
+                    var network = (roster.Network ? " Только в покрытии сети." : "") + (roster.ConsumesWorker ? $" {roster.Worker.Name} распадается на наниты и становится зданием." : "");
                     actions[slot] = new HudAction { Title = stats.Name, Hotkey = key.ToString(), Key = key,
                         Icon = BuildingIcon(building, stats), Metal = stats.Metal, Plasma = stats.Plasma, Seconds = stats.BuildSeconds,
                         Active = host.Mode == MatchMode.Build && host.BuildKind == building,
@@ -904,7 +906,7 @@ namespace Order.Presentation
             }
             else if (CancellableSite() != null)
                 actions[14] = new HudAction { Title = "Отменить стройку", Hotkey = "ESC", Icon = HudIconKind.Close,
-                    Description = "Снести недостроенное здание: вернётся три четверти стоимости.", Run = () => host.CancelConstruction() };
+                    Description = host.Match.Roster(PrototypeMatch.Player).ConsumesWorker ? $"Снести недостроенное здание: вернётся три четверти стоимости, а наниты снова соберутся в рабочего ({host.Match.Roster(PrototypeMatch.Player).Worker.Name.ToLowerInvariant()})." : "Снести недостроенное здание: вернётся три четверти стоимости.", Run = () => host.CancelConstruction() };
             commandsTitle.text = title;
             for (var i = 0; i < Slots; i++)
             {

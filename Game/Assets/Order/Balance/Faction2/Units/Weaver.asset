@@ -31,6 +31,13 @@ MonoBehaviour:
   HitsGround: 1
   HitsAir: 0
   Leap: 0
-  Metal: 75
+  Armor: 0
+  Siege: 0
+  MinRange: 0
+  Splash: 0
+  DeploySeconds: 0
+  Ramp: 1
+  RampSeconds: 0
+  Metal: 50
   Plasma: 0
   TrainSeconds: 8

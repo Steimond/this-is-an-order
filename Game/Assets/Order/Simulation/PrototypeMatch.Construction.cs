@@ -11,8 +11,9 @@ namespace Order.Simulation
     // - the building rises only while its worker stands by it, one worker per building. A worker given another order or
     //   killed leaves the building waiting, and any worker of the side can resume it;
     // - a building under construction can be cancelled for three quarters of its cost.
-    // Machines place their sites the same way, but the worker throws a construction grenade and is free at once: the
-    // building rises by itself (the nanite visuals and the network coverage come with the next steps, SETTING.md).
+    // Machines place their sites the same way, but on the site the worker dissolves into the nanites that become the
+    // building, as a zerg drone becomes one: the worker is spent, the building rises by itself inside the network's
+    // coverage, and cancelling it gives the worker back with three quarters of the cost (SETTING.md, «Наниты — суть расы»).
     public sealed partial class PrototypeMatch
     {
         // How close to the footprint a worker builds; the view uses it for the welding beam too.
@@ -75,7 +76,9 @@ namespace Order.Simulation
             int owner=worker.Owner;
             if(!CanBuild(x,z,kind,out var reason,owner)){if(owner==Player)Message=reason;return false;}
             var stats=Roster(owner).Buildings[kind];
-            if(!SiteSpot(worker,x,z,stats.Width,out float sx,out float sz)){if(owner==Player)Message="К месту стройки не подойти";return false;}
+            // A machine worker goes to the very middle of the site, where it melts down into the building.
+            float sx=x+stats.Width*.5f,sz=z+stats.Width*.5f;
+            if(!Roster(owner).ConsumesWorker&&!SiteSpot(worker,x,z,stats.Width,out sx,out sz)){if(owner==Player)Message="К месту стройки не подойти";return false;}
             var message=Message;
             GiveOrder(worker,UnitOrder.Move);PlanPath(worker,sx,sz);
             worker.SiteKind=kind;worker.SiteX=x;worker.SiteZ=z;worker.siteTimer=0;
@@ -87,6 +90,8 @@ namespace Order.Simulation
         public bool QueueBuild(PrototypeUnit worker,int x,int z,int kind)
         {
             if(worker==null||!worker.Alive||worker.Kind!=UnitKind.Worker){Message="Строить может только рабочий.";return false;}
+            // A machine worker becomes its first building, so it has nothing to queue.
+            if(Roster(worker.Owner).ConsumesWorker){if(worker.Owner==Player)Message=$"{worker.Stats.Name} сам становится зданием: очереди построек у него нет.";return false;}
             if(!CanBuild(x,z,kind,out var reason,worker.Owner)){if(worker.Owner==Player)Message=reason;return false;}
             int waiting=worker.queued.Count;
             Enqueue(worker,QueuedOrder.Build(kind,x,z));
@@ -110,6 +115,9 @@ namespace Order.Simulation
             Message=worker.Owner==Player?$"{worker.Stats.Name}: продолжает стройку — {building.Stats.Name}.":message;
             return true;
         }
+        // A site taken down by its owner, and the machine worker that gathered again out of it (null for humans), for the
+        // view to play the liquid back into the worker.
+        public event Action<PrototypeBuilding, PrototypeUnit> Cancelled;
         // Returns three quarters of the cost; the worker is free.
         public bool CancelConstruction(PrototypeBuilding building)
         {
@@ -119,7 +127,10 @@ namespace Order.Simulation
             metalStock[building.Owner]+=metal;plasmaStock[building.Owner]+=plasma;
             var builder=building.Builder;if(builder!=null)builder.Constructing=null;
             building.builder=null;Buildings.Remove(building);NavigationChanged(building.X,building.Z,building.Width);
-            if(building.Owner==Player)Message=$"Стройка отменена: {stats.Name}. Возвращено: металл {metal}"+(plasma>0?$", плазма {plasma}.":".");
+            // A machine site gives back the worker it was made of: the nanites gather into it again on the freed spot.
+            var worker=building.holdsWorker?Spawn(UnitKind.Worker,building.X+building.Width*.5f,building.Z+building.Width*.5f,building.Owner):null;
+            Cancelled?.Invoke(building,worker);
+            if(building.Owner==Player)Message=$"Стройка отменена: {stats.Name}. Возвращено: металл {metal}"+(plasma>0?$", плазма {plasma}":"")+(worker!=null?$" и {worker.Stats.Name.ToLowerInvariant()}.":".");
             return true;
         }
         // A worker at a construction or repair, or on its way to one; machines being taken apart are busy too.
@@ -183,8 +194,15 @@ namespace Order.Simulation
                 var building=AddBuilding(u.SiteKind,x,z,u.Owner,0);
                 RouteAroundNewBuildings();
                 u.SiteKind=-1;u.siteTimer=0;
-                if(Roster(u.Owner).SelfBuilding)building.SelfBuilt=true;else{u.Constructing=building;building.builder=u;}
-                if(u.Owner==Player)Message=building.SelfBuilt?$"Граната брошена, наниты строят: {stats.Name}.":$"Строительство начато: {stats.Name}.";
+                bool spent=false;
+                if(Roster(u.Owner).SelfBuilding)
+                {
+                    building.SelfBuilt=true;
+                    // Machines: the worker dissolves into the nanites that become the building, and is spent on it.
+                    if(Roster(u.Owner).ConsumesWorker){building.holdsWorker=true;u.AbsorbedInto=building;u.Health=0;spent=true;}
+                }
+                else{u.Constructing=building;building.builder=u;}
+                if(u.Owner==Player)Message=spent?$"{u.Stats.Name} распадается на наниты: строится {stats.Name}.":building.SelfBuilt?$"Наниты строят: {stats.Name}.":$"Строительство начато: {stats.Name}.";
             }
         }
         void EndSite(PrototypeUnit u,string reason){u.SiteKind=-1;u.siteTimer=0;if(u.Owner==Player)Message=reason;}

@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 using Order.Content;
 using Order.Contracts;
@@ -27,7 +28,7 @@ namespace Order.Tests.EditMode
             Assert.That(match.Buildings[0].Stats.Name,Is.EqualTo("Ядро"));Assert.That(Weaver(match).Stats.Name,Is.EqualTo("Ткач"));
             Assert.That(match.Buildings.Find(b=>b.Owner==Enemy&&b.Kind==2).Stats.Name,Is.EqualTo("Командный узел"));
             var hq=match.Buildings[0];int metal=match.Metal;
-            Assert.That(match.Train(hq,UnitKind.Worker),Is.True);Assert.That(match.Metal,Is.EqualTo(metal-75),"A weaver costs its own price");
+            Assert.That(match.Train(hq,UnitKind.Worker),Is.True);Assert.That(match.Metal,Is.EqualTo(metal-50),"A weaver costs its own price: as cheap as a human worker, since every building spends one");
             Run(match,8.1f);
             Assert.That(match.Units.FindAll(u=>u.Owner==PrototypeMatch.Player&&u.Kind==UnitKind.Worker).Count,Is.EqualTo(2),"Assembled in 8 s");
         }
@@ -83,16 +84,49 @@ namespace Order.Tests.EditMode
             Assert.That(next.Wrap,Is.EqualTo(1),"A deposit wrapped before is taken at once");Assert.That(next.Mining,Is.True);
             Assert.That(next.Cocoon,Is.LessThan(next.Stats.Cocoon),"The cocoon still has to grow back");
         }
-        [Test] public void MachineBuildingRisesByItselfOnceTheSiteIsPlaced()
+        [Test] public void MachineWorkerBecomesTheBuildingThatThenRisesByItself()
         {
             var match=Machines();var worker=Weaver(match);var stats=match.Roster(PrototypeMatch.Player).Buildings[0];
-            var node=Sites.Place(match,15,14,0);
+            int supply=match.SupplyUsed,metal=match.Metal;
+            var node=Sites.Place(match,15,14,0,worker:worker);
             Assert.That(node.SelfBuilt,Is.True);Assert.That(node.Stats.Name,Is.EqualTo("Вычислительный узел"));
-            Assert.That(worker.Constructing,Is.Null,"The worker is free after the throw");Assert.That(match.Message,Does.Contain("Граната"));
-            Assert.That(match.Move(worker,9.5f,6.5f),Is.True);
+            Assert.That(match.Units,Has.No.Member(worker),"The worker dissolved into the building");Assert.That(worker.AbsorbedInto,Is.SameAs(node));
+            Assert.That(match.Message,Does.Contain("распадается на наниты"));
+            Assert.That(match.Metal,Is.EqualTo(metal-stats.Metal));Assert.That(match.SupplyUsed,Is.EqualTo(supply-worker.Stats.Supply));
             Run(match,stats.BuildSeconds+.2f);
-            Assert.That(node.Ready,Is.EqualTo(1));Assert.That(match.SupplyLimit,Is.EqualTo(18));
-            Assert.That(match.Resume(worker,Sites.Place(match,18,14,0)),Is.False,"Nothing to resume");
+            Assert.That(node.Ready,Is.EqualTo(1),"With no worker it still rises");Assert.That(match.SupplyLimit,Is.EqualTo(18));
+            var weaver=match.Spawn(UnitKind.Worker,13.5f,13.5f);
+            Assert.That(match.Resume(weaver,Sites.Place(match,18,14,0)),Is.False,"Nothing to resume");
+        }
+        [Test] public void MachineWorkerMeltsDownInTheMiddleOfTheSite()
+        {
+            var match=Machines();var worker=Weaver(match);int w=match.Roster(PrototypeMatch.Player).Buildings[1].Width;
+            Assert.That(match.Build(worker,15,14,1),Is.True,match.Message);
+            for(int i=0;i<400&&worker.AbsorbedInto==null;i++)match.Tick(.05f);
+            Assert.That(worker.AbsorbedInto,Is.Not.Null);
+            Assert.That(worker.X,Is.EqualTo(15+w*.5f).Within(.35f));Assert.That(worker.Z,Is.EqualTo(14+w*.5f).Within(.35f),"It walks into the middle of the site, not to its edge");
+        }
+        [Test] public void CancellingAMachineSiteGivesTheWorkerBack()
+        {
+            var match=Machines();var worker=Weaver(match);var stats=match.Roster(PrototypeMatch.Player).Buildings[1];
+            var site=Sites.Place(match,15,14,1,worker:worker);int metal=match.Metal,workers=match.Units.FindAll(u=>u.Kind==UnitKind.Worker).Count;
+            Assert.That(match.CancelConstruction(site),Is.True);
+            Assert.That(match.Metal,Is.EqualTo(metal+(int)(stats.Metal*.75f)));
+            Assert.That(match.Units.FindAll(u=>u.Kind==UnitKind.Worker).Count,Is.EqualTo(workers+1),"The nanites gather into a worker again");
+            Assert.That(match.Message,Does.Contain("ткач"));
+            Run(match,.2f);
+            var back=match.Units.Find(u=>u.Kind==UnitKind.Worker&&u!=worker);
+            Assert.That(match.CanTravel(back.X,back.Z,back.X,back.Z,back.Stats.Radius),Is.True,"On free ground where the site was");
+        }
+        [Test] public void AMachineWorkerQueuesNoBuildingsAndTheCostsMakeUpForIt()
+        {
+            var match=Machines();var worker=Weaver(match);
+            Assert.That(match.QueueBuild(worker,15,14,0),Is.False);Assert.That(match.Message,Does.Contain("очереди построек у него нет"));
+            // A building and the worker it takes cost what the building alone cost before the workers were spent.
+            var roster=match.Roster(PrototypeMatch.Player);int weaver=roster.Worker.Metal;
+            Assert.That(weaver,Is.EqualTo(50));
+            Assert.That(new[]{roster.Buildings[0].Metal,roster.Buildings[1].Metal,roster.Buildings[FactionBalance.Main].Metal,roster.Buildings[FactionBalance.Relay].Metal,roster.Buildings[4].Metal}.Select(m=>m+weaver),
+                Is.EqualTo(new[]{100,150,400,75,125}));
         }
         [Test] public void BotPlaysTheMachines()
         {

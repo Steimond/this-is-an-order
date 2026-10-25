@@ -42,8 +42,8 @@ namespace Order.Presentation
         GameObject worldRoot, footprint, focusRing, ghostModel, rallyFlag;
         LineRenderer rallyLine;
         int ghostKind=-1;
-        // A machine site adds the construction grenade: four pieces at the corners and the nanite streams, under Grenade.
-        sealed class BuildingView{public GameObject Model,Ring,Grenade;public Transform[] Pieces;public LineRenderer Streams;public bool Revealing;}
+        // A rising machine building adds its nanite liquid form, under Liquid.
+        sealed class BuildingView{public GameObject Model,Ring,Liquid,Puddle;public bool Revealing;public float DriedAt;}
         readonly Dictionary<PrototypeBuilding,BuildingView> buildingViews=new Dictionary<PrototypeBuilding,BuildingView>();
         readonly List<GameObject> selectionRings = new List<GameObject>(), hoverRings = new List<GameObject>();
         readonly List<GameObject> depositViews = new List<GameObject>();
@@ -62,8 +62,8 @@ namespace Order.Presentation
         readonly Mesh[,] buildingMeshes = new Mesh[2,5];
         Mesh ringMesh, beaconMesh, shadowMesh, selectionMesh, markerMesh, cargoMesh;
         Material buildingMaterial, enemyBuildingMaterial, ghostMaterial, footprintMaterial, selectedMaterial, neutralMaterial, constructionMaterial, beaconMaterial, unitMaterial, enemyMaterial, beamMaterial, shadowMaterial,
-            unitRingMaterial, hoverRingMaterial, enemyRingMaterial, enemyHoverMaterial, markerMaterial, oreMaterial, plasmaCargoMaterial, naniteMaterial, cocoonMaterial, coverageMaterial, darkCoverageMaterial;
-        Mesh cocoonMesh, grenadeMesh;
+            unitRingMaterial, hoverRingMaterial, enemyRingMaterial, enemyHoverMaterial, markerMaterial, oreMaterial, plasmaCargoMaterial, naniteMaterial, liquidMaterial, cocoonMaterial, coverageMaterial, darkCoverageMaterial;
+        Mesh cocoonMesh;
         MaterialPropertyBlock revealBlock;
         MaterialPropertyBlock cocoonColor;
         // Enemy team colour on models and the minimap.
@@ -144,9 +144,10 @@ namespace Order.Presentation
             }
             beamMaterial=scenery.Glow("Mining beam",new Color(.45f,.9f,1)*3);
             naniteMaterial=scenery.Glow("Nanite threads",new Color(.62f,.86f,1)*2.4f);
+            liquidMaterial=scenery.NaniteLiquid("Nanite liquid");
             coverageMaterial=scenery.Glow("Network coverage",new Color(.5f,.8f,1)*1.1f);darkCoverageMaterial=scenery.Glow("Network coverage lost",new Color(.45f,.45f,.5f)*.5f);
             cocoonMaterial=scenery.Glow("Nanite cocoon",new Color(.14f,.27f,.38f,1));cocoonMesh=scenery.Own(MachineModels.Cocoon());cocoonColor=new MaterialPropertyBlock();
-            grenadeMesh=scenery.Own(MachineModels.GrenadePiece());revealBlock=new MaterialPropertyBlock();
+            revealBlock=new MaterialPropertyBlock();
             shadowMaterial=scenery.Glow("Air unit shadow",new Color(0,0,0,.6f),false,m=>m.SetFloat("_Soft",1));
             shadowMesh=scenery.Own(SoftQuad());
             // StarCraft-like green circles under selected units, a faint one under the hovered unit, and order markers.
@@ -165,7 +166,7 @@ namespace Order.Presentation
             combat=new CombatEffects(scenery,worldRoot.transform,MapCamera,shadowMesh,ringMesh);
             Match.Attacked+=(attacker,target)=>strikes.Add((attacker,target));Match.Died+=deaths.Add;
             Match.AttackedBuilding+=(attacker,target)=>buildingStrikes.Add((attacker,target));Match.Destroyed+=ruins.Add;
-            Match.UnderAttack+=OnUnderAttack;
+            Match.UnderAttack+=OnUnderAttack;Match.Cancelled+=OnCancelled;
             Match.AddTestSquad();Match.AddEnemySquad();Match.AddEnemyBase();Match.StartBot();Match.PrepareNavigation();SelectWorker();
             var square=new MeshBuilder();square.Quad(new Vector3(-.5f,0,-.5f),new Vector3(-.5f,0,.5f),new Vector3(.5f,0,.5f),new Vector3(.5f,0,-.5f));
             footprint=scenery.Model("Placement footprint",scenery.Own(square.ToMesh("Footprint")),footprintMaterial,worldRoot.transform,false);footprint.SetActive(false);
@@ -307,6 +308,8 @@ namespace Order.Presentation
             ShowCoverage();
             for(int i=0;i<pinViews.Count;i++)pinViews[i].transform.localScale=new Vector3(1,1+.08f*Mathf.Sin(Time.time*4+i),1);
             AnimateBuildings();
+            AnimateMelts();
+            AnimateGathers();
             scenery.Tick(Time.deltaTime);
             refresh+=Time.deltaTime;if(refresh>.15f){refresh=0;RefreshWorld();}
         }
@@ -358,7 +361,8 @@ namespace Order.Presentation
             foreach(var unit in Match.Units)
             {
                 if(!unitViews.TryGetValue(unit.Id,out var view))unitViews[unit.Id]=view=CreateUnitView(unit);
-                bool seen=Match.SeenBy(PrototypeMatch.Player,unit);
+                // A machine worker gathering back out of a cancelled site shows only as the liquid until it has formed.
+                bool seen=Match.SeenBy(PrototypeMatch.Player,unit)&&!Gathering(unit);
                 if(view.Root.activeSelf!=seen){view.Root.SetActive(seen);if(view.Shadow!=null)view.Shadow.gameObject.SetActive(seen);}
                 float ground=Match.HeightAt(unit.X,unit.Z);
                 if(unit.Stats.Flying)
@@ -758,6 +762,8 @@ namespace Order.Presentation
                 {
                     // A machine taken apart leaves no wreck: a last cold flash where its nanites flow away.
                     if(unit.Disassembling){combat.Flash(Center(unit,view),new Color(.62f,.86f,1)*2.6f,Mathf.Max(.5f,unit.Stats.Radius*2),.5f,2.2f);continue;}
+                    // A worker spent on a building melts into it.
+                    if(unit.AbsorbedInto!=null){StartMelt(unit,view);continue;}
                     combat.Explosion(Center(unit,view),Match.HeightAt(unit.X,unit.Z),unit.Stats.Flying?1.3f:Mathf.Max(1,unit.Stats.Radius*2.6f));
                 }
             deaths.Clear();
@@ -954,7 +960,7 @@ namespace Order.Presentation
                 float h=b.Stats.Height,ground=Match.Map.Height(b.X,b.Z);
                 bool shown=BuildingShown(b);
                 if(view.Model.activeSelf!=shown)view.Model.SetActive(shown);
-                if(b.SelfBuilt&&(b.Ready<1||view.Revealing)){Grenade(b,view,shown,h,ground);continue;}
+                if(b.SelfBuilt&&(b.Ready<1||view.Revealing)){Liquid(b,view,shown,h,ground);continue;}
                 // The full-sized model rises through the opaque terrain; it never scales up.
                 view.Model.transform.position=new Vector3(b.X+b.Width*.5f,ground-h*(1-b.Ready),b.Z+b.Width*.5f);
                 view.Ring.SetActive(b.Ready<1&&shown);
@@ -963,61 +969,156 @@ namespace Order.Presentation
                 if(b.Ready<1){view.Ring.transform.position=new Vector3(b.X+b.Width*.5f,ground,b.Z+b.Width*.5f);view.Ring.transform.localScale=Vector3.one*b.Width*(rising?.74f+.04f*Mathf.Sin(Time.time*6):.7f);}
             }
         }
-        // The machines' construction grenade (SETTING.md): it bursts into four pieces that fly to the corners of the
-        // footprint; nanites stream down from them and draw the outline, and the building appears under them from the top
-        // down; at the end the pieces dissolve. Driven by the building's progress, so a cancelled or destroyed site simply
-        // disappears with its view.
-        const float Burst=.08f,Fade=.92f;
-        void Grenade(PrototypeBuilding b,BuildingView view,bool shown,float h,float ground)
+        // A machine building rises out of nanite liquid (SETTING.md, «Наниты — суть расы»):
+        // - the worker walks to the middle of the site and melts down there into a puddle (StartMelt);
+        // - the puddle flows into the building: the liquid fills the building's whole shape from the ground up, flowing
+        //   upwards with a cold meniscus on top, while the puddle sinks into it;
+        // - then the liquid drains off from the top down in tongues, and the real building shows above its edge, wet and
+        //   mirror-dark at first, drying off as the edge moves on; once it stands the last of the film dries.
+        // The liquid's own shape swells and shivers all the while (the vertex wobble of Order/NaniteLiquid, on a finely
+        // split copy of the model). Driven by the progress, so a cancelled site plays its own way back (OnCancelled) and a
+        // destroyed one simply disappears with its view.
+        const float LiquidRough=.3f,DryingSeconds=1.6f,MeltSeconds=.9f,LiquidWobble=.06f;
+        readonly Dictionary<Mesh,Mesh> liquidMeshes=new Dictionary<Mesh,Mesh>();
+        Mesh puddleMesh;
+        // Buildings split to 0.3, the small bodies of units finer, so both bend smoothly.
+        Mesh LiquidMesh(Mesh mesh,float maxEdge=.3f){if(!liquidMeshes.TryGetValue(mesh,out var liquid))liquidMeshes[mesh]=liquid=scenery.Own(NaniteMeshes.Subdivided(mesh,maxEdge));return liquid;}
+        Mesh PuddleMesh()=>puddleMesh??=scenery.Own(NaniteMeshes.Puddle());
+        void LiquidBlock(Renderer renderer,float front,float flow,float ground,float spikes=1)
         {
-            float w=b.Width,cx=b.X+w*.5f,cz=b.Z+w*.5f,top=ground+h*1.05f;
+            revealBlock.SetFloat("_Front",front);revealBlock.SetFloat("_FrontNoise",LiquidRough);revealBlock.SetFloat("_Flow",flow);
+            revealBlock.SetFloat("_Base",ground);revealBlock.SetFloat("_Wobble",LiquidWobble);revealBlock.SetFloat("_Spikes",spikes);
+            renderer.SetPropertyBlock(revealBlock);revealBlock.Clear();
+        }
+        void Liquid(PrototypeBuilding b,BuildingView view,bool shown,float h,float ground)
+        {
+            float w=b.Width,cx=b.X+w*.5f,cz=b.Z+w*.5f,top=ground+h*1.08f+.15f,bottom=ground-LiquidRough-.1f,time=Time.time;
             view.Model.transform.position=new Vector3(cx,ground,cz);
             view.Ring.SetActive(false);
             var renderer=view.Model.GetComponent<MeshRenderer>();
+            float build=b.Stats.BuildSeconds,fill=Mathf.Clamp(3/build,.2f,.45f),drain=(1-fill)*build;
+            // The worker's melt comes first: while it lasts only the puddle grows under it.
+            float melt=Mathf.Min(MeltSeconds/build,fill*.6f);
+            // The film is as tall as the edge travels while it dries, so it reads the same on a quick node and a slow core.
+            float film=Mathf.Clamp((top-bottom)/Mathf.Max(.1f,drain)*DryingSeconds,.25f,1.2f);
             if(b.Ready>=1)
             {
-                revealBlock.Clear();renderer.SetPropertyBlock(revealBlock);
-                if(view.Grenade!=null){Destroy(view.Grenade);view.Grenade=null;}
-                view.Revealing=false;return;
+                if(view.Liquid!=null){Destroy(view.Liquid);view.Liquid=null;view.DriedAt=time+DryingSeconds;}
+                if(view.Puddle!=null){Destroy(view.Puddle);view.Puddle=null;}
+                float left=view.DriedAt-time;
+                if(left<=0){revealBlock.Clear();renderer.SetPropertyBlock(revealBlock);view.Revealing=false;return;}
+                revealBlock.SetFloat("_RevealBelow",bottom);revealBlock.SetFloat("_RevealNoise",LiquidRough);revealBlock.SetFloat("_Wet",film*left/DryingSeconds);
+                renderer.SetPropertyBlock(revealBlock);revealBlock.Clear();return;
             }
             view.Revealing=true;
-            if(view.Grenade==null)
+            if(view.Liquid==null)view.Liquid=scenery.Model("Nanite form",LiquidMesh(view.Model.GetComponent<MeshFilter>().sharedMesh),liquidMaterial,worldRoot.transform);
+            if(view.Liquid.activeSelf!=shown)view.Liquid.SetActive(shown);
+            view.Liquid.transform.SetPositionAndRotation(view.Model.transform.position,view.Model.transform.rotation);
+            view.Liquid.transform.localScale=view.Model.transform.localScale;
+            // The puddle at the middle of the site: it spreads while the worker melts, then sinks into the rising liquid.
+            float sinking=Mathf.InverseLerp(melt,melt+(fill-melt)*.4f,b.Ready),radius=w*.42f*Mathf.SmoothStep(0,1,b.Ready/Mathf.Max(1e-4f,melt*.8f))*(1-Mathf.SmoothStep(0,1,sinking));
+            if(radius>.02f)
             {
-                view.Grenade=new GameObject("Construction grenade");view.Grenade.transform.SetParent(worldRoot.transform,false);
-                var material=b.Owner==PrototypeMatch.Player?buildingMaterial:enemyBuildingMaterial;
-                view.Pieces=new Transform[4];
-                for(int i=0;i<4;i++)view.Pieces[i]=scenery.Model("Grenade piece",grenadeMesh,material,view.Grenade.transform,false).transform;
-                view.Streams=new GameObject("Nanite streams",typeof(LineRenderer)).GetComponent<LineRenderer>();view.Streams.transform.SetParent(view.Grenade.transform,false);
-                view.Streams.sharedMaterial=naniteMaterial;view.Streams.positionCount=13;view.Streams.widthMultiplier=.045f;
-                view.Streams.shadowCastingMode=UnityEngine.Rendering.ShadowCastingMode.Off;
+                if(view.Puddle==null)view.Puddle=scenery.Model("Nanite puddle",PuddleMesh(),liquidMaterial,worldRoot.transform);
+                if(view.Puddle.activeSelf!=shown)view.Puddle.SetActive(shown);
+                view.Puddle.transform.SetPositionAndRotation(new Vector3(cx,ground-.02f-.08f*sinking,cz),Quaternion.Euler(0,b.X*37,0));
+                view.Puddle.transform.localScale=new Vector3(radius,1,radius);
+                LiquidBlock(view.Puddle.GetComponent<MeshRenderer>(),1000,0,ground-1,2);
             }
-            if(view.Grenade.activeSelf!=shown)view.Grenade.SetActive(shown);
-            float t=Mathf.InverseLerp(Burst,Fade,b.Ready),front=b.Ready<Burst?top+1:Mathf.Lerp(top,ground-.05f,t);
-            revealBlock.SetFloat("_RevealBelow",front);revealBlock.SetColor("_RevealColor",new Color(.62f,.86f,1)*2.2f);
-            renderer.SetPropertyBlock(revealBlock);
-            if(!shown)return;
-            float burst=Mathf.Clamp01(b.Ready/Burst),fade=1-Mathf.InverseLerp(Fade,1,b.Ready),time=Time.time;
-            var landing=new Vector3(cx,ground+.3f,cz);
-            for(int i=0;i<4;i++)
+            else if(view.Puddle!=null){Destroy(view.Puddle);view.Puddle=null;}
+            float front,flow;
+            if(b.Ready<fill)
             {
-                var corner=new Vector3(b.X+(i==1||i==2?w-.18f:.18f),top+.08f*Mathf.Sin(time*2.4f+i),b.Z+(i>=2?w-.18f:.18f));
-                // A short arc from where the grenade landed out to the corner.
-                var at=Vector3.Lerp(landing,corner,Mathf.SmoothStep(0,1,burst))+Vector3.up*Mathf.Sin(burst*Mathf.PI)*.6f;
-                view.Pieces[i].position=at;view.Pieces[i].rotation=Quaternion.Euler(0,time*90+i*90,0);
-                view.Pieces[i].localScale=Vector3.one*fade;
+                // Filling: the front rises fast at first and settles at the top; the building itself is not there yet.
+                float s=Mathf.InverseLerp(melt,fill,b.Ready);
+                front=Mathf.Lerp(ground-.05f,top,1-(1-s)*(1-s));flow=1.1f;
+                revealBlock.SetFloat("_RevealBelow",1000);
             }
-            view.Streams.enabled=b.Ready>=Burst;
-            if(!view.Streams.enabled)return;
-            // From each corner piece down to the front, then along the outline to the next corner.
-            int k=0;float y=Mathf.Max(ground+.05f,front);
-            for(int i=0;i<4;i++)
+            else
             {
-                var p=view.Pieces[i].position;
-                view.Streams.SetPosition(k++,p);view.Streams.SetPosition(k++,new Vector3(p.x,y,p.z));
-                var q=view.Pieces[(i+1)%4].position;view.Streams.SetPosition(k++,new Vector3(q.x,y,q.z));
+                // Draining: one edge for both, so the building shows exactly where the liquid has left.
+                float s=(b.Ready-fill)/(1-fill);
+                front=Mathf.Lerp(top,bottom,s*s*(3-2*s));flow=-1.2f;
+                revealBlock.SetFloat("_RevealBelow",front);revealBlock.SetFloat("_RevealNoise",LiquidRough);
+                revealBlock.SetColor("_RevealColor",NaniteGlow*1.6f);revealBlock.SetFloat("_Wet",film);
             }
-            view.Streams.SetPosition(k,view.Streams.GetPosition(1));
-            view.Streams.widthMultiplier=.045f*fade;
+            renderer.SetPropertyBlock(revealBlock);revealBlock.Clear();
+            LiquidBlock(view.Liquid.GetComponent<MeshRenderer>(),front,flow,ground);
+        }
+        // A worker spent on a building loses its form where it stands, in the middle of the site: its body turns to the
+        // same liquid, sags and spreads, and sinks into the puddle growing under it.
+        sealed class Melt{public GameObject View;public Vector3 At,Scale;public Quaternion Turn;public float Start,Ground;}
+        readonly List<Melt> melts=new List<Melt>();
+        void StartMelt(PrototypeUnit unit,UnitView view)
+        {
+            var body=view.Body;
+            var melt=scenery.Model("Melting "+unit.Stats.Name,LiquidMesh(view.Model.Body,.08f),liquidMaterial,worldRoot.transform);
+            melts.Add(new Melt{View=melt,At=body.position,Scale=body.lossyScale,Turn=body.rotation,Start=Time.time,Ground=Match.HeightAt(unit.X,unit.Z)});
+            AnimateMelts();
+        }
+        void AnimateMelts()
+        {
+            for(int i=melts.Count-1;i>=0;i--)
+            {
+                var m=melts[i];float s=(Time.time-m.Start)/MeltSeconds;
+                if(s>=1){Destroy(m.View);melts.RemoveAt(i);continue;}
+                float sag=Mathf.SmoothStep(0,1,Mathf.Min(1,s*1.6f)),sink=Mathf.SmoothStep(0,1,Mathf.Max(0,s*2.2f-1.2f));
+                m.View.transform.SetPositionAndRotation(m.At+Vector3.down*sink*.25f,m.Turn);
+                m.View.transform.localScale=Vector3.Scale(m.Scale,new Vector3(1+.55f*sag-.4f*sink,Mathf.Lerp(1,.12f,sag),1+.55f*sag-.4f*sink));
+                LiquidBlock(m.View.GetComponent<MeshRenderer>(),1000,-1.5f,m.Ground,1+2*sag);
+            }
+        }
+        // Cancelling a machine site plays it all back, quickly: the liquid shape slumps down into a puddle and the puddle
+        // gathers up into the worker, which can be ordered from the start; its model stays hidden until it has formed.
+        sealed class Gather{public GameObject Form,Puddle,Body;public PrototypeUnit Worker;public float Start,Top,Ground,Radius,Scale;public Vector3 Center;}
+        readonly List<Gather> gathers=new List<Gather>();
+        const float GatherSeconds=.6f;
+        void OnCancelled(PrototypeBuilding b,PrototypeUnit worker)
+        {
+            if(!b.SelfBuilt||!buildingViews.TryGetValue(b,out var view)||!view.Model.activeSelf)return;
+            float ground=Match.Map.Height(b.X,b.Z);
+            var g=new Gather{Worker=worker,Start=Time.time,Ground=ground,Top=ground+b.Stats.Height*1.08f+.15f,Radius=b.Width*.42f,Center=new Vector3(b.X+b.Width*.5f,ground,b.Z+b.Width*.5f)};
+            g.Form=scenery.Model("Nanite form",LiquidMesh(view.Model.GetComponent<MeshFilter>().sharedMesh),liquidMaterial,worldRoot.transform);
+            g.Form.transform.SetPositionAndRotation(view.Model.transform.position,view.Model.transform.rotation);
+            g.Puddle=scenery.Model("Nanite puddle",PuddleMesh(),liquidMaterial,worldRoot.transform);
+            if(worker!=null)
+            {
+                var key=(Match.FactionOf(worker.Owner),worker.Kind);
+                if(!unitModels.TryGetValue(key,out var model))
+                {
+                    model=key.Item1==FactionId.Resonance?MachineModels.Unit(worker.Kind):MatchModels.Unit(worker.Kind);unitModels[key]=model;
+                    scenery.Own(model.Body);if(model.Leg!=null)scenery.Own(model.Leg);if(model.Rotor!=null)scenery.Own(model.Rotor);if(model.Gun!=null)scenery.Own(model.Gun);
+                }
+                g.Body=scenery.Model("Gathering "+worker.Stats.Name,LiquidMesh(model.Body,.08f),liquidMaterial,worldRoot.transform);
+                g.Scale=model.Scale;
+            }
+            gathers.Add(g);AnimateGathers();
+        }
+        bool Gathering(PrototypeUnit unit){foreach(var g in gathers)if(g.Worker==unit)return true;return false;}
+        void AnimateGathers()
+        {
+            for(int i=gathers.Count-1;i>=0;i--)
+            {
+                var g=gathers[i];float s=(Time.time-g.Start)/GatherSeconds;
+                if(s>=1){Destroy(g.Form);Destroy(g.Puddle);if(g.Body!=null)Destroy(g.Body);gathers.RemoveAt(i);continue;}
+                // The shape slumps down to the ground in the first half.
+                float slump=Mathf.SmoothStep(0,1,Mathf.Min(1,s*2));
+                g.Form.SetActive(slump<1);
+                LiquidBlock(g.Form.GetComponent<MeshRenderer>(),Mathf.Lerp(g.Top,g.Ground-.4f,slump),-2.5f,g.Ground,2);
+                // The puddle spreads as the shape slumps, then draws in under the worker.
+                float spread=Mathf.SmoothStep(0,1,Mathf.Clamp01(s*2.5f-.3f)),draw=Mathf.SmoothStep(0,1,Mathf.Clamp01(s*2-1));
+                var at=g.Worker!=null&&g.Worker.Alive?new Vector3(g.Worker.X,Match.HeightAt(g.Worker.X,g.Worker.Z),g.Worker.Z):g.Center;
+                g.Puddle.transform.position=Vector3.Lerp(g.Center,at,draw)+Vector3.down*.02f;
+                float radius=Mathf.Lerp(g.Radius*spread,.12f,draw);g.Puddle.transform.localScale=new Vector3(radius,1,radius);
+                LiquidBlock(g.Puddle.GetComponent<MeshRenderer>(),1000,0,g.Ground-1,2);
+                // The worker rises out of it in the second half.
+                if(g.Body==null)continue;
+                float rise=Mathf.SmoothStep(0,1,Mathf.Clamp01(s*2-1));
+                g.Body.SetActive(rise>0);
+                g.Body.transform.position=at;
+                g.Body.transform.localScale=new Vector3(g.Scale*(1.5f-.5f*rise),g.Scale*Mathf.Lerp(.1f,1,rise),g.Scale*(1.5f-.5f*rise));
+                LiquidBlock(g.Body.GetComponent<MeshRenderer>(),1000,1.5f,at.y,1+2*(1-rise));
+            }
         }
         // The machines' network, as pylon fields in StarCraft: while the player places a building, has a worker selected or
         // looks at a core or relay, each of its nodes draws its coverage on the ground; a relay that is cut off is grey.
@@ -1080,7 +1181,7 @@ namespace Order.Presentation
             }
             if(buildingViews.Count==Match.Buildings.Count)return;
             foreach(var b in new List<PrototypeBuilding>(buildingViews.Keys))
-                if(!Match.Buildings.Contains(b)){var view=buildingViews[b];Destroy(view.Model);Destroy(view.Ring);if(view.Grenade!=null)Destroy(view.Grenade);buildingViews.Remove(b);if(selectedBuilding==b)selectedBuilding=null;}
+                if(!Match.Buildings.Contains(b)){var view=buildingViews[b];Destroy(view.Model);Destroy(view.Ring);if(view.Liquid!=null)Destroy(view.Liquid);if(view.Puddle!=null)Destroy(view.Puddle);buildingViews.Remove(b);if(selectedBuilding==b)selectedBuilding=null;}
         }
         // The building whose model is under the cursor, nearest to the camera.
         PrototypeBuilding BuildingAt(Vector2 screen)
@@ -1279,10 +1380,14 @@ namespace Order.Presentation
             if(Array.IndexOf(Match.Roster(PrototypeMatch.Player).Buildable,kind)<0)return false;
             int w=Match.Roster(PrototypeMatch.Player).Buildings[kind].Width;float cx=x+w*.5f,cz=z+w*.5f;
             PrototypeUnit worker=null;float best=float.MaxValue;
+            // A machine worker becomes the building, so Shift sends the next free worker of the selection instead of
+            // queueing the order.
+            bool next=Match.Roster(PrototypeMatch.Player).ConsumesWorker&&queue;
+            if(next)queue=false;
             if(queue)foreach(var u in selection.Orderable)if(u.Kind==UnitKind.Worker&&(u.SiteKind>=0||u.Constructing!=null||u.Queued.Count>0)){worker=u;break;}
             if(worker==null)foreach(var u in selection.Orderable)
             {
-                if(u.Kind!=UnitKind.Worker)continue;
+                if(u.Kind!=UnitKind.Worker||(next&&u.SiteKind>=0))continue;
                 float d=(u.X-cx)*(u.X-cx)+(u.Z-cz)*(u.Z-cz);
                 if(d<best){best=d;worker=u;}
             }
@@ -1442,10 +1547,12 @@ namespace Order.Presentation
             scenery?.Dispose();scenery=null;
             if(miniTexture!=null){Destroy(miniTexture);miniTexture=null;}
             buildingViews.Clear();depositViews.Clear();pinViews.Clear();siteGhosts.Clear();coverageRings.Clear();pins.Clear();Match=null;
+            foreach(var m in melts)if(m.View!=null)Destroy(m.View);melts.Clear();
+            foreach(var g in gathers){if(g.Form!=null)Destroy(g.Form);if(g.Puddle!=null)Destroy(g.Puddle);if(g.Body!=null)Destroy(g.Body);}gathers.Clear();
             combat?.Dispose();combat=null;strikes.Clear();deaths.Clear();buildingStrikes.Clear();ruins.Clear();waypointLines.Clear();waypointDots.Clear();alerts.Clear();
             unitViews.Clear();unitModels.Clear();selectionRings.Clear();hoverRings.Clear();hovered.Clear();markers.Clear();
             selection=new UnitSelection();lastClickUnit=null;lastGroup=-1;pressing=dragging=false;
-            Array.Clear(buildingMeshes,0,buildingMeshes.Length);
+            Array.Clear(buildingMeshes,0,buildingMeshes.Length);liquidMeshes.Clear();puddleMesh=null;
             ghostModel=null;ghostKind=-1;Mode=MatchMode.None;
         }
         void OnDestroy()=>Shutdown();

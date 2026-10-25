@@ -74,6 +74,13 @@ namespace Order.Presentation
             setup?.Invoke(material);
             return material;
         }
+        // The machines' graphite nanite liquid (Order/NaniteLiquid), cut below a front that the view moves per renderer.
+        public Material NaniteLiquid(string name, Action<Material> setup = null)
+        {
+            var material = Own(new Material(Shader.Find("Order/NaniteLiquid")) { name = name });
+            setup?.Invoke(material);
+            return material;
+        }
         // Additive by default; translucent effects blend normally. Colours above 1 drive the bloom.
         public Material Glow(string name, Color color, bool additive = true, Action<Material> setup = null)
         {

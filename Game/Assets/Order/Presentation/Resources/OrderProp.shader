@@ -16,21 +16,25 @@ Shader "Order/Prop"
         _TeamOverride("Use team colour override", Float) = 0
         [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 2
         _ZWrite("Write depth", Float) = 1
-        // Machine buildings appear from the top down: everything below this world height is cut away, and a glowing
-        // band of nanites marks the edge. Far below the ground by default, so nothing is cut.
+        // Machine buildings appear from the top down as the nanite liquid drains off them: everything below the edge is cut
+        // away, the edge is broken into tongues like the liquid's own (NaniteFront, roughness _RevealNoise), a glowing band
+        // of nanites marks it, and just above it a wet film dries over _Wet. Far below the ground by default, so nothing
+        // is cut.
         _RevealBelow("Hidden below world height", Float) = -1000
         _RevealColor("Reveal edge glow", Color) = (0,0,0,0)
+        _RevealNoise("Reveal edge roughness", Float) = 0
+        _Wet("Wet film above the edge", Float) = 0
     }
     SubShader
     {
         Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Opaque" "Queue"="Geometry" }
         HLSLINCLUDE
-        #include "OrderCommon.hlsl"
+        #include "OrderNanite.hlsl"
         CBUFFER_START(UnityPerMaterial)
             half4 _BaseColor;
             half4 _TeamColor;
             half4 _RevealColor;
-            float _Emission, _Gloss, _Rim, _Panels, _Sway, _Fog, _Opacity, _Cull, _ZWrite, _TeamOverride, _RevealBelow;
+            float _Emission, _Gloss, _Rim, _Panels, _Sway, _Fog, _Opacity, _Cull, _ZWrite, _TeamOverride, _RevealBelow, _RevealNoise, _Wet;
         CBUFFER_END
         struct Attributes { float4 positionOS:POSITION; float3 normalOS:NORMAL; half4 color:COLOR; float4 data:TEXCOORD0; };
         float3 PropWorld(Attributes input)
@@ -40,10 +44,14 @@ Shader "Order/Prop"
             p.xz += float2(sin(phase), cos(phase * .8)) * .05 * input.data.x * _Sway;
             return p;
         }
-        void Reveal(float3 positionWS) { clip(positionWS.y - _RevealBelow); }
-        half3 RevealEdge(float3 positionWS)
+        float RevealFront(float3 positionWS) { return NaniteFront(positionWS, _RevealBelow, _RevealNoise); }
+        void Reveal(float3 positionWS) { clip(positionWS.y - RevealFront(positionWS)); }
+        // A thin glowing seam along the edge; on a flat top the edge sweeps across the whole face at once, so it glows
+        // there only faintly.
+        half3 RevealEdge(float3 positionWS, float3 normalWS)
         {
-            return _RevealColor.rgb * (1 - saturate((positionWS.y - _RevealBelow) / .14));
+            float above = positionWS.y - RevealFront(positionWS);
+            return _RevealColor.rgb * (1 - saturate(above / .07)) * (1 - .85 * abs(normalWS.y));
         }
         ENDHLSL
 
@@ -89,10 +97,26 @@ Shader "Order/Prop"
                     float2 seam = abs(frac(plate) - .5);
                     albedo *= 1 - smoothstep(.46, .5, max(seam.x, seam.y)) * .3;
                 }
-                half3 color = OrderLighting(albedo, input.positionWS, n, 1, input.positionCS, _Gloss);
-                half rim = pow(1 - saturate(dot(n, GetWorldSpaceNormalizeViewDir(input.positionWS))), 3) * _Rim;
-                color += albedo * (input.data.z * _Emission + rim * 1.5);
-                color += RevealEdge(input.positionWS);
+                // Just drained: a film of nanites still wets the surface over _Wet above the edge, darker and mirror-glossy,
+                // drying off upwards in streaks.
+                float3 p = input.positionWS, v = GetWorldSpaceNormalizeViewDir(p);
+                half wet = 0;
+                if (_Wet > 0)
+                {
+                    float above = p.y - RevealFront(p);
+                    wet = saturate(1 - above / (_Wet * (.6 + .8 * OrderNoise(NanitePlane(p, n) * float2(9, 1.2)))));
+                    albedo *= lerp(1, .22, wet);
+                }
+                half3 color = OrderLighting(albedo, p, n, 1, input.positionCS, lerp(_Gloss, 1, wet));
+                half rim = pow(1 - saturate(dot(n, v)), 3) * _Rim;
+                color += albedo * (input.data.z * _Emission * (1 - wet) + rim * 1.5);
+                if (wet > 0)
+                {
+                    Light sun = GetMainLight();
+                    half nh = saturate(dot(n, normalize(sun.direction + v)));
+                    color += (NaniteSky(reflect(-v, n)) * (.025 + .7 * pow(1 - saturate(dot(n, v)), 5)) + sun.color * pow(nh, 200) * 2.5) * wet;
+                }
+                color += RevealEdge(input.positionWS, n);
                 if (_Fog > .5) color = OrderApplyWorld(color, input.positionWS);
                 return half4(color, _Opacity);
             }

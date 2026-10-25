@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Order.Balance::Order.Balance.BuildingBalanceAsset
   DisplayName: "\u0423\u0437\u0435\u043B \u043F\u0440\u043E\u0448\u0438\u0432\u043A\u0438"
   Footprint: 2
-  Metal: 125
+  Metal: 75
   Plasma: 0
   Supply: 0
   Health: 750
@@ -25,3 +25,4 @@ MonoBehaviour:
   Coverage: 0
   Relays: 0
   Researches: 1
+  Extracts: 0
