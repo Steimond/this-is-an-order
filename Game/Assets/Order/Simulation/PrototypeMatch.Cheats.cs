@@ -58,6 +58,18 @@ namespace Order.Simulation
             UpdateVision();
             return spawned;
         }
+        // The visual lab's cheats (VisualLab): a building of either side set down at once, finished or at a stage of its
+        // construction, where a machine site rises by itself as one a worker melted into; and a network that reaches
+        // everywhere, so the lab's machine buildings never go dark.
+        public bool WholeNetwork { get; private set; }
+        public void ReachEverywhere() { WholeNetwork = true; Cheated = true; }
+        public PrototypeBuilding PlaceBuilding(int kind, int x, int z, int owner, float ready)
+        {
+            var building = AddBuilding(kind, x, z, owner, Math.Min(1, ready));
+            building.SelfBuilt = ready < 1 && Roster(owner).SelfBuilding;
+            Cheated = true; UpdateVision();
+            return building;
+        }
         bool SpawnRoom(UnitStats stats, float x, float z)
         {
             if (!stats.Flying && !CanTravel(x, z, x, z, stats.Radius)) return false;

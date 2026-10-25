@@ -14,6 +14,18 @@ namespace Order.Tests.EditMode
         static PrototypeMatch Machines(){var match=new PrototypeMatch(null,FactionId.Resonance,FactionId.Expedition);match.ToggleReveal();match.Metal=5000;return match;}
         static PrototypeBuilding Finished(PrototypeMatch match,int x,int z,int kind)=>Sites.Place(match,x,z,kind,finish:true);
 
+        [Test] public void TheVisualLabSetsBuildingsDownAtTheirStagesAndItsNetworkReachesEverywhere()
+        {
+            var match=new PrototypeMatch(null,FactionId.Resonance,FactionId.Expedition);
+            var site=match.PlaceBuilding(1,30,30,PrototypeMatch.Player,.3f);
+            Assert.That(site.Ready,Is.EqualTo(.3f));Assert.That(site.SelfBuilt,Is.True,"A machine site rises by itself, as one a worker melted into");
+            Assert.That(match.PlaceBuilding(1,50,50,PrototypeMatch.Enemy,.5f).SelfBuilt,Is.False,"A human site waits for its builder");
+            var far=match.PlaceBuilding(0,40,24,PrototypeMatch.Player,1);
+            Run(match,PrototypeMatch.NetworkGrace+1);
+            Assert.That(far.Powered,Is.False,"Out of coverage it goes dark");
+            match.ReachEverywhere();match.Tick(.05f);
+            Assert.That(far.Linked,Is.True);Assert.That(far.Powered,Is.True);Assert.That(match.Cheated,Is.True);
+        }
         [Test] public void MachinesBuildOnlyInsideCoverageHumansAnywhere()
         {
             var match=Machines();

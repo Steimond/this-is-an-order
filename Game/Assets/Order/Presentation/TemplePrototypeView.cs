@@ -62,7 +62,7 @@ namespace Order.Presentation
         readonly Mesh[,] buildingMeshes = new Mesh[2,5];
         Mesh ringMesh, beaconMesh, shadowMesh, selectionMesh, markerMesh, cargoMesh;
         Material buildingMaterial, enemyBuildingMaterial, ghostMaterial, footprintMaterial, selectedMaterial, neutralMaterial, constructionMaterial, beaconMaterial, unitMaterial, enemyMaterial, beamMaterial, shadowMaterial,
-            unitRingMaterial, hoverRingMaterial, enemyRingMaterial, enemyHoverMaterial, markerMaterial, oreMaterial, plasmaCargoMaterial, naniteMaterial, liquidMaterial, cocoonMaterial, coverageMaterial, darkCoverageMaterial;
+            unitRingMaterial, hoverRingMaterial, enemyRingMaterial, enemyHoverMaterial, markerMaterial, oreMaterial, plasmaCargoMaterial, naniteMaterial, liquidMaterial, spikeMaterial, cocoonMaterial, coverageMaterial, darkCoverageMaterial;
         Mesh cocoonMesh;
         MaterialPropertyBlock revealBlock;
         MaterialPropertyBlock cocoonColor;
@@ -92,6 +92,10 @@ namespace Order.Presentation
             if(Match==null)Initialize(GetComponent<UIDocument>().rootVisualElement,()=>UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu"));
         }
 
+        // A scene of its own can lay the match out instead of the test ground's squads and bot (VisualLab): the sides
+        // to play and a setup run once the match exists.
+        [NonSerialized] public (FactionId player,FactionId enemy)? Sides;
+        [NonSerialized] public Action<PrototypeMatch> Setup;
         public void Initialize(VisualElement root, Action exit, MatchServices services=null)
         {
             if(Match!=null)return;
@@ -100,7 +104,7 @@ namespace Order.Presentation
             var catalog=Resources.Load<BalanceCatalog>("PrototypeBalanceCatalog");
             if(catalog==null)throw new InvalidOperationException("Create balance assets using Order/Create Missing Balance Assets.");
             // Factions: those chosen for the match in the menu (by default humans against the machines), or a restart's.
-            var (player,enemy)=restartAs??(services?.App?.PlayerFaction??FactionId.Expedition,services?.App?.EnemyFaction??FactionId.Resonance);restartAs=null;
+            var (player,enemy)=restartAs??Sides??(services?.App?.PlayerFaction??FactionId.Expedition,services?.App?.EnemyFaction??FactionId.Resonance);restartAs=null;
             Match=new PrototypeMatch(catalog.Snapshot(),player,enemy);ui=root;onExit=exit;
             ecsWorld=World.DefaultGameObjectInjectionWorld;
             if(ecsWorld==null)throw new InvalidOperationException("Default ECS world is unavailable.");
@@ -144,7 +148,11 @@ namespace Order.Presentation
             }
             beamMaterial=scenery.Glow("Mining beam",new Color(.45f,.9f,1)*3);
             naniteMaterial=scenery.Glow("Nanite threads",new Color(.62f,.86f,1)*2.4f);
-            liquidMaterial=scenery.NaniteLiquid("Nanite liquid");
+            // The liquid is tuned in its material asset (Resources/NaniteLiquid), live, even in Play Mode; the spikes take
+            // its settings (SyncSpikes).
+            liquidMaterial=Resources.Load<Material>("NaniteLiquid");
+            if(liquidMaterial==null)liquidMaterial=scenery.NaniteLiquid("Nanite liquid");
+            spikeMaterial=scenery.Own(new Material(liquidMaterial){name="Nanite spikes"});spikeMaterial.EnableKeyword("NANITE_SPIKES");
             coverageMaterial=scenery.Glow("Network coverage",new Color(.5f,.8f,1)*1.1f);darkCoverageMaterial=scenery.Glow("Network coverage lost",new Color(.45f,.45f,.5f)*.5f);
             cocoonMaterial=scenery.Glow("Nanite cocoon",new Color(.14f,.27f,.38f,1));cocoonMesh=scenery.Own(MachineModels.Cocoon());cocoonColor=new MaterialPropertyBlock();
             revealBlock=new MaterialPropertyBlock();
@@ -167,7 +175,14 @@ namespace Order.Presentation
             Match.Attacked+=(attacker,target)=>strikes.Add((attacker,target));Match.Died+=deaths.Add;
             Match.AttackedBuilding+=(attacker,target)=>buildingStrikes.Add((attacker,target));Match.Destroyed+=ruins.Add;
             Match.UnderAttack+=OnUnderAttack;Match.Cancelled+=OnCancelled;
-            Match.AddTestSquad();Match.AddEnemySquad();Match.AddEnemyBase();Match.StartBot();Match.PrepareNavigation();SelectWorker();
+            if(Setup!=null)Setup(Match);else{Match.AddTestSquad();Match.AddEnemySquad();Match.AddEnemyBase();Match.StartBot();}
+            Match.PrepareNavigation();SelectWorker();
+            // The machines' liquid meshes take a moment to make, the spikes most: made now, not as the first site rises.
+            if(Match.FactionOf(PrototypeMatch.Player)==FactionId.Resonance||Match.FactionOf(PrototypeMatch.Enemy)==FactionId.Resonance)
+            {
+                var machines=Match.Balance.Of(FactionId.Resonance).Buildings;
+                for(int kind=0;kind<machines.Length;kind++)if(machines[kind]!=null){var shape=BuildingMesh(FactionId.Resonance,kind);LiquidMesh(shape);SpikeMesh(shape);}
+            }
             var square=new MeshBuilder();square.Quad(new Vector3(-.5f,0,-.5f),new Vector3(-.5f,0,.5f),new Vector3(.5f,0,.5f),new Vector3(.5f,0,-.5f));
             footprint=scenery.Model("Placement footprint",scenery.Own(square.ToMesh("Footprint")),footprintMaterial,worldRoot.transform,false);footprint.SetActive(false);
             UpdateCamera();RefreshWorld();
@@ -313,6 +328,7 @@ namespace Order.Presentation
             ShowPlannedSites();
             ShowCoverage();
             for(int i=0;i<pinViews.Count;i++)pinViews[i].transform.localScale=new Vector3(1,1+.08f*Mathf.Sin(Time.time*4+i),1);
+            SyncSpikes();
             AnimateBuildings();
             AnimateMelts();
             AnimateGathers();
@@ -983,25 +999,44 @@ namespace Order.Presentation
         // - then the liquid drains off from the top down in tongues, and the real building shows above its edge, wet and
         //   mirror-dark at first, drying off as the edge moves on; once it stands the last of the film dries.
         // The liquid's own shape swells and shivers all the while (the vertex wobble of Order/NaniteLiquid, on a finely
-        // split copy of the model). Driven by the progress, so a cancelled site plays its own way back (OnCancelled) and a
+        // split copy of the model), and magnetic spikes stand out of it, rising and sinking in patches (a child mesh of
+        // cones, NaniteMeshes.Spikes). Driven by the progress, so a cancelled site plays its own way back (OnCancelled) and a
         // destroyed one simply disappears with its view.
         // A flat top keeps its liquid longer towards the middle of the building, as deep as this share of the width
         // (NaniteLevel in OrderNanite.hlsl): it drains off such a face as a shrinking puddle and floods it from the rim,
         // instead of the whole face turning at once.
-        const float LiquidRough=.3f,DryingSeconds=1.6f,MeltSeconds=.9f,LiquidWobble=.06f,PoolDepth=.25f;
+        const float LiquidRough=.3f,DryingSeconds=1.6f,MeltSeconds=.9f,PoolDepth=.25f;
         readonly Dictionary<Mesh,Mesh> liquidMeshes=new Dictionary<Mesh,Mesh>();
         Mesh puddleMesh;
         // Buildings split to 0.3, the small bodies of units finer, so both bend smoothly.
         Mesh LiquidMesh(Mesh mesh,float maxEdge=.3f){if(!liquidMeshes.TryGetValue(mesh,out var liquid))liquidMeshes[mesh]=liquid=scenery.Own(NaniteMeshes.Subdivided(mesh,maxEdge));return liquid;}
         Mesh PuddleMesh()=>puddleMesh??=scenery.Own(NaniteMeshes.Puddle());
-        // shift is how far the liquid's flow has gone (+ up, - down): a flow that turns round is integrated by the caller, so
-        // the pattern and the shape slow down and turn instead of jumping.
-        void LiquidBlock(Renderer renderer,float front,float shift,float ground,float spikes=1,float wobble=LiquidWobble,Vector4 pool=default,float rough=LiquidRough)
+        // Magnetic spikes over a model, cones about 0.085 apart, 0.075 in foot radius, up to 0.18 tall (NaniteMeshes.Spikes), and over the puddle.
+        readonly Dictionary<Mesh,Mesh> spikeMeshes=new Dictionary<Mesh,Mesh>();
+        Mesh puddleSpikes;
+        Mesh SpikeMesh(Mesh mesh){if(!spikeMeshes.TryGetValue(mesh,out var spikes))spikeMeshes[mesh]=spikes=scenery.Own(NaniteMeshes.Spikes(mesh,.085f,.075f,.18f));return spikes;}
+        Mesh PuddleSpikeMesh()=>puddleSpikes??=scenery.Own(NaniteMeshes.PuddleSpikes());
+        // The liquid with its spikes, a child drawn with the same settings (LiquidBlock).
+        GameObject WithSpikes(GameObject liquid,Mesh spikes){scenery.Model("Nanite spikes",spikes,spikeMaterial,liquid.transform);return liquid;}
+        // The spikes draw with the liquid's own settings: in the editor they follow its material as it is tuned.
+        void SyncSpikes()
+        {
+#if UNITY_EDITOR
+            spikeMaterial.CopyPropertiesFromMaterial(liquidMaterial);spikeMaterial.EnableKeyword("NANITE_SPIKES");
+#endif
+        }
+        // What a liquid object takes from its view, beside the tunable look in the material: shift is how far the liquid's
+        // flow has gone (+ up, - down), integrated by the caller, so the pattern and the shape slow down and turn instead
+        // of jumping; spikes and wobble scale the material's spikes and wobble for this object.
+        void LiquidBlock(Renderer renderer,float front,float shift,float ground,float spikes=1,float wobble=1,Vector4 pool=default,float rough=LiquidRough)
         {
             revealBlock.SetFloat("_Front",front);revealBlock.SetFloat("_FrontNoise",rough);revealBlock.SetFloat("_Shift",shift);
-            revealBlock.SetFloat("_Base",ground);revealBlock.SetFloat("_Wobble",wobble);revealBlock.SetFloat("_Spikes",spikes);
+            revealBlock.SetFloat("_Base",ground);revealBlock.SetFloat("_WobbleFade",wobble);revealBlock.SetFloat("_Spikes",spikes);
             if(pool.z>0)revealBlock.SetVector("_Pool",pool);
-            renderer.SetPropertyBlock(revealBlock);revealBlock.Clear();
+            renderer.SetPropertyBlock(revealBlock);
+            // Its spikes, if it has them, stand on the same liquid.
+            if(renderer.transform.childCount>0)renderer.transform.GetChild(0).GetComponent<MeshRenderer>().SetPropertyBlock(revealBlock);
+            revealBlock.Clear();
         }
         // How far the building's shape reaches for the liquid above the ground, with the pooling on flat tops
         // (NaniteLevel): the lowest level the drain has to uncover (x), the highest it starts from (y), and the highest
@@ -1084,7 +1119,7 @@ namespace Order.Presentation
                 renderer.SetPropertyBlock(revealBlock);revealBlock.Clear();return;
             }
             view.Revealing=true;
-            if(view.Liquid==null)view.Liquid=scenery.Model("Nanite form",LiquidMesh(view.Model.GetComponent<MeshFilter>().sharedMesh),liquidMaterial,worldRoot.transform);
+            if(view.Liquid==null){var shape=view.Model.GetComponent<MeshFilter>().sharedMesh;view.Liquid=WithSpikes(scenery.Model("Nanite form",LiquidMesh(shape),liquidMaterial,worldRoot.transform),SpikeMesh(shape));}
             if(view.Liquid.activeSelf!=shown)view.Liquid.SetActive(shown);
             view.Liquid.transform.SetPositionAndRotation(view.Model.transform.position,view.Model.transform.rotation);
             view.Liquid.transform.localScale=view.Model.transform.localScale;
@@ -1092,11 +1127,12 @@ namespace Order.Presentation
             float sinking=Mathf.InverseLerp(melt,melt+(fill-melt)*.4f,b.Ready),radius=w*.42f*Mathf.SmoothStep(0,1,b.Ready/Mathf.Max(1e-4f,melt*.8f))*(1-Mathf.SmoothStep(0,1,sinking));
             if(radius>.02f)
             {
-                if(view.Puddle==null)view.Puddle=scenery.Model("Nanite puddle",PuddleMesh(),liquidMaterial,worldRoot.transform);
+                if(view.Puddle==null)view.Puddle=WithSpikes(scenery.Model("Nanite puddle",PuddleMesh(),liquidMaterial,worldRoot.transform),PuddleSpikeMesh());
                 if(view.Puddle.activeSelf!=shown)view.Puddle.SetActive(shown);
                 view.Puddle.transform.SetPositionAndRotation(new Vector3(cx,ground-.02f-.08f*sinking,cz),Quaternion.Euler(0,b.X*37,0));
                 view.Puddle.transform.localScale=new Vector3(radius,1,radius);
-                LiquidBlock(view.Puddle.GetComponent<MeshRenderer>(),1000,0,ground-1,2);
+                // Its spikes grow as it spreads.
+                LiquidBlock(view.Puddle.GetComponent<MeshRenderer>(),1000,0,ground-1,Mathf.Clamp01(radius));
             }
             else if(view.Puddle!=null){Destroy(view.Puddle);view.Puddle=null;}
             view.PuddleRadius=view.Puddle!=null?radius:0;
@@ -1148,7 +1184,7 @@ namespace Order.Presentation
                 m.View.transform.SetPositionAndRotation(m.At+Vector3.down*sink*.25f,m.Turn);
                 m.View.transform.localScale=Vector3.Scale(m.Scale,new Vector3(1+.55f*sag-.4f*sink,Mathf.Lerp(1,.12f,sag),1+.55f*sag-.4f*sink));
                 // The shiver and the spikes come in as the body loses its form, so it does not twitch the moment it melts.
-                LiquidBlock(m.View.GetComponent<MeshRenderer>(),1000,-1.5f*(Time.time-m.Start),m.Ground,3*sag,LiquidWobble*Mathf.SmoothStep(0,1,Mathf.Min(1,s*4)));
+                LiquidBlock(m.View.GetComponent<MeshRenderer>(),1000,-1.5f*(Time.time-m.Start),m.Ground,3*sag,Mathf.SmoothStep(0,1,Mathf.Min(1,s*4)));
             }
         }
         // Cancelling a machine site plays it all back, quickly: the liquid shape slumps down into a puddle and the puddle
@@ -1164,9 +1200,10 @@ namespace Order.Presentation
             // It starts from where the liquid is: as high as it has filled, flowing as it flowed, the puddle as wide as it was.
             var g=new Gather{Worker=worker,Start=Time.time,Ground=ground,Top=view.Liquid!=null?view.Front:ground+b.Stats.Height*1.08f+.15f,Radius=b.Width*.42f,
                 Flow=view.Flow,Shift=view.Shift,PuddleFrom=view.PuddleRadius,Pool=view.Pool,Center=new Vector3(b.X+b.Width*.5f,ground,b.Z+b.Width*.5f)};
-            g.Form=scenery.Model("Nanite form",LiquidMesh(view.Model.GetComponent<MeshFilter>().sharedMesh),liquidMaterial,worldRoot.transform);
+            var shape=view.Model.GetComponent<MeshFilter>().sharedMesh;
+            g.Form=WithSpikes(scenery.Model("Nanite form",LiquidMesh(shape),liquidMaterial,worldRoot.transform),SpikeMesh(shape));
             g.Form.transform.SetPositionAndRotation(view.Model.transform.position,view.Model.transform.rotation);
-            g.Puddle=scenery.Model("Nanite puddle",PuddleMesh(),liquidMaterial,worldRoot.transform);
+            g.Puddle=WithSpikes(scenery.Model("Nanite puddle",PuddleMesh(),liquidMaterial,worldRoot.transform),PuddleSpikeMesh());
             if(worker!=null)
             {
                 var key=(Match.FactionOf(worker.Owner),worker.Kind);
@@ -1191,13 +1228,13 @@ namespace Order.Presentation
                 float slump=Mathf.SmoothStep(0,1,Mathf.Min(1,s*2));
                 g.Form.SetActive(slump<1);
                 g.Flow=Mathf.MoveTowards(g.Flow,-2.5f,Time.deltaTime*12);g.Shift+=g.Flow*Time.deltaTime;
-                LiquidBlock(g.Form.GetComponent<MeshRenderer>(),Mathf.Lerp(g.Top,g.Ground-.4f,slump),g.Shift,g.Ground,1+slump,pool:g.Pool);
+                LiquidBlock(g.Form.GetComponent<MeshRenderer>(),Mathf.Lerp(g.Top,g.Ground-.4f,slump),g.Shift,g.Ground,1-slump,pool:g.Pool);
                 // The puddle spreads as the shape slumps, then draws in under the worker.
                 float spread=Mathf.SmoothStep(0,1,Mathf.Clamp01(s*2.5f-.3f)),draw=Mathf.SmoothStep(0,1,Mathf.Clamp01(s*2-1));
                 var at=g.Worker!=null&&g.Worker.Alive?new Vector3(g.Worker.X,Match.HeightAt(g.Worker.X,g.Worker.Z),g.Worker.Z):g.Center;
                 g.Puddle.transform.position=Vector3.Lerp(g.Center,at,draw)+Vector3.down*.02f;
                 float radius=Mathf.Lerp(Mathf.Max(g.PuddleFrom,g.Radius*spread),.12f,draw);g.Puddle.transform.localScale=new Vector3(radius,1,radius);
-                LiquidBlock(g.Puddle.GetComponent<MeshRenderer>(),1000,0,g.Ground-1,2);
+                LiquidBlock(g.Puddle.GetComponent<MeshRenderer>(),1000,0,g.Ground-1,Mathf.Clamp01(radius));
                 // The worker rises out of it in the second half.
                 if(g.Body==null)continue;
                 float rise=Mathf.SmoothStep(0,1,Mathf.Clamp01(s*2-1));
@@ -1418,6 +1455,8 @@ namespace Order.Presentation
             selectedBuilding=null;selectedDeposit=null;hud?.Refresh();
         }
         public void Focus(Vector2 point)=>focus=new Vector3(Mathf.Clamp(point.x,0,64),0,Mathf.Clamp(point.y,0,64));
+        // The camera moved at once, from this distance (the visual lab's presets).
+        public void LookAt(Vector2 point,float distance){Focus(point);zoom=targetZoom=Mathf.Clamp(distance,MinZoom,MaxZoom);focusHeight=Match.HeightAt(focus.x,focus.z);}
         public Vector2 CameraFocus=>new Vector2(focus.x,focus.z);
         public void FocusWorker(){var worker=Match.Units.Find(u=>u.Owner==PrototypeMatch.Player&&u.Kind==UnitKind.Worker);if(worker!=null)focus=new Vector3(worker.X,0,worker.Z);}
         // Camera to the middle of the selected units; without a selection, to the worker.
@@ -1639,7 +1678,7 @@ namespace Order.Presentation
             combat?.Dispose();combat=null;strikes.Clear();deaths.Clear();buildingStrikes.Clear();ruins.Clear();waypointLines.Clear();waypointDots.Clear();alerts.Clear();
             unitViews.Clear();unitModels.Clear();selectionRings.Clear();hoverRings.Clear();hovered.Clear();markers.Clear();
             selection=new UnitSelection();lastClickUnit=null;lastGroup=-1;pressing=dragging=false;
-            Array.Clear(buildingMeshes,0,buildingMeshes.Length);liquidMeshes.Clear();liquidSpans.Clear();puddleMesh=null;
+            Array.Clear(buildingMeshes,0,buildingMeshes.Length);liquidMeshes.Clear();liquidSpans.Clear();spikeMeshes.Clear();puddleMesh=puddleSpikes=null;
             ghostModel=null;ghostKind=-1;Mode=MatchMode.None;
         }
         void OnDestroy()=>Shutdown();

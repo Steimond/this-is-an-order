@@ -21,7 +21,7 @@ namespace Order.Simulation
         {
             for (int side = 0; side < 2; side++)
             {
-                if (!Roster(side).Network) { foreach (var b in Buildings) if (b.Owner == side) { b.Linked = b.Powered = true; b.DarkFor = 0; } continue; }
+                if (!Roster(side).Network || WholeNetwork) { foreach (var b in Buildings) if (b.Owner == side) { b.Linked = b.Powered = true; b.DarkFor = 0; } continue; }
                 // Cores are the roots; the relays they allow, in the order they were placed, are the other nodes.
                 int allowed = 0;
                 foreach (var b in Buildings) if (b.Owner == side && b.Kind == FactionBalance.Main && b.Ready >= 1 && b.Health > 0) allowed += b.Stats.Relays;
