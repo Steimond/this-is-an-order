@@ -343,9 +343,30 @@ namespace Order.Simulation
 
         // ---------- Path search ----------
         static int Cell(Fix x, Fix z) => Math.Max(0, Math.Min(63, (int)z)) * 64 + Math.Max(0, Math.Min(63, (int)x));
+        // Found paths, until the map changes: a path depends only on the start and goal cells, the deposit, the radius and
+        // what blocks movement, so the same question gets the same answer. A path that reaches its goal does not depend on
+        // the exact target point either (that only picks the nearest cell when the goal is out of reach), so it serves any
+        // point in the goal cell; one that does not is kept for its exact point. The callers only read the cells.
+        readonly Dictionary<(int start, int goal, int deposit, long x, long z, long radius), (List<int> cells, bool reached)> paths =
+            new Dictionary<(int, int, int, long, long, long), (List<int>, bool)>();
+        int pathsVersion = -1, pathsBuildings = -1;
+        const int MaxPaths = 4096;
+        List<int> FindPath(int start, int goal, ResourceDeposit deposit, Fix targetX, Fix targetZ, Fix radius, out bool reached)
+        {
+            if (pathsVersion != navigationVersion || pathsBuildings != Buildings.Count || paths.Count >= MaxPaths)
+            { paths.Clear(); pathsVersion = navigationVersion; pathsBuildings = Buildings.Count; }
+            int at = deposit == null ? -1 : deposit.Z * 64 + deposit.X;
+            var anyPoint = (start, goal, at, 0L, 0L, radius.Raw);
+            if (paths.TryGetValue(anyPoint, out var found) && found.reached) { reached = true; return found.cells; }
+            var exact = (start, goal, at, targetX.Raw, targetZ.Raw, radius.Raw);
+            if (paths.TryGetValue(exact, out found)) { reached = found.reached; return found.cells; }
+            var cells = SearchPath(start, goal, deposit, targetX, targetZ, radius, out reached);
+            paths[reached ? anyPoint : exact] = (cells, reached);
+            return cells;
+        }
         // Cells from the start (excluded) to the goal cell, or to a cell next to the deposit. When the goal cannot be
         // reached, the path leads to the reachable cell closest to the target.
-        List<int> FindPath(int start, int goal, ResourceDeposit deposit, Fix targetX, Fix targetZ, Fix radius, out bool reached)
+        List<int> SearchPath(int start, int goal, ResourceDeposit deposit, Fix targetX, Fix targetZ, Fix radius, out bool reached)
         {
             searchStamp++; open.Clear();
             int best = start; Fix bestDistance = Fix.MaxValue;
@@ -406,6 +427,7 @@ namespace Order.Simulation
         void StepUnits(Fix dt)
         {
             foreach (var u in Units) { u.levelY = HeightAt(u.X, u.Z); u.touchedArrived = false; u.startX = u.X; u.startZ = u.Z; }
+            searchStep++;
             FillBlocks();
             foreach (var u in Units) Fight(u, dt);
             blocksTrue = false;

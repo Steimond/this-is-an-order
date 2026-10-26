@@ -48,6 +48,11 @@ namespace Order.Simulation
         // Whether the gap between the two is certainly beyond the reach, from the squared distance alone: a quick test
         // before the exact Gap, with a margin far above the rounding of the root, so it never rejects what Gap accepts.
         static readonly Fix BeyondMargin = Fix.One / 1024;
+        // A unit without a target in reach looks round for one every SearchEvery steps (0.2 s), not every step, as in
+        // StarCraft; the units take turns by Id, so a crowd does not search all at once. `searchStep` counts movement steps.
+        const int SearchEvery = 4;
+        int searchStep;
+        bool Searching(PrototypeUnit u) => (searchStep + u.Id) % SearchEvery == 0;
         // Whether a candidate beats the best so far: a lower score, or the same score and earlier in Units, as a pass over
         // all units in their order would pick (Near may list them in any order).
         static bool First(Fix score, PrototypeUnit candidate, Fix bestScore, PrototypeUnit best) =>
@@ -140,7 +145,7 @@ namespace Order.Simulation
         {
             if (u.cooldown > 0) u.cooldown -= dt;
             if (u.leaping) return;
-            if (u.Stats.Siege) { FightDeployed(u, dt); return; }
+            if (u.Stats.Siege) { long siege = Mark(); FightDeployed(u, dt); Spent(StepProfile.Phase.FightSiege, siege); return; }
             if (!u.Alive || u.Stats.Damage <= 0 || u.Order == UnitOrder.Move || u.HarvestTarget != null || u.Disassembling) { u.Target = null; u.TargetBuilding = null; return; }
             long since = Mark();
             var target = PickTarget(u);
@@ -150,8 +155,8 @@ namespace Order.Simulation
             bool fresh = (target != null && target != u.Target) || (building != null && building != u.TargetBuilding);
             if (fresh && u.cooldown <= 0) u.cooldown = Reaction(u);
             u.Target = target; u.TargetBuilding = building;
-            if (target == null && building == null) { if (u.engaged) Disengage(u); return; }
-            if (u.Stats.Leap && target != null) { FightByLeaps(u, target, dt); return; }
+            if (target == null && building == null) { if (u.engaged) { since = Mark(); Disengage(u); Spent(StepProfile.Phase.FightDisengage, since); } return; }
+            if (u.Stats.Leap && target != null) { since = Mark(); FightByLeaps(u, target, dt); Spent(StepProfile.Phase.FightLeaps, since); return; }
             if (target != null ? InRange(u, target) : Gap(u, building) <= (u.Stats.Leap ? BuildingReach : u.Stats.AttackRange))
             {
                 // Stand and shoot; an attack-move picks its route up again once the fight is over.
@@ -330,6 +335,13 @@ namespace Order.Simulation
             if (keep && InRange(u, current)) return current;
             bool hold = u.Order == UnitOrder.Hold;
             Fix acquire = hold ? u.Stats.AttackRange : AcquireRange(u);
+            // Between its searches a unit keeps what it has: the target it is closing in on, or none, though it still
+            // answers an attacker. A target that died or vanished is replaced at once.
+            if (!Searching(u) && (current == null || keep))
+            {
+                if (keep) return current;
+                return !hold && Valid(u, u.aggressor) && Gap(u, u.aggressor) <= acquire + AggressorReach ? u.aggressor : null;
+            }
             PrototypeUnit inRange = null, near = null; Fix inRangeScore = Fix.MaxValue, nearScore = Fix.MaxValue;
             foreach (var v in Near(u.X, u.Z, acquire + u.Stats.Radius + widest, false))
             {
@@ -356,6 +368,7 @@ namespace Order.Simulation
             Fix acquire = u.Order == UnitOrder.Hold ? u.Stats.AttackRange : AcquireRange(u);
             var current = u.TargetBuilding;
             if (Valid(u, current) && Gap(u, current) <= acquire + AcquireExtra) return current;
+            if (!Searching(u) && current == null) return null;
             PrototypeBuilding best = null; Fix bestGap = acquire;
             foreach (var b in Buildings)
             {

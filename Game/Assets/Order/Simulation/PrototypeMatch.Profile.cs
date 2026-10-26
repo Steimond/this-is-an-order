@@ -8,7 +8,7 @@ namespace Order.Simulation
     public sealed class StepProfile
     {
         // The Fight… phases after Vision are parts of Fight (picking targets, closing in, striking), counted inside it.
-        public enum Phase { Network, Buildings, Production, Research, Bot, Fight, Move, Separate, Obstacles, Arrival, Works, Cleanup, Vision, FightTargets, FightApproach, FightStrikes }
+        public enum Phase { Network, Buildings, Production, Research, Bot, Fight, Move, Separate, Obstacles, Arrival, Works, Cleanup, Vision, FightTargets, FightApproach, FightStrikes, FightSiege, FightDisengage, FightLeaps }
         public static readonly string[] Names = System.Enum.GetNames(typeof(Phase));
         public readonly long[] Ticks = new long[Names.Length];
         public int Steps;

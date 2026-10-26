@@ -26,9 +26,9 @@ namespace Order.Simulation
             if (d < (Fix)1e-3f) return LeapStart.Blocked;
             dx /= d; dz /= d;
             if (!CanTravel(u.X, u.Z, target.X, target.Z, r)) return LeapStart.Blocked;
-            // The first unit on the line before the target, if any.
+            // The first unit on the line before the target, if any: only units within the jump's length can stand on it.
             Fix stop = Fix.MaxValue;
-            foreach (var v in Units)
+            foreach (var v in Near(u.X, u.Z, d + r + widest, false))
             {
                 if (v == u || v == target || v.Stats.Flying || !v.Alive) continue;
                 Fix along = (v.X - u.X) * dx + (v.Z - u.Z) * dz, across = Math.Abs((v.X - u.X) * dz - (v.Z - u.Z) * dx), reach = r + v.Stats.Radius;
@@ -56,7 +56,7 @@ namespace Order.Simulation
         }
         bool LandingFree(PrototypeUnit u, PrototypeUnit target, Fix x, Fix z)
         {
-            foreach (var v in Units)
+            foreach (var v in Near(x, z, u.Stats.Radius + widest, false))
             {
                 if (v == u || v == target || v.Stats.Flying || !v.Alive) continue;
                 Fix reach = u.Stats.Radius + v.Stats.Radius;
