@@ -1,0 +1,15 @@
+{
+  "what": "Simulation stress battle without the view: 8 sides meet in the middle of Temple Basin (StressBattle)",
+  "date": "2026-10-26T18:14",
+  "unity": "6000.6.6f1",
+  "machine": "AMD Ryzen 7 7700 8-Core Processor (16 threads), Windows 11  (10.0.26300)",
+  "where": "Player, IL2CPP, main thread",
+  "steps": 600,
+  "stepSeconds": 0.05,
+  "results": [
+    { "units": 500, "aliveAtEnd": 116, "setupMs": 139.7, "stepMs": { "mean": 1.25, "median": 1.05, "p95": 2.85, "max": 9.25 }, "phasesMeanMs": { "Network": 0.001, "Buildings": 0.000, "Production": 0.000, "Research": 0.000, "Bot": 0.000, "Fight": 0.550, "Move": 0.089, "Separate": 0.258, "Obstacles": 0.046, "Arrival": 0.137, "Works": 0.010, "Cleanup": 0.004, "Vision": 0.152, "FightTargets": 0.134, "FightApproach": 0.300, "FightStrikes": 0.004 } },
+    { "units": 1000, "aliveAtEnd": 355, "setupMs": 214.5, "stepMs": { "mean": 3.61, "median": 3.30, "p95": 6.82, "max": 21.15 }, "phasesMeanMs": { "Network": 0.001, "Buildings": 0.000, "Production": 0.000, "Research": 0.000, "Bot": 0.000, "Fight": 1.621, "Move": 0.256, "Separate": 0.778, "Obstacles": 0.095, "Arrival": 0.527, "Works": 0.023, "Cleanup": 0.010, "Vision": 0.303, "FightTargets": 0.401, "FightApproach": 0.885, "FightStrikes": 0.009 } },
+    { "units": 2000, "aliveAtEnd": 734, "setupMs": 406.8, "stepMs": { "mean": 8.71, "median": 8.20, "p95": 15.10, "max": 35.22 }, "phasesMeanMs": { "Network": 0.002, "Buildings": 0.000, "Production": 0.000, "Research": 0.000, "Bot": 0.000, "Fight": 3.544, "Move": 0.618, "Separate": 2.292, "Obstacles": 0.192, "Arrival": 1.414, "Works": 0.055, "Cleanup": 0.031, "Vision": 0.563, "FightTargets": 1.285, "FightApproach": 1.483, "FightStrikes": 0.024 } },
+    { "units": 3000, "aliveAtEnd": 1240, "setupMs": 626.3, "stepMs": { "mean": 14.63, "median": 14.07, "p95": 24.46, "max": 63.97 }, "phasesMeanMs": { "Network": 0.002, "Buildings": 0.000, "Production": 0.000, "Research": 0.000, "Bot": 0.000, "Fight": 5.085, "Move": 1.053, "Separate": 3.822, "Obstacles": 0.295, "Arrival": 3.362, "Works": 0.103, "Cleanup": 0.055, "Vision": 0.849, "FightTargets": 2.286, "FightApproach": 1.652, "FightStrikes": 0.040 } }
+  ]
+}
