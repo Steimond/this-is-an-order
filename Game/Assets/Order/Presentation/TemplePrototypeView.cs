@@ -4,7 +4,7 @@ using Order.Content;
 using Order.Contracts;
 using Order.Balance;
 using Order.Simulation;
-using Unity.Entities;
+
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UIElements;
@@ -77,8 +77,8 @@ namespace Order.Presentation
         readonly List<LineRenderer> waypointLines = new List<LineRenderer>();
         readonly List<GameObject> waypointDots = new List<GameObject>();
         readonly List<Vector3> waypointPoints = new List<Vector3>();
-        Entity matchEntity;
-        World ecsWorld;
+        // Real time not yet played by the match, and how far the frame is between the last two match steps (0–1).
+        float pending, blend;
         Vector3 focus = new Vector3(13,0,13);
         float zoom=StartZoom, targetZoom=StartZoom, focusHeight, refresh;
         int buildKind=-1, hoverX, hoverZ;
@@ -105,11 +105,7 @@ namespace Order.Presentation
             if(catalog==null)throw new InvalidOperationException("Create balance assets using Order/Create Missing Balance Assets.");
             // Factions: those chosen for the match in the menu (by default humans against the machines), or a restart's.
             var (player,enemy)=restartAs??Sides??(services?.App?.PlayerFaction??FactionId.Expedition,services?.App?.EnemyFaction??FactionId.Resonance);restartAs=null;
-            Match=new PrototypeMatch(catalog.Snapshot(),player,enemy);ui=root;onExit=exit;
-            ecsWorld=World.DefaultGameObjectInjectionWorld;
-            if(ecsWorld==null)throw new InvalidOperationException("Default ECS world is unavailable.");
-            matchEntity=ecsWorld.EntityManager.CreateEntity();
-            ecsWorld.EntityManager.AddComponentObject(matchEntity,new PrototypeMatchState{Match=Match});
+            Match=new PrototypeMatch(catalog.Snapshot(),player,enemy);ui=root;onExit=exit;pending=0;blend=1;
             worldRoot=new GameObject("Temple Basin • generated world");
             var cameraObject=new GameObject("RTS Camera",typeof(Camera),typeof(AudioListener));
             cameraObject.transform.SetParent(worldRoot.transform);
@@ -299,6 +295,7 @@ namespace Order.Presentation
                 }
                 else if(!overUI&&Mode==MatchMode.None){var unit=UnitAt(p);if(unit!=null)hovered.Add(unit);}
             }
+            PlayMatch();
             focus.x=Mathf.Clamp(focus.x,0,64);focus.z=Mathf.Clamp(focus.z,0,64);
             zoom=Mathf.Lerp(zoom,targetZoom,1-Mathf.Exp(-Time.deltaTime*12));
             focusHeight=Mathf.Lerp(focusHeight,Match.HeightAt(Mathf.Clamp(focus.x,0,63.9f),Mathf.Clamp(focus.z,0,63.9f)),1-Mathf.Exp(-Time.deltaTime*4));
@@ -335,6 +332,21 @@ namespace Order.Presentation
             scenery.Tick(Time.deltaTime);
             refresh+=Time.deltaTime;if(refresh>.15f){refresh=0;RefreshWorld();}
         }
+        // The match plays the frame's time in its fixed steps, after this frame's orders; a long frame (a hitch, a breakpoint)
+        // plays at most a few steps, so the match slows down instead of freezing the view to catch up.
+        const int MaxStepsPerFrame=5;
+        void PlayMatch()
+        {
+            pending+=Time.deltaTime;
+            for(int steps=0;pending>=PrototypeMatch.TickSeconds;steps++)
+            {
+                if(steps==MaxStepsPerFrame){pending=0;break;}
+                Match.Advance();pending-=PrototypeMatch.TickSeconds;
+            }
+            blend=Mathf.Clamp01(pending/PrototypeMatch.TickSeconds);
+        }
+        // Where a unit is drawn this frame: between where it stood before the last match step and where it stands now.
+        Vector2 Place(PrototypeUnit unit)=>new Vector2(Mathf.Lerp(unit.PreviousX,unit.X,blend),Mathf.Lerp(unit.PreviousZ,unit.Z,blend));
         sealed class UnitView
         {
             public GameObject Root;
@@ -386,7 +398,8 @@ namespace Order.Presentation
                 // A machine worker gathering back out of a cancelled site shows only as the liquid until it has formed.
                 bool seen=Match.SeenBy(PrototypeMatch.Player,unit)&&!Gathering(unit);
                 if(view.Root.activeSelf!=seen){view.Root.SetActive(seen);if(view.Shadow!=null)view.Shadow.gameObject.SetActive(seen);}
-                float ground=Match.HeightAt(unit.X,unit.Z);
+                var at=Place(unit);
+                float ground=Match.HeightAt(at.x,at.y);
                 if(unit.Stats.Flying)
                 {
                     // Climb early and fast, sink late and slowly: the flight level follows the highest ground around
@@ -396,7 +409,7 @@ namespace Order.Presentation
                 }
                 // A leaper flies its jump in an arc.
                 else view.Height=ground+(unit.Leaping?Mathf.Sin(unit.LeapShare*Mathf.PI)*.9f:0);
-                var position=new Vector3(unit.X,view.Height,unit.Z);
+                var position=new Vector3(at.x,view.Height,at.y);
                 var root=view.Root.transform;
                 var direction=position-root.position;direction.y=0;
                 float step=direction.magnitude;
@@ -473,7 +486,7 @@ namespace Order.Presentation
                 for(int i=0;i<view.Rotors.Length;i++)view.Rotors[i].localRotation=Quaternion.Euler(0,time*1300*(i%2==0?1:-1)+i*40,0);
                 // A howitzer lifts its barrel as it deploys and lowers it to travel.
                 if(view.Gun!=null)view.Gun.localRotation=Quaternion.Euler(-view.Model.GunLift*unit.DeployShare,0,0);
-                if(view.Shadow!=null)view.Shadow.position=new Vector3(unit.X,ground+.06f,unit.Z);
+                if(view.Shadow!=null)view.Shadow.position=new Vector3(at.x,ground+.06f,at.y);
                 bool beam=(mining&&!nanite)||welding;
                 if(beam&&view.Beam==null)
                 {
@@ -625,10 +638,10 @@ namespace Order.Presentation
         {
             while(pool.Count<=index)pool.Add(scenery.Model("Selection circle",selectionMesh,material,worldRoot.transform,false));
             var ring=pool[index];ring.SetActive(true);ring.GetComponent<MeshRenderer>().sharedMaterial=material;
-            float y;Quaternion tilt;
+            float y;Quaternion tilt;var at=Place(unit);
             if(unit.Stats.Flying&&unitViews.TryGetValue(unit.Id,out var view)){y=view.Body.position.y-.3f;tilt=Quaternion.identity;}
-            else{y=Match.HeightAt(unit.X,unit.Z)+.03f;tilt=Quaternion.FromToRotation(Vector3.up,GroundNormal(unit.X,unit.Z));}
-            ring.transform.SetPositionAndRotation(new Vector3(unit.X,y,unit.Z),tilt);
+            else{y=Match.HeightAt(at.x,at.y)+.03f;tilt=Quaternion.FromToRotation(Vector3.up,GroundNormal(at.x,at.y));}
+            ring.transform.SetPositionAndRotation(new Vector3(at.x,y,at.y),tilt);
             ring.transform.localScale=Vector3.one*(unit.Stats.Radius+.16f)*scale;
         }
         // Slope under a point for circles and markers: ramps tilt them, a nearby cliff does not (samples across a drop count as level).
@@ -706,7 +719,7 @@ namespace Order.Presentation
                 {
                     if(unit.Queued.Count==0)continue;
                     Vector3 G(float x,float z)=>new Vector3(x,Match.HeightAt(Mathf.Clamp(x,0,63.99f),Mathf.Clamp(z,0,63.99f))+.1f,z);
-                    waypointPoints.Clear();waypointPoints.Add(G(unit.X,unit.Z));
+                    var from=Place(unit);waypointPoints.Clear();waypointPoints.Add(G(from.x,from.y));
                     bool any=false;float lx=0,lz=0;foreach(var p in unit.Route){lx=p.X;lz=p.Z;any=true;}
                     if(any)waypointPoints.Add(G(lx,lz));
                     bool attack=unit.Order==UnitOrder.AttackMove||unit.Order==UnitOrder.Attack;
@@ -900,8 +913,8 @@ namespace Order.Presentation
                 if(t>=1||(marker.Unit!=null&&!marker.Unit.Alive)){Destroy(marker.View);markers.RemoveAt(i);continue;}
                 if(marker.Unit!=null)
                 {
-                    var unit=marker.Unit;float y=unit.Stats.Flying&&unitViews.TryGetValue(unit.Id,out var view)?view.Body.position.y-.3f:Match.HeightAt(unit.X,unit.Z)+.05f;
-                    marker.View.transform.position=new Vector3(unit.X,y,unit.Z);
+                    var unit=marker.Unit;var at=Place(unit);float y=unit.Stats.Flying&&unitViews.TryGetValue(unit.Id,out var view)?view.Body.position.y-.3f:Match.HeightAt(at.x,at.y)+.05f;
+                    marker.View.transform.position=new Vector3(at.x,y,at.y);
                     marker.View.transform.localScale=Vector3.one*(unit.Stats.Radius+.16f)*Mathf.Lerp(1.9f,1.05f,Mathf.Sqrt(t));
                 }
                 else if(marker.Size>0)marker.View.transform.localScale=Vector3.one*marker.Size*Mathf.Lerp(1.35f,1,Mathf.Sqrt(t));
@@ -1668,7 +1681,6 @@ namespace Order.Presentation
         {
             enabled=false;
             hud?.Dispose();hud=null;
-            if(ecsWorld!=null&&ecsWorld.IsCreated&&ecsWorld.EntityManager.Exists(matchEntity))ecsWorld.EntityManager.DestroyEntity(matchEntity);
             if(worldRoot!=null){worldRoot.SetActive(false);Destroy(worldRoot);worldRoot=null;}
             scenery?.Dispose();scenery=null;
             if(miniTexture!=null){Destroy(miniTexture);miniTexture=null;}

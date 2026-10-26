@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Order.Content;
 using Order.Contracts;
-using Unity.Entities;
 
 namespace Order.Simulation
 {
@@ -46,7 +45,7 @@ namespace Order.Simulation
         public FactionBalance Roster(int side)=>Balance.Of(factions[side]);
         public PrototypeUnit Spawn(UnitKind kind,float x,float z,int owner=Player)
         {
-            var unit=new PrototypeUnit(nextUnitId++,kind,Roster(owner).Unit(kind),owner){X=x,Z=z};
+            var unit=new PrototypeUnit(nextUnitId++,kind,Roster(owner).Unit(kind),owner){X=x,Z=z,startX=x,startZ=z};
             Units.Add(unit);return unit;
         }
         // Test-ground setup: a mixed squad west of the command node for selection and movement checks; with the worker it fills the starting supply.
@@ -76,6 +75,12 @@ namespace Order.Simulation
         public int SupplyLimit=>Limit(Player);
         int Limit(int owner){int limit=0;foreach(var b in Buildings)if(b.Owner==owner&&b.Ready>=1&&b.Powered)limit+=b.Stats.Supply;return limit;}
         public float HeightAt(float x,float z)=>Map.Height((int)x,(int)z,x-(int)x);
+        // The match advances only in fixed steps of TickSeconds, so the same orders on the same steps give the same match on
+        // every machine; the view interpolates between steps. Frame counts the steps made.
+        public const float TickSeconds=Step;
+        public int Frame{get;private set;}
+        public void Advance(){Tick(Step);Frame++;}
+        // Any stretch of time at once, for tests and tools; it does not count frames.
         public void Tick(float dt)
         {
             UpdateNetwork(dt);
@@ -214,6 +219,9 @@ namespace Order.Simulation
         internal int returns;
         public bool Moving=>route.Count>0;
         public int WaypointCount=>route.Count;
+        // Where the unit stood before the last movement step, for the view to interpolate.
+        public float PreviousX=>startX;
+        public float PreviousZ=>startZ;
         public IEnumerable<Waypoint> Route=>route;
         internal PrototypeUnit(int id,UnitKind kind,UnitStats stats,int owner){Id=id;Kind=kind;Stats=stats;Owner=owner;Health=stats.Health;}
     }
@@ -253,17 +261,5 @@ namespace Order.Simulation
         public bool HasRally{get;internal set;}
         public float RallyX{get;internal set;}
         public float RallyZ{get;internal set;}
-    }
-    public sealed class PrototypeMatchState : IComponentData {public PrototypeMatch Match;}
-    public partial class PrototypeMatchSystem : SystemBase
-    {
-        EntityQuery matches;
-        protected override void OnCreate() => matches=GetEntityQuery(ComponentType.ReadOnly<PrototypeMatchState>());
-        protected override void OnUpdate()
-        {
-            float dt=SystemAPI.Time.DeltaTime;
-            using var entities=matches.ToEntityArray(Unity.Collections.Allocator.Temp);
-            foreach(var entity in entities)EntityManager.GetComponentObject<PrototypeMatchState>(entity).Match.Tick(dt);
-        }
     }
 }

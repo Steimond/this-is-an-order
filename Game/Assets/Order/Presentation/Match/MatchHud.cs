@@ -91,7 +91,6 @@ namespace Order.Presentation
         private readonly MatchServices services;
         private readonly StyleSheet style;
         private readonly CancellationTokenSource lifetime = new CancellationTokenSource();
-        private readonly float started = Time.realtimeSinceStartup;
         private HudCursor cursor;
         private readonly HudSound sound;
         private readonly MinimapPanel minimap;
@@ -966,7 +965,8 @@ namespace Order.Presentation
         {
             if (disposed) return;
             var now = Time.realtimeSinceStartup;
-            var elapsed = (int)(now - started);
+            // Match time, not wall time: the match falls behind the clock when frames hitch or the editor pauses.
+            var elapsed = (int)(host.Match?.Clock ?? 0);
             timer.text = $"{elapsed / 60:00}:{elapsed % 60:00}";
             if (now > eventUntil && host.Mode == MatchMode.None) eventLine.RemoveFromClassList("is-visible");
             if (shown < speech.Length)

@@ -7,7 +7,6 @@ using Order.Contracts;
 using Order.Input;
 using Order.Simulation;
 using Order.Voice;
-using Unity.Entities;
 
 namespace Order.Tests.EditMode
 {
@@ -102,15 +101,6 @@ namespace Order.Tests.EditMode
             model.Completion.SetException(new InvalidOperationException("offline"));
             Assert.That((await input.SubmitTranscriptAsync("потише", new CommandContext(app.Session, CommandSource.Text))).Outcome, Is.EqualTo(CommandOutcome.Unavailable));
             Assert.That(input.SubmitManual(AppCommand.SetVolume(0.7f)).Applied, Is.True);
-        }
-        [Test] public void EcsIdentityUsesStableId()
-        {
-            using (var world = new World("Identity test"))
-            {
-                var entity = world.EntityManager.CreateEntity(typeof(SimulationIdentity));
-                world.EntityManager.SetComponentData(entity, new SimulationIdentity { UnitId = 42, OwnerId = 1 });
-                Assert.That(world.EntityManager.GetComponentData<SimulationIdentity>(entity).UnitId, Is.EqualTo(42UL));
-            }
         }
     }
 }

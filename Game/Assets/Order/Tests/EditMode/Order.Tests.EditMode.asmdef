@@ -10,9 +10,7 @@
     "Order.Input",
     "Order.Bootstrap",
     "Order.Simulation",
-    "Order.Presentation",
-    "Unity.Entities",
-    "Unity.Collections"
+    "Order.Presentation"
   ],
   "overrideReferences": true,
   "precompiledReferences": ["nunit.framework.dll", "Newtonsoft.Json.dll"],

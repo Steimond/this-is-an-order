@@ -8,9 +8,7 @@
     "Order.Input",
     "Order.Voice",
     "Order.Simulation",
-    "Unity.Entities",
     "Unity.InputSystem",
-    "Unity.Collections",
     "Order.Balance",
     "Unity.RenderPipelines.Universal.Runtime",
     "Unity.RenderPipelines.Core.Runtime"

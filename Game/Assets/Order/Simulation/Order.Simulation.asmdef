@@ -3,10 +3,8 @@
   "rootNamespace": "Order.Simulation",
   "references": [
     "Order.Contracts",
-    "Unity.Entities",
-    "Unity.Collections",
     "Order.Content"
   ],
   "autoReferenced": false,
-  "noEngineReferences": false
+  "noEngineReferences": true
 }
