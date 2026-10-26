@@ -17,15 +17,15 @@ namespace Order.Simulation
         static readonly int[] Dx = { 1, -1, 0, 0, 1, 1, -1, -1 }, Dz = { 0, 0, 1, -1, 1, -1, 1, -1 };
         // Bumps when buildings or deposits change what blocks movement; caches below depend on it.
         int navigationVersion;
-        readonly bool[] blocked = new bool[4096];
+        readonly bool[] blocked;
         int blockedVersion = -1, blockedBuildings = -1;
         readonly Dictionary<int, sbyte[]> edges = new Dictionary<int, sbyte[]>();
         // Cached edges are forgotten only round the spot that changed (see NavigationChanged).
-        readonly Fix[] pathCost = new Fix[4096];
-        readonly int[] cameFrom = new int[4096], seen = new int[4096], done = new int[4096];
+        readonly Fix[] pathCost;
+        readonly int[] cameFrom, seen, done;
         int searchStamp;
         readonly CellHeap open = new CellHeap();
-        readonly List<PrototypeUnit>[] buckets = new List<PrototypeUnit>[4096];
+        readonly List<PrototypeUnit>[] buckets;
         readonly List<int> usedBuckets = new List<int>();
 
         public bool Occupied(int x, int z)
@@ -33,11 +33,11 @@ namespace Order.Simulation
             if (blockedVersion != navigationVersion || blockedBuildings != Buildings.Count)
             {
                 Array.Clear(blocked, 0, blocked.Length);
-                foreach (var r in Map.Resources) if (r.Remaining > 0) blocked[r.Z * 64 + r.X] = true;
-                foreach (var b in Buildings) for (int zz = b.Z; zz < b.Z + b.Width; zz++) for (int xx = b.X; xx < b.X + b.Width; xx++) if (Map.Inside(xx, zz)) blocked[zz * 64 + xx] = true;
+                foreach (var r in Map.Resources) if (r.Remaining > 0) blocked[r.Z * Size + r.X] = true;
+                foreach (var b in Buildings) for (int zz = b.Z; zz < b.Z + b.Width; zz++) for (int xx = b.X; xx < b.X + b.Width; xx++) if (Map.Inside(xx, zz)) blocked[zz * Size + xx] = true;
                 blockedVersion = navigationVersion; blockedBuildings = Buildings.Count;
             }
-            return blocked[z * 64 + x];
+            return blocked[z * Size + x];
         }
         // A building placed or gone, or a deposit mined out: the blocked-cell cache is rebuilt and the cached edges round
         // the spot are forgotten; edges elsewhere stay valid, so the next long path does not pay for the whole map again.
@@ -45,9 +45,9 @@ namespace Order.Simulation
         {
             navigationVersion++;
             foreach (var table in edges.Values)
-                for (int cz = Math.Max(0, z - 2); cz <= Math.Min(63, z + width + 1); cz++)
-                for (int cx = Math.Max(0, x - 2); cx <= Math.Min(63, x + width + 1); cx++)
-                    for (int dir = 0; dir < 8; dir++) table[(cz * 64 + cx) * 8 + dir] = 0;
+                for (int cz = Math.Max(0, z - 2); cz <= Math.Min(Last, z + width + 1); cz++)
+                for (int cx = Math.Max(0, x - 2); cx <= Math.Min(Last, x + width + 1); cx++)
+                    for (int dir = 0; dir < 8; dir++) table[(cz * Size + cx) * 8 + dir] = 0;
         }
         public bool CanStep(int x, int z, int nx, int nz) => Map.Inside(nx, nz) && !Occupied(nx, nz) && !RampSide(x, z, nx, nz) && Math.Abs(Map.Height(x, z) - Map.Height(nx, nz)) <= (Fix).51f;
         // Ramps are entered and left only at their ends: their sides are walls along the whole length, even where the drop is
@@ -68,7 +68,7 @@ namespace Order.Simulation
             for (int i = 0; i <= count; i++)
             {
                 Fix x = ax + dx * i / count, z = az + dz * i / count;
-                if (x < radius || z < radius || x >= 64 - radius || z >= 64 - radius) return false;
+                if (x < radius || z < radius || x >= Size - radius || z >= Size - radius) return false;
                 Fix h = HeightAt(x, z); if (Math.Abs(h - previous) > (Fix).51f) return false; previous = h;
                 int cx = (int)x, cz = (int)z;
                 if (i > 0 && RampSide((int)(ax + dx * (i - 1) / count), (int)(az + dz * (i - 1) / count), cx, cz)) return false;
@@ -92,7 +92,7 @@ namespace Order.Simulation
             return PlanPath(unit, targetX, targetZ);
         }
         // A NaN point from the view arrives below the map (Fix converts NaN to its least value).
-        static bool InMap(Fix x, Fix z) => x >= 0 && z >= 0 && x < 64 && z < 64;
+        bool InMap(Fix x, Fix z) => x >= 0 && z >= 0 && x < Size && z < Size;
         const string Unreachable = "Точка недоступна: двигаюсь как можно ближе.";
         // Route to a point without touching the order: used by orders, chasing, re-planning and returning to place.
         bool PlanPath(PrototypeUnit unit, Fix targetX, Fix targetZ)
@@ -112,7 +112,7 @@ namespace Order.Simulation
             if (unit.Stats.Flying)
             {
                 // Air units fly straight over cliffs, buildings and deposits.
-                SetRoute(unit, new List<Waypoint> { new Waypoint(Math.Max(radius, Math.Min(64 - radius, targetX)), Math.Max(radius, Math.Min(64 - radius, targetZ))) });
+                SetRoute(unit, new List<Waypoint> { new Waypoint(Math.Max(radius, Math.Min(Size - radius, targetX)), Math.Max(radius, Math.Min(Size - radius, targetZ))) });
                 Message = "Приказ: движение."; return true;
             }
             if (deposit == null && CanTravel(unit.X, unit.Z, targetX, targetZ, radius))
@@ -120,13 +120,13 @@ namespace Order.Simulation
                 SetRoute(unit, new List<Waypoint> { new Waypoint(targetX, targetZ) });
                 Message = beside ? Unreachable : "Приказ: движение."; return true;
             }
-            var cells = FindPath(Cell(unit.X, unit.Z), tz * 64 + tx, deposit, targetX, targetZ, radius, out bool reached);
+            var cells = FindPath(Cell(unit.X, unit.Z), tz * Size + tx, deposit, targetX, targetZ, radius, out bool reached);
             var points = new List<Waypoint> { new Waypoint(unit.X, unit.Z) };
-            foreach (var c in cells) points.Add(new Waypoint(c % 64 + (Fix).5f, c / 64 + (Fix).5f));
+            foreach (var c in cells) points.Add(new Waypoint(c % Size + (Fix).5f, c / Size + (Fix).5f));
             if (deposit == null && reached && CanTravel(points[points.Count - 1].X, points[points.Count - 1].Z, targetX, targetZ, radius)) points.Add(new Waypoint(targetX, targetZ));
             // Already in a cell next to the deposit, yet maybe pushed to its far side: the unit steps to its middle, within
             // reach of the deposit, instead of standing out of reach with nowhere to go.
-            if (deposit != null && reached && cells.Count == 0) { int c = Cell(unit.X, unit.Z); points.Add(new Waypoint(c % 64 + (Fix).5f, c / 64 + (Fix).5f)); }
+            if (deposit != null && reached && cells.Count == 0) { int c = Cell(unit.X, unit.Z); points.Add(new Waypoint(c % Size + (Fix).5f, c / Size + (Fix).5f)); }
             // Pull the string: from each point jump to the farthest point still reachable in a straight line. It is found by
             // doubling the step while the line stays clear and then halving between the last clear and the first blocked
             // point, so a long path costs a few line checks per corner instead of one per cell.
@@ -193,7 +193,7 @@ namespace Order.Simulation
             if (units.Count == 1 && !queue) return attack ? AttackMove(units[0], x, z) : Move(units[0], x, z);
             int cx = (int)x, cz = (int)z;
             bool deposit = Map.Inside(cx, cz) && Explored[cx, cz] && Map.ResourceAt(cx, cz) != null;
-            Fix mx = 0, mz = 0, minX = 64, minZ = 64, maxX = 0, maxZ = 0, spread = 0;
+            Fix mx = 0, mz = 0, minX = Size, minZ = Size, maxX = 0, maxZ = 0, spread = 0;
             foreach (var u in units) { mx += u.X; mz += u.Z; minX = Math.Min(minX, u.X); maxX = Math.Max(maxX, u.X); minZ = Math.Min(minZ, u.Z); maxZ = Math.Max(maxZ, u.Z); }
             mx /= units.Count; mz /= units.Count;
             // A click on a building sends the group to the free ground next to it on the group's side.
@@ -314,12 +314,12 @@ namespace Order.Simulation
         {
             var radii = new HashSet<Fix>();
             foreach (var roster in new[] { Balance.Expedition, Balance.Resonance }) foreach (var stats in roster.Units) if (stats != null && !stats.Flying) radii.Add(stats.Radius);
-            foreach (var radius in radii) for (int cell = 0; cell < 4096; cell++) for (int dir = 0; dir < 8; dir++) Passable(cell, dir, radius);
+            foreach (var radius in radii) for (int cell = 0; cell < Cells; cell++) for (int dir = 0; dir < 8; dir++) Passable(cell, dir, radius);
         }
         bool FreeSpot(PrototypeUnit unit, Fix x, Fix z, Fix level)
         {
             Fix r = unit.Stats.Radius;
-            if (x < r || z < r || x >= 64 - r || z >= 64 - r) return false;
+            if (x < r || z < r || x >= Size - r || z >= Size - r) return false;
             if (unit.Stats.Flying) return true;
             return Math.Abs(HeightAt(x, z) - level) < (Fix).51f && CanTravel(x, z, x, z, r);
         }
@@ -342,7 +342,7 @@ namespace Order.Simulation
         }
 
         // ---------- Path search ----------
-        static int Cell(Fix x, Fix z) => Math.Max(0, Math.Min(63, (int)z)) * 64 + Math.Max(0, Math.Min(63, (int)x));
+        int Cell(Fix x, Fix z) => Math.Max(0, Math.Min(Last, (int)z)) * Size + Math.Max(0, Math.Min(Last, (int)x));
         // Found paths, until the map changes: a path depends only on the start and goal cells, the deposit, the radius and
         // what blocks movement, so the same question gets the same answer. A path that reaches its goal does not depend on
         // the exact target point either (that only picks the nearest cell when the goal is out of reach), so it serves any
@@ -355,7 +355,7 @@ namespace Order.Simulation
         {
             if (pathsVersion != navigationVersion || pathsBuildings != Buildings.Count || paths.Count >= MaxPaths)
             { paths.Clear(); pathsVersion = navigationVersion; pathsBuildings = Buildings.Count; }
-            int at = deposit == null ? -1 : deposit.Z * 64 + deposit.X;
+            int at = deposit == null ? -1 : deposit.Z * Size + deposit.X;
             var anyPoint = (start, goal, at, 0L, 0L, radius.Raw);
             if (paths.TryGetValue(anyPoint, out var found) && found.reached) { reached = true; return found.cells; }
             var exact = (start, goal, at, targetX.Raw, targetZ.Raw, radius.Raw);
@@ -378,14 +378,14 @@ namespace Order.Simulation
                 int p = open.Pop();
                 if (done[p] == searchStamp) continue;
                 done[p] = searchStamp;
-                int x = p % 64, z = p / 64;
+                int x = p % Size, z = p / Size;
                 if (deposit != null ? Math.Abs(x - deposit.X) + Math.Abs(z - deposit.Z) == 1 : p == goal) { reached = true; end = p; break; }
                 Fix distance = (x + (Fix).5f - targetX) * (x + (Fix).5f - targetX) + (z + (Fix).5f - targetZ) * (z + (Fix).5f - targetZ);
                 if (distance < bestDistance) { bestDistance = distance; best = p; }
                 for (int dir = 0; dir < 8; dir++)
                 {
                     if (!Passable(p, dir, radius)) continue;
-                    int n = (z + Dz[dir]) * 64 + x + Dx[dir];
+                    int n = (z + Dz[dir]) * Size + x + Dx[dir];
                     Fix cost = pathCost[p] + (dir < 4 ? 1 : (Fix)1.41421f);
                     if (done[n] == searchStamp || (seen[n] == searchStamp && cost >= pathCost[n])) continue;
                     seen[n] = searchStamp; pathCost[n] = cost; cameFrom[n] = p;
@@ -398,26 +398,26 @@ namespace Order.Simulation
             cells.Reverse();
             return cells;
         }
-        static Fix Heuristic(int cell, int goal)
+        Fix Heuristic(int cell, int goal)
         {
-            int dx = Math.Abs(cell % 64 - goal % 64), dz = Math.Abs(cell / 64 - goal / 64);
+            int dx = Math.Abs(cell % Size - goal % Size), dz = Math.Abs(cell / Size - goal / Size);
             return dx + dz - (Fix).58579f * Math.Min(dx, dz);
         }
         // Many paths cost exactly the same in exact arithmetic; of those the search prefers cells near the straight line
         // from start to goal, so the way, and the corners a group shares, do not depend on the order of the heap.
-        static Fix Straying(int cell, int start, int goal)
+        Fix Straying(int cell, int start, int goal)
         {
-            int gx = goal % 64, gz = goal / 64;
-            return Math.Abs((cell % 64 - gx) * (start / 64 - gz) - (start % 64 - gx) * (cell / 64 - gz)) * (Fix).001f;
+            int gx = goal % Size, gz = goal / Size;
+            return Math.Abs((cell % Size - gx) * (start / Size - gz) - (start % Size - gx) * (cell / Size - gz)) * (Fix).001f;
         }
         // Edge between neighbouring cell centres for a radius, cached until a building or deposit near it changes.
         bool Passable(int cell, int dir, Fix radius)
         {
             int key = (int)Math.Round(radius * 1000);
-            if (!edges.TryGetValue(key, out var table)) edges[key] = table = new sbyte[4096 * 8];
+            if (!edges.TryGetValue(key, out var table)) edges[key] = table = new sbyte[Cells * 8];
             int index = cell * 8 + dir;
             if (table[index] != 0) return table[index] > 0;
-            int x = cell % 64, z = cell / 64, nx = x + Dx[dir], nz = z + Dz[dir];
+            int x = cell % Size, z = cell / Size, nx = x + Dx[dir], nz = z + Dz[dir];
             bool ok = CanStep(x, z, nx, nz) && (dir < 4 || (CanStep(x, z, nx, z) && CanStep(x, z, x, nz))) && CanTravel(x + (Fix).5f, z + (Fix).5f, nx + (Fix).5f, nz + (Fix).5f, radius);
             table[index] = (sbyte)(ok ? 1 : -1);
             return ok;
@@ -440,7 +440,7 @@ namespace Order.Simulation
             foreach (var u in Units)
             {
                 if (!u.Stats.Flying) { KeepOutOfObstacles(u); continue; }
-                Fix r = u.Stats.Radius; u.X = Math.Max(r, Math.Min(64 - r, u.X)); u.Z = Math.Max(r, Math.Min(64 - r, u.Z));
+                Fix r = u.Stats.Radius; u.X = Math.Max(r, Math.Min(Size - r, u.X)); u.Z = Math.Max(r, Math.Min(Size - r, u.Z));
             }
             Lap(StepProfile.Phase.Obstacles);
             foreach (var u in Units) { if (!u.leaping && !Anchored(u)) UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
@@ -512,11 +512,11 @@ namespace Order.Simulation
             if (u.route.Count == 0 || Ghost(u)) return free;
             Heading(u, 0, 0, out Fix hx, out Fix hz);
             if (hx == 0 && hz == 0) return free;
-            int cx = Math.Max(0, Math.Min(63, (int)u.X)), cz = Math.Max(0, Math.Min(63, (int)u.Z));
-            for (int z = Math.Max(0, cz - 1); z <= Math.Min(63, cz + 1); z++)
-            for (int x = Math.Max(0, cx - 1); x <= Math.Min(63, cx + 1); x++)
+            int cx = Math.Max(0, Math.Min(Last, (int)u.X)), cz = Math.Max(0, Math.Min(Last, (int)u.Z));
+            for (int z = Math.Max(0, cz - 1); z <= Math.Min(Last, cz + 1); z++)
+            for (int x = Math.Max(0, cx - 1); x <= Math.Min(Last, cx + 1); x++)
             {
-                var bucket = buckets[z * 64 + x];
+                var bucket = buckets[z * Size + x];
                 if (bucket == null) continue;
                 foreach (var v in bucket)
                 {
@@ -545,11 +545,11 @@ namespace Order.Simulation
             foreach (var u in Units)
             {
                 if (Ghost(u)) continue;
-                int cx = Math.Max(0, Math.Min(63, (int)u.X)), cz = Math.Max(0, Math.Min(63, (int)u.Z));
-                for (int z = Math.Max(0, cz - 1); z <= Math.Min(63, cz + 1); z++)
-                for (int x = Math.Max(0, cx - 1); x <= Math.Min(63, cx + 1); x++)
+                int cx = Math.Max(0, Math.Min(Last, (int)u.X)), cz = Math.Max(0, Math.Min(Last, (int)u.Z));
+                for (int z = Math.Max(0, cz - 1); z <= Math.Min(Last, cz + 1); z++)
+                for (int x = Math.Max(0, cx - 1); x <= Math.Min(Last, cx + 1); x++)
                 {
-                    var bucket = buckets[z * 64 + x];
+                    var bucket = buckets[z * Size + x];
                     if (bucket == null) continue;
                     foreach (var v in bucket) if (v.Id > u.Id && v.Stats.Flying == u.Stats.Flying) Push(u, v);
                 }
@@ -661,10 +661,10 @@ namespace Order.Simulation
         void KeepOutOfObstacles(PrototypeUnit u)
         {
             Fix r = u.Stats.Radius;
-            int sx = Math.Max(0, Math.Min(63, (int)u.startX)), sz = Math.Max(0, Math.Min(63, (int)u.startZ));
+            int sx = Math.Max(0, Math.Min(Last, (int)u.startX)), sz = Math.Max(0, Math.Min(Last, (int)u.startZ));
             for (int iteration = 0; iteration < 2; iteration++)
             {
-                u.X = Math.Max(r + (Fix)1e-4f, Math.Min(64 - r - (Fix)1e-4f, u.X)); u.Z = Math.Max(r + (Fix)1e-4f, Math.Min(64 - r - (Fix)1e-4f, u.Z));
+                u.X = Math.Max(r + (Fix)1e-4f, Math.Min(Size - r - (Fix)1e-4f, u.X)); u.Z = Math.Max(r + (Fix)1e-4f, Math.Min(Size - r - (Fix)1e-4f, u.Z));
                 for (int zz = (int)(u.Z - r); zz <= (int)(u.Z + r); zz++)
                 for (int xx = (int)(u.X - r); xx <= (int)(u.X + r); xx++)
                 {

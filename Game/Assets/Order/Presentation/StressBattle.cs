@@ -35,7 +35,7 @@ namespace Order.Presentation
                 }
                 // New units join the end of the match's list.
                 var army = match.Units.GetRange(first, match.Units.Count - first);
-                if (army.Count > 0) match.Execute(MatchCommand.AttackMove(side, army, 32, 32));
+                if (army.Count > 0) match.Execute(MatchCommand.AttackMove(side, army, match.Map.Centre.x, match.Map.Centre.z));
             }
             match.UpdateVision();
             return match;

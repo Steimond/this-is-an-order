@@ -70,7 +70,7 @@ namespace Order.Presentation
         {
             var match = view.Match;
             if (match == null) return;
-            if (!aimed) { aimed = true; view.LookAt(new Vector2(32, 32), 30); windowStart = Time.unscaledTime; }
+            if (!aimed) { aimed = true; view.LookAt(new Vector2(match.Map.Size * .5f, match.Map.Size * .5f), 30); windowStart = Time.unscaledTime; }
             if (quitAfter > 0 && Time.unscaledTime >= quitAfter) UnityEngine.Application.Quit();
             float frame = Time.unscaledDeltaTime * 1000;
             if (updateStart != 0) scriptSum += (Stopwatch.GetTimestamp() - updateStart) * 1000.0 / Stopwatch.Frequency;
@@ -101,22 +101,22 @@ namespace Order.Presentation
                 if (ms >= .1) text.AppendLine(string.Format(CultureInfo.InvariantCulture, "  {0} {1:0.0}", StepProfile.Names[i], ms));
             }
             report = text.ToString();
-            Write(match, stepMean, frameMean, memory);
+            Write(match, stepMean, frameMean, scripts - stepsPerFrame, frameMean - scripts, memory);
             profile.Clear(); lastSteps = 0; lastTotal = 0;
             frames = 0; frameSum = 0; scriptSum = 0; stepSum = 0; frameWorst = 0; stepWorst = 0; windowStart = Time.unscaledTime;
         }
 
-        void Write(PrototypeMatch match, double stepMean, double frameMean, long memory)
+        void Write(PrototypeMatch match, double stepMean, double frameMean, double view, double rest, long memory)
         {
             try
             {
                 if (csv == null)
                 {
                     csv = Path.Combine(UnityEngine.Application.persistentDataPath, $"stress-{System.DateTime.Now:yyyyMMdd-HHmmss}.csv");
-                    File.WriteAllText(csv, $"# {SystemInfo.processorType.Trim()}, {SystemInfo.graphicsDeviceName}, {SystemInfo.operatingSystem}, {(UnityEngine.Application.isEditor ? "Editor" : "Player")}\nframe,units,step_ms,step_worst_ms,frame_ms,frame_worst_ms,memory_mb\n");
+                    File.WriteAllText(csv, $"# {SystemInfo.processorType.Trim()}, {SystemInfo.graphicsDeviceName}, {SystemInfo.operatingSystem}, {(UnityEngine.Application.isEditor ? "Editor" : "Player")}\nframe,units,step_ms,step_worst_ms,frame_ms,frame_worst_ms,view_ms,rest_ms,memory_mb\n");
                     UnityEngine.Debug.Log("Stress lab writes to " + csv);
                 }
-                File.AppendAllText(csv, string.Format(CultureInfo.InvariantCulture, "{0},{1},{2:0.00},{3:0.00},{4:0.00},{5:0.00},{6:0}\n", match.Frame, match.Units.Count, stepMean, stepWorst, frameMean, frameWorst, memory / 1048576.0));
+                File.AppendAllText(csv, string.Format(CultureInfo.InvariantCulture, "{0},{1},{2:0.00},{3:0.00},{4:0.00},{5:0.00},{6:0.00},{7:0.00},{8:0}\n", match.Frame, match.Units.Count, stepMean, stepWorst, frameMean, frameWorst, view, rest, memory / 1048576.0));
             }
             catch (IOException) { }
         }

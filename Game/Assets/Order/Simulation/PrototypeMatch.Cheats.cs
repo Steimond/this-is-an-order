@@ -50,7 +50,7 @@ namespace Order.Simulation
                 {
                     Fix a = 2 * Math.PI * i / around;
                     Fix px = x + Math.Cos(a) * ring * spacing, pz = z + Math.Sin(a) * ring * spacing;
-                    if (!InMap(px, pz) || px < stats.Radius || pz < stats.Radius || px > 64 - stats.Radius || pz > 64 - stats.Radius) continue;
+                    if (!InMap(px, pz) || px < stats.Radius || pz < stats.Radius || px > Size - stats.Radius || pz > Size - stats.Radius) continue;
                     if (!SpawnRoom(stats, px, pz)) continue;
                     spawned.Add(Spawn(kind, px, pz, owner));
                 }

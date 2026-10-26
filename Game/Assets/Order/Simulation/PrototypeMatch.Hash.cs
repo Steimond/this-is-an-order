@@ -31,7 +31,7 @@ namespace Order.Simulation
                 h.Add(u.leaping);h.Add(u.Disassembly);h.Add(u.queued.Count);
                 h.Add(u.route.Count);foreach(var p in u.route){h.Add(p.X);h.Add(p.Z);}
             }
-            for(int z=0;z<64;z++)for(int x=0;x<64;x++)h.Add(Explored[x,z]);
+            for(int z=0;z<Size;z++)for(int x=0;x<Size;x++)h.Add(Explored[x,z]);
             return h.Value;
         }
         // FNV-1a over 64 bits.

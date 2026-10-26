@@ -493,7 +493,7 @@ namespace Order.Presentation
                     shields.style.display = DisplayStyle.Flex; shields.Q<Label>(className: "hud-bar__caption").text = "КОКОН";
                     shields.Set(unit.Cocoon, stats.Cocoon);
                 }
-                var place = MapGrid.Name((float)unit.X, (float)unit.Z, TempleMap.Size);
+                var place = MapGrid.Name((float)unit.X, (float)unit.Z, host.Match.Map.Size);
                 var targets = stats.HitsGround && stats.HitsAir ? "наземные и воздушные" : stats.HitsAir ? "только воздушные" : "только наземные";
                 var role = stats.Damage <= 0 ? nanites ? $"Обвивает залежь: {stats.HarvestAmount} каждые {stats.HarvestInterval:0.#} с, кокон {stats.Cocoon}" : $"Груз {stats.HarvestAmount} за рейс, {stats.HarvestInterval:0.#} с у залежи"
                     : $"Урон {match.Damage(unit)}  ·  {(stats.AttackRange < 1 ? "Ближний бой" : stats.MinRange > 0 ? $"Дальность {stats.MinRange:0.#}–{stats.AttackRange:0.#}" : $"Дальность {stats.AttackRange:0.#}")}{(stats.Splash > 0 ? $"  ·  По площади {stats.Splash:0.#}" : "")}{(stats.Ramp > 1 ? $"  ·  Луч: до ×{stats.Ramp:0.#} за {stats.RampSeconds:0.#} с на одной цели" + (match.Focus(unit) > 0 ? $", сейчас ×{1 + (stats.Ramp - 1) * match.Focus(unit):0.0}" : "") : "")}  ·  Перезарядка {stats.AttackCooldown:0.##} с  ·  Цели: {targets}";
@@ -548,7 +548,7 @@ namespace Order.Presentation
                 if (stats.Supply > 0) facts.Add($"Снабжение +{stats.Supply}");
                 if (stats.Coverage > 0) facts.Add($"Покрытие {stats.Coverage:0}" + (stats.Relays > 0 ? $", ретрансляторов до {stats.Relays}" : ""));
                 facts.Add($"Обзор {stats.Vision}"); facts.Add($"След {stats.Width}×{stats.Width}");
-                facts.Add(MapGrid.Name(building.X + stats.Width / 2f, building.Z + stats.Width / 2f, TempleMap.Size));
+                facts.Add(MapGrid.Name(building.X + stats.Width / 2f, building.Z + stats.Width / 2f, host.Match.Map.Size));
                 selectionStats.text = string.Join("  ·  ", facts);
                 UpgradeSlot(HudIconKind.Armor, "БРОНЯ", 0);
             }
@@ -563,7 +563,7 @@ namespace Order.Presentation
                 health.Set(deposit.Remaining, total, $"{deposit.Remaining} / {total}");
                 var own = match.Roster(PrototypeMatch.Player);
                 var yield = own.NaniteMining ? $"{own.Worker.Name} добывает {own.Worker.HarvestAmount} каждые {own.Worker.HarvestInterval:0.#} с" : $"{own.Worker.Name} выносит {own.Worker.HarvestAmount} за рейс";
-                selectionStats.text = $"{yield}  ·  {MapGrid.Name(deposit.X + .5f, deposit.Z + .5f, TempleMap.Size)}";
+                selectionStats.text = $"{yield}  ·  {MapGrid.Name(deposit.X + .5f, deposit.Z + .5f, host.Match.Map.Size)}";
             }
             else any = false;
             health.Q<Label>(className: "hud-bar__caption").text = host.SelectedDeposit != null && unit == null && host.SelectedBuilding == null ? "ЗАПАС" : "ПРОЧНОСТЬ";
@@ -1107,7 +1107,7 @@ namespace Order.Presentation
                     (services == null ? "" : "Меню: «открой графику», «громкость 40», «в штаб».");
                 return true;
             }
-            var hasPoint = MapGrid.TryFind(t, TempleMap.Size, out var x, out var z, out var place);
+            var hasPoint = MapGrid.TryFind(t, host.Match.Map.Size, out var x, out var z, out var place);
             var pinMatch = Regex.Match(t, @"\bметк\w*\s*(?:номер\s*)?(\d)\b", RegexOptions.CultureInvariant);
             if (!hasPoint && pinMatch.Success)
             {
@@ -1180,7 +1180,7 @@ namespace Order.Presentation
                         .OrderBy(r => (r.X + .5f - fx) * (r.X + .5f - fx) + (r.Z + .5f - fz) * (r.Z + .5f - fz)).FirstOrDefault();
                     if (rift == null) { ok = false; reply = "Нет свободного разведанного разлома плазмы."; return true; }
                     ok = host.Build(rift.X, rift.Z, build);
-                    var at = MapGrid.Name(rift.X + .5f, rift.Z + .5f, TempleMap.Size);
+                    var at = MapGrid.Name(rift.X + .5f, rift.Z + .5f, host.Match.Map.Size);
                     reply = ok ? $"{stats.Name}: рабочий идёт строить в {at}." : $"Не могу строить в {at}: {match.Message}";
                     return true;
                 }
@@ -1204,7 +1204,7 @@ namespace Order.Presentation
                 if (deposit == null) { ok = false; reply = wantPlasma ? "Нет разведанной плазмы." : "Нет разведанного металла."; return true; }
                 ok = match.Execute(MatchCommand.Move(PrototypeMatch.Player, new[] { harvester }, deposit.X + .5f, deposit.Z + .5f)) && harvester.HarvestTarget == deposit;
                 if (!ok) { reply = match.Message; return true; }
-                reply = ok ? $"{harvester.Stats.Name}: добыча {(deposit.Plasma ? "плазмы" : "металла")} в {MapGrid.Name(deposit.X + .5f, deposit.Z + .5f, TempleMap.Size)}." : match.Message;
+                reply = ok ? $"{harvester.Stats.Name}: добыча {(deposit.Plasma ? "плазмы" : "металла")} в {MapGrid.Name(deposit.X + .5f, deposit.Z + .5f, host.Match.Map.Size)}." : match.Message;
                 return true;
             }
             if (Is(@"^(?:авторемонт|автоматический ремонт|автопочинка)\b"))

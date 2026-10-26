@@ -30,7 +30,7 @@ namespace Order.Presentation
         public MinimapPanel(IMatchHost host)
         {
             this.host = host;
-            size = TempleMap.Size;
+            size = host.Match.Map.Size;
             Root = Hud.Box("match-minimap");
             Root.AddToClassList("match-hit");
             Root.Add(new HudFrame(12, 0, 0, 12));
@@ -153,7 +153,7 @@ namespace Order.Presentation
             {
                 var r = contentRect;
                 if (r.width < 10 || host.Match == null) return;
-                var size = TempleMap.Size;
+                var size = host.Match.Map.Size;
                 Vector2 M(float x, float z) => new Vector2(r.x + x / size * r.width, r.y + (1 - z / size) * r.height);
                 var p = context.painter2D;
                 var squares = MapGrid.Squares(size);

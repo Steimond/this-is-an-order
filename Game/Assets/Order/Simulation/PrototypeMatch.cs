@@ -53,18 +53,24 @@ namespace Order.Simulation
             for(int side=0;side<count;side++)
             {
                 metalStock[side]=Balance.StartingMetal;plasmaStock[side]=Balance.StartingPlasma;supplyCap[side]=Balance.SupplyCap;
-                ground[side]=new bool[64,64];sky[side]=new bool[64,64];explored[side]=new bool[64,64];
+                ground[side]=new bool[Size,Size];sky[side]=new bool[Size,Size];explored[side]=new bool[Size,Size];
             }
             foreach(var r in Map.Resources)r.Remaining=r.Plasma?Balance.PlasmaDeposit:Balance.MetalDeposit;
+            // The grids of movement and path search, one entry a cell of the map.
+            blocked=new bool[Cells];pathCost=new Fix[Cells];cameFrom=new int[Cells];seen=new int[Cells];done=new int[Cells];buckets=new List<PrototypeUnit>[Cells];
         }
         public int Sides=>factions.Length;
+        // The map's side in cells, its last cell along a side and its number of cells: every grid of the match is sized by them.
+        public int Size=>Map.Size;
+        int Last=>Map.Size-1;
+        int Cells=>Map.Size*Map.Size;
         // A side's start: a finished main building on one of the map's start spots (TempleMap.Bases, the first four) and
         // workers round it.
         public PrototypeBuilding AddStart(int side,int seat,int workers=4)
         {
             var (x,z)=Map.Bases[seat];
             var main=AddBuilding(FactionBalance.Main,x,z,side,1);
-            SpawnAround(UnitKind.Worker,workers,main.X+main.Width*(Fix).5f,main.Z<32?main.Z+main.Width+(Fix)1.5f:main.Z-(Fix)1.5f,side);
+            SpawnAround(UnitKind.Worker,workers,main.X+main.Width*(Fix).5f,main.Z<Size/2?main.Z+main.Width+(Fix)1.5f:main.Z-(Fix)1.5f,side);
             return main;
         }
         // Each side plays one faction: its roster, how its workers gather and how it builds.
@@ -145,13 +151,13 @@ namespace Order.Simulation
             foreach(var u in Units)Reveal((int)u.X,(int)u.Z,u.Stats.Vision,u.Stats.Flying,u.Owner);
             foreach(var b in Buildings)if(b.Ready>=1)Reveal(b.X+b.Width/2,b.Z+b.Width/2,b.Stats.Vision,false,b.Owner);
             // Cheat: the player sees the whole map.
-            if(Revealed)for(int z=0;z<64;z++)for(int x=0;x<64;x++){ground[Player][x,z]=sky[Player][x,z]=explored[Player][x,z]=true;}
+            if(Revealed)for(int z=0;z<Size;z++)for(int x=0;x<Size;x++){ground[Player][x,z]=sky[Player][x,z]=explored[Player][x,z]=true;}
         }
         // Whether a side currently sees the unit; a side always sees its own units.
         public bool SeenBy(int side,PrototypeUnit u)
         {
             if(u.Owner==side)return true;
-            int x=Math.Max(0,Math.Min(63,(int)u.X)),z=Math.Max(0,Math.Min(63,(int)u.Z));
+            int x=Math.Max(0,Math.Min(Last,(int)u.X)),z=Math.Max(0,Math.Min(Last,(int)u.Z));
             var grid=u.Stats.Flying?sky[side]:ground[side];
             return grid[x,z];
         }
@@ -161,18 +167,18 @@ namespace Order.Simulation
         // on the line to it, the cell itself included, stands above the observer's eyes (Sight lists those lines).
         void Reveal(int sx,int sz,int radius,bool fromAir,int side)
         {
-            if(sx<0||sz<0||sx>63||sz>63||!observers.Add((((long)side*4096+sz*64+sx)*256+radius)*2+(fromAir?1:0)))return;
-            if(cellHeights==null){cellHeights=new Fix[4096];for(int z=0;z<64;z++)for(int x=0;x<64;x++)cellHeights[z*64+x]=Map.Height(x,z);}
+            if(sx<0||sz<0||sx>Last||sz>Last||!observers.Add((((long)side*Cells+sz*Size+sx)*256+radius)*2+(fromAir?1:0)))return;
+            if(cellHeights==null){cellHeights=new Fix[Cells];for(int z=0;z<Size;z++)for(int x=0;x<Size;x++)cellHeights[z*Size+x]=Map.Height(x,z);}
             bool[,] ground=this.ground[side],sky=this.sky[side],explored=this.explored[side];
             var sight=Sight(radius,sx&1,sz&1);
-            Fix observer=fromAir?Fix.MaxValue:cellHeights[sz*64+sx]+(Fix).6f;
+            Fix observer=fromAir?Fix.MaxValue:cellHeights[sz*Size+sx]+(Fix).6f;
             for(int k=0;k<sight.Dx.Length;k++)
             {
                 int x=sx+sight.Dx[k],z=sz+sight.Dz[k];
-                if(x<0||z<0||x>63||z>63)continue;
+                if(x<0||z<0||x>Last||z>Last)continue;
                 sky[x,z]=true;
                 bool clear=true;
-                if(!fromAir)for(int j=sight.Ray[k];j<sight.Ray[k+1];j++)if(cellHeights[(sz+sight.RayZ[j])*64+sx+sight.RayX[j]]>observer){clear=false;break;}
+                if(!fromAir)for(int j=sight.Ray[k];j<sight.Ray[k+1];j++)if(cellHeights[(sz+sight.RayZ[j])*Size+sx+sight.RayX[j]]>observer){clear=false;break;}
                 if(clear){ground[x,z]=true;explored[x,z]=true;}
             }
         }

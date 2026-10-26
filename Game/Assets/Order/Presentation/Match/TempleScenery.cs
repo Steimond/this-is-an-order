@@ -14,7 +14,9 @@ namespace Order.Presentation
     public sealed class TempleScenery : IDisposable
     {
         public const int Margin = 24, FogTexels = 2;
-        const int Size = TempleMap.Size, DataTexels = 4, Chunk = 16;
+        const int DataTexels = 4, Chunk = 16;
+        // The map's side in cells.
+        readonly int Size;
         const float Batter = .22f;
         public static readonly Color Mist = new Color(.03f, .055f, .065f);
         static readonly Color StoneColor = new Color(.62f, .6f, .54f), MossColor = new Color(.26f, .38f, .24f), RockColor = new Color(.36f, .34f, .31f);
@@ -30,7 +32,7 @@ namespace Order.Presentation
         readonly Texture2D fog;
         readonly Color32[] fogPixels;
         readonly float[] shownVisible, shownExplored, targetVisible, targetExplored, blurScratch;
-        readonly bool[] lastVisible = new bool[Size * Size], lastExplored = new bool[Size * Size];
+        readonly bool[] lastVisible, lastExplored;
         bool fogReady, settled;
         Material foliage, solid, wisps;
         public Light Sun { get; private set; }
@@ -49,7 +51,8 @@ namespace Order.Presentation
 
         public TempleScenery(TempleMap map, Transform root, Camera camera)
         {
-            this.map = map; this.root = root;
+            this.map = map; this.root = root; Size = map.Size;
+            lastVisible = new bool[Size * Size]; lastExplored = new bool[Size * Size];
             int n = Size * FogTexels;
             fog = Own(new Texture2D(n, n, TextureFormat.RGBA32, false, true) { name = "Fog of war", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear });
             fogPixels = new Color32[n * n];
@@ -109,13 +112,13 @@ namespace Order.Presentation
             for (int i = 0; i < 4; i++) { sum += amplitude * Mathf.PerlinNoise(x + 100, z + 100); x = x * 2.03f + 17.1f; z = z * 2.03f + 5.3f; amplitude *= .5f; }
             return sum / .9375f;
         }
-        public static float Outside(float x, float z)
+        public float Outside(float x, float z)
         {
             float ox = Mathf.Max(Mathf.Max(-x, x - Size), 0), oz = Mathf.Max(Mathf.Max(-z, z - Size), 0);
             return Mathf.Sqrt(ox * ox + oz * oz);
         }
         // 1 where the corner plateaus would continue beyond the map edge.
-        static float Terrace(float x, float z)
+        float Terrace(float x, float z)
         {
             float u = Mathf.Min(x, Size - x), v = Mathf.Min(z, Size - z);
             return 1 - Smooth(-2, 2, Mathf.Max(u - 20, v - 20));

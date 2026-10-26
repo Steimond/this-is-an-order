@@ -10,8 +10,10 @@ namespace Order.Simulation
     // the step, when units move, a search goes over every unit as before.
     public sealed partial class PrototypeMatch
     {
-        const int Block = 4, Blocks = 64 / Block;
-        readonly List<PrototypeUnit>[] blocks = new List<PrototypeUnit>[Blocks * Blocks];
+        const int Block = 4;
+        // Blocks across the map; the last ones may stick out past its edge.
+        int Blocks => (Size + Block - 1) / Block;
+        List<PrototypeUnit>[] blocks;
         readonly List<PrototypeUnit> near = new List<PrototypeUnit>();
         static readonly System.Comparison<PrototypeUnit> ByIndex = (a, b) => a.index.CompareTo(b.index);
         // The widest unit on the map this step: a search for edges within a reach looks this much farther for centres.
@@ -20,6 +22,7 @@ namespace Order.Simulation
 
         void FillBlocks()
         {
+            if (blocks == null) blocks = new List<PrototypeUnit>[Blocks * Blocks];
             for (int i = 0; i < blocks.Length; i++) { if (blocks[i] == null) blocks[i] = new List<PrototypeUnit>(); else blocks[i].Clear(); }
             widest = 0;
             for (int i = 0; i < Units.Count; i++)
@@ -30,7 +33,7 @@ namespace Order.Simulation
             }
             blocksTrue = true;
         }
-        static int BlockOf(Fix v) => Math.Max(0, Math.Min(Blocks - 1, (int)v / Block));
+        int BlockOf(Fix v) => Math.Max(0, Math.Min(Blocks - 1, (int)v / Block));
         // Units whose centre may lie within `reach` of the point; in the order of Units when `ordered`, otherwise in any order
         // with fresh `index`es, for searches that break ties by index or do not depend on the order. The list is shared: use
         // it up before the next search.

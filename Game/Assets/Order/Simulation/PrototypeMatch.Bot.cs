@@ -49,10 +49,10 @@ namespace Order.Simulation
             var hq = BotHeadquarters();
             // Its army waits on its plateau at the top of its ramp; the map's corners mirror each other.
             Fix cx = hq != null ? hq.X + hq.Width * (Fix).5f : 48, cz = hq != null ? hq.Z + hq.Width * (Fix).5f : 48;
-            mind.StageX = cx < 32 ? 64 - (Fix)46.5f : (Fix)46.5f; mind.StageZ = cz < 32 ? 64 - (Fix)52.5f : (Fix)52.5f;
+            (mind.StageX, mind.StageZ) = Map.Staging(cx, cz);
             // Starting workers are part of the bot's base, not a cheat.
             if (hq != null && !Units.Exists(u => u.Owner == side && u.Kind == UnitKind.Worker))
-                SpawnAround(UnitKind.Worker, 4, hq.X + hq.Width * (Fix).5f, hq.Z < 32 ? hq.Z + hq.Width + (Fix)1.5f : hq.Z - (Fix)1.5f, side);
+                SpawnAround(UnitKind.Worker, 4, hq.X + hq.Width * (Fix).5f, hq.Z < Size / 2 ? hq.Z + hq.Width + (Fix)1.5f : hq.Z - (Fix)1.5f, side);
             bot = previous;
         }
         public bool ToggleBot() { if (BotEnabled) bots.RemoveAll(b => b.Side == Enemy); else StartBot(); return Cheat(BotEnabled, "бот противника"); }
@@ -257,7 +257,7 @@ namespace Order.Simulation
             }
             if (!bot.Cramped) return false;
             bot.Cramped = false;
-            Fix cx = hq.X + hq.Width * (Fix).5f, cz = hq.Z + hq.Width * (Fix).5f, dx = 32 - cx, dz = 32 - cz, d = Math.Sqrt(dx * dx + dz * dz), reach = hq.Stats.Coverage - (Fix)1.5f;
+            Fix cx = hq.X + hq.Width * (Fix).5f, cz = hq.Z + hq.Width * (Fix).5f, dx = Map.Centre.x - cx, dz = Map.Centre.z - cz, d = Math.Sqrt(dx * dx + dz * dz), reach = hq.Stats.Coverage - (Fix)1.5f;
             return d > 0 && BotRelayAt(cx + dx / d * reach, cz + dz / d * reach, r => Near(r, hq));
             bool Near(PrototypeBuilding relay, PrototypeBuilding core) => Distance(relay, core) <= core.Stats.Coverage;
         }
