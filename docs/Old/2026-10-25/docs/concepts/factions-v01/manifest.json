@@ -1,0 +1,91 @@
+{
+  "design": "../../FACTIONS_DESIGN.md",
+  "date": "2026-10-25",
+  "generator": "built-in image_gen",
+  "sheets": [
+    {
+      "id": "10",
+      "title": "Улучшения авиации и сети",
+      "file": "10-nanite-upgrades-air.png",
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "11",
+      "title": "Состояния и эффекты людей",
+      "file": null,
+      "status": "generation_blocked_violence"
+    },
+    {
+      "id": "12",
+      "title": "Перетекание форм",
+      "file": "12-nanite-transformations.png",
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "13",
+      "title": "Ресурсы и добыча",
+      "file": "13-resources-and-mining.png",
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "14",
+      "title": "Способности нанитов",
+      "file": "14-nanite-effects.png",
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "01",
+      "title": "Наземные силы людей",
+      "file": "01-human-ground.png",
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "02",
+      "title": "Авиация людей",
+      "file": "02-human-air.png",
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "03",
+      "title": "Наземные формы нанитов",
+      "file": "03-nanite-ground.png",
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "04",
+      "title": "Воздушные формы нанитов",
+      "file": "04-nanite-air.png",
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "05",
+      "title": "Здания людей",
+      "file": "05-human-buildings.png",
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "06",
+      "title": "Здания нанитов",
+      "file": "06-nanite-buildings.png",
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "07",
+      "title": "Наземные улучшения людей",
+      "file": null,
+      "status": "generation_blocked_violence"
+    },
+    {
+      "id": "08",
+      "title": "Авиация и поддержка людей: улучшения",
+      "file": "08-human-upgrades-support.png",
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "09",
+      "title": "Наземные улучшения нанитов",
+      "file": "09-nanite-upgrades-ground.png",
+      "status": "generated_reviewed"
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "date": "2026-10-25",
+  "generator": "built-in image_gen",
+  "scope": "concept images only; no game UI implementation",
+  "sheets": [
+    {
+      "id": "10",
+      "title": "Люди — облегчённый HUD",
+      "file": "10-human-hud-compact.png",
+      "references": [
+        "01-human-hud.png",
+        "03-human-roster-icons.png"
+      ],
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "11",
+      "title": "Наниты — облегчённый HUD",
+      "file": "11-nanite-hud-compact.png",
+      "references": [
+        "02-nanite-hud.png",
+        "04-nanite-roster-icons.png"
+      ],
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "01",
+      "title": "Люди — выразительный HUD",
+      "file": "01-human-hud.png",
+      "references": [
+        "references/current-human-hud.png"
+      ],
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "02",
+      "title": "Наниты — выразительный HUD",
+      "file": "02-nanite-hud.png",
+      "references": [
+        "references/current-nanite-hud.png",
+        "../factions-v01/06-nanite-buildings.png"
+      ],
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "03",
+      "title": "Иконки людей: юниты и здания",
+      "file": "03-human-roster-icons.png",
+      "references": [
+        "../factions-v01/01-human-ground.png",
+        "../factions-v01/02-human-air.png",
+        "../factions-v01/05-human-buildings.png"
+      ],
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "04",
+      "title": "Иконки нанитов: формы и узлы",
+      "file": "04-nanite-roster-icons.png",
+      "references": [
+        "../factions-v01/03-nanite-ground.png",
+        "../factions-v01/04-nanite-air.png",
+        "../factions-v01/06-nanite-buildings.png"
+      ],
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "05",
+      "title": "Общие команды в двух стилях",
+      "file": "05-command-icons.png",
+      "references": [],
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "06",
+      "title": "Люди: способности и улучшения",
+      "file": "06-human-abilities-upgrades.png",
+      "references": [
+        "01-human-hud.png"
+      ],
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "07",
+      "title": "Наниты: способности и улучшения",
+      "file": "07-nanite-abilities-upgrades.png",
+      "references": [
+        "02-nanite-hud.png"
+      ],
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "08",
+      "title": "Панели, подсказки и состояния",
+      "file": "08-panels-and-states.png",
+      "references": [
+        "01-human-hud.png",
+        "02-nanite-hud.png"
+      ],
+      "status": "generated_reviewed"
+    },
+    {
+      "id": "09",
+      "title": "Ассистент, ввод и обратная связь",
+      "file": "09-assistant-and-feedback.png",
+      "references": [
+        "01-human-hud.png",
+        "02-nanite-hud.png"
+      ],
+      "status": "generated_reviewed"
+    }
+  ]
+}

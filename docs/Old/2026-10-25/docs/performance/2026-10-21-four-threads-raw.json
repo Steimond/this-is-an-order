@@ -1,0 +1,98 @@
+{
+  "method": "Short raw-model diagnostic; three calls, first prefix uncached. Not the full game pipeline and not a controlled benchmark under RTS load.",
+  "model": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+  "runtime": "llama.cpp b11787",
+  "threads": 4,
+  "startup_ms": 1001,
+  "total": 3,
+  "passed": 2,
+  "results": [
+    {
+      "text": "громкость 11 процентов",
+      "passed": false,
+      "milliseconds": 4716,
+      "prompt_tokens": 1178,
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 1178,
+        "prompt_ms": 3853.432,
+        "prompt_per_token_ms": 3.271164685908319,
+        "prompt_per_second": 305.70151490930687,
+        "predicted_n": 24,
+        "predicted_ms": 841.904,
+        "predicted_per_token_ms": 36.60452173913043,
+        "predicted_per_second": 27.31902924799027
+      },
+      "actual": {
+        "action": "clarify",
+        "value": null,
+        "screen": "none",
+        "faction": null,
+        "open_audio": false
+      },
+      "expected": {
+        "text": "громкость 11 процентов",
+        "action": "set_volume",
+        "value": 11
+      }
+    },
+    {
+      "text": "Выставь общую громкость на 37 процентов",
+      "passed": true,
+      "milliseconds": 1063,
+      "prompt_tokens": 1184,
+      "timings": {
+        "cache_n": 1164,
+        "prompt_n": 20,
+        "prompt_ms": 137.964,
+        "prompt_per_token_ms": 6.8982,
+        "prompt_per_second": 144.96535328056595,
+        "predicted_n": 25,
+        "predicted_ms": 916.551,
+        "predicted_per_token_ms": 38.189625,
+        "predicted_per_second": 26.18512226815529
+      },
+      "actual": {
+        "action": "set_volume",
+        "value": 37,
+        "screen": "none",
+        "faction": null,
+        "open_audio": false
+      },
+      "expected": {
+        "text": "Выставь общую громкость на 37 процентов",
+        "action": "set_volume",
+        "value": 37
+      }
+    },
+    {
+      "text": "Поставь звук на одиннадцать процентов",
+      "passed": true,
+      "milliseconds": 1061,
+      "prompt_tokens": 1184,
+      "timings": {
+        "cache_n": 1164,
+        "prompt_n": 20,
+        "prompt_ms": 143.912,
+        "prompt_per_token_ms": 7.195600000000001,
+        "prompt_per_second": 138.9738173328145,
+        "predicted_n": 25,
+        "predicted_ms": 909.643,
+        "predicted_per_token_ms": 37.90179166666667,
+        "predicted_per_second": 26.383977010761363
+      },
+      "actual": {
+        "action": "set_volume",
+        "value": 11,
+        "screen": "none",
+        "faction": null,
+        "open_audio": false
+      },
+      "expected": {
+        "text": "Поставь звук на одиннадцать процентов",
+        "action": "set_volume",
+        "value": 11
+      }
+    }
+  ]
+}

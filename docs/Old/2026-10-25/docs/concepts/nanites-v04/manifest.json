@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-25",
+  "status": "direction_proposal",
+  "generator": "built-in image_gen",
+  "sheets": [
+    {
+      "file": "01-units.png",
+      "coverage": "11 units + golem shelter"
+    },
+    {
+      "file": "02-buildings.png",
+      "coverage": "10 buildings + guard air mode + assembly"
+    }
+  ]
+}

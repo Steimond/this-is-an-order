@@ -1,0 +1,337 @@
+[
+  {
+    "original": "docs/ARCHITECTURE.md",
+    "archive": "docs/Old/2026-10-25/docs/ARCHITECTURE.md",
+    "sha256": "5b15c02db02c347ad2669c04cfe6177dc8b3e9640b27814d651ac446f0860af4"
+  },
+  {
+    "original": "docs/ASSISTANT_KNOWLEDGE.md",
+    "archive": "docs/Old/2026-10-25/docs/ASSISTANT_KNOWLEDGE.md",
+    "sha256": "e50c23c597788604f858a15f5683b0dadc3b53c1cc1daabe86da89051c0cee7a"
+  },
+  {
+    "original": "docs/BACKLOG.md",
+    "archive": "docs/Old/2026-10-25/docs/BACKLOG.md",
+    "sha256": "77186792d47599894e533f69967fd2b33bc240fa7567fcd39fcc2979c04d5bd2"
+  },
+  {
+    "original": "docs/COMMANDS.md",
+    "archive": "docs/Old/2026-10-25/docs/COMMANDS.md",
+    "sha256": "b7cc744745a3b4b07da35389b5a7e7d43eeb72b0496598d8bf5e2a52ad0a8b14"
+  },
+  {
+    "original": "docs/CONCEPT.md",
+    "archive": "docs/Old/2026-10-25/docs/CONCEPT.md",
+    "sha256": "a6ab7524732b5da59ff13f7651eb7da44bf489bf9b7bea1b8ccb623d92e48008"
+  },
+  {
+    "original": "docs/DECISIONS.md",
+    "archive": "docs/Old/2026-10-25/docs/DECISIONS.md",
+    "sha256": "79969c4b1f9ab2eb3c70984af3a54660fce744fe974939556760bf09c719bd97"
+  },
+  {
+    "original": "docs/FACTIONS_DESIGN.md",
+    "archive": "docs/Old/2026-10-25/docs/FACTIONS_DESIGN.md",
+    "sha256": "8250d50c08037f5ef2b44a640a60712d18dd86881d7831900b0994f0b24e6d70"
+  },
+  {
+    "original": "docs/LOCAL_AI.md",
+    "archive": "docs/Old/2026-10-25/docs/LOCAL_AI.md",
+    "sha256": "2f24d0db7c59cea2a3ab04a2e28c0c7220037a8f99a8af6109c1dfac901f985d"
+  },
+  {
+    "original": "docs/PERFORMANCE.md",
+    "archive": "docs/Old/2026-10-25/docs/PERFORMANCE.md",
+    "sha256": "9d8b324444870deab671691d8af2e3a9bd3002b5e9d26d3ef737f22b4ed6a941"
+  },
+  {
+    "original": "docs/ROADMAP.md",
+    "archive": "docs/Old/2026-10-25/docs/ROADMAP.md",
+    "sha256": "26c972f51f1d2f87f990553cffcc696fcde03ea2eca233fff0fdd1514266da60"
+  },
+  {
+    "original": "docs/SETTING.md",
+    "archive": "docs/Old/2026-10-25/docs/SETTING.md",
+    "sha256": "b0cd67b92c08380d7604ee6ee5308753a9a612892dbbaa31fada154c70588317"
+  },
+  {
+    "original": "docs/TESTING.md",
+    "archive": "docs/Old/2026-10-25/docs/TESTING.md",
+    "sha256": "55d67e4ea8b1cc5758d422cb03fbcebc0185b447b57dbde224ad35faac150643"
+  },
+  {
+    "original": "docs/TEST_MAP.md",
+    "archive": "docs/Old/2026-10-25/docs/TEST_MAP.md",
+    "sha256": "815ac32bbb98aeede8716223193918447dadd28e970acba7cb4b54132e94bdc6"
+  },
+  {
+    "original": "docs/UI.md",
+    "archive": "docs/Old/2026-10-25/docs/UI.md",
+    "sha256": "4b38473061efceee278c640559f7bac932fc09e7c534dfc96f239a3a8b083678"
+  },
+  {
+    "original": "README.md",
+    "archive": "docs/Old/2026-10-25/README.md",
+    "sha256": "f9375e85841fec0ebdd1261d1c14e8ffd7db226abd7c4bd4ec42e75dea819e8b"
+  },
+  {
+    "original": "Game/Assets/Order/Balance/README.md",
+    "archive": "docs/Old/2026-10-25/Game/Assets/Order/Balance/README.md",
+    "sha256": "89ee1b68ebe653aedb5ae6ce0c5c2c3d16b199d01d9a9d61c7d2d4d9cafda943"
+  },
+  {
+    "original": "docs/references/ui/hud-hydra-coral.webp",
+    "archive": "docs/Old/2026-10-25/docs/references/ui/hud-hydra-coral.webp",
+    "sha256": "910048f82d7b11a6694f079e8bc6aa35182096a244bba0d83cd2bf441fb2de36"
+  },
+  {
+    "original": "docs/references/ui/hud-modular-mono-facade.png",
+    "archive": "docs/Old/2026-10-25/docs/references/ui/hud-modular-mono-facade.png",
+    "sha256": "7f8c2d08d41a66252c23838e4ddc24d85348fc2f2d8af9dc7af73d023b3a24f5"
+  },
+  {
+    "original": "docs/references/ui/hud-teal-orange-dashboard.webp",
+    "archive": "docs/Old/2026-10-25/docs/references/ui/hud-teal-orange-dashboard.webp",
+    "sha256": "850c860e3e8f87a7d631edd918c2dbfb2e736d212a8253bf0114d01909558e28"
+  },
+  {
+    "original": "docs/references/ui/README.md",
+    "archive": "docs/Old/2026-10-25/docs/references/ui/README.md",
+    "sha256": "de0ae052144f703a7a2541a50714a6cd10a86dcce9639775626527ba00ca5b91"
+  },
+  {
+    "original": "docs/performance/2026-10-21-command-profile.json",
+    "archive": "docs/Old/2026-10-25/docs/performance/2026-10-21-command-profile.json",
+    "sha256": "6f6ed7ece0d84032b174c972a58f56e6a37db3ddde19c32c2b7f32db4de02840"
+  },
+  {
+    "original": "docs/performance/2026-10-21-four-threads-raw.json",
+    "archive": "docs/Old/2026-10-25/docs/performance/2026-10-21-four-threads-raw.json",
+    "sha256": "18993468b5f9dee9573fb0a77b6c71cc0d895cbc20f276ac339c3f06d84b92db"
+  },
+  {
+    "original": "docs/concepts/nanites-v04/01-units.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/nanites-v04/01-units.png",
+    "sha256": "104210480c5130098cbbe95c5ef60bc6349909c1843bb676760b9ee44628e2b3"
+  },
+  {
+    "original": "docs/concepts/nanites-v04/02-buildings.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/nanites-v04/02-buildings.png",
+    "sha256": "d3d557264b9802f49e51d11f4be61f932c3ba54eb7f1b65b1a30ad68a31f2803"
+  },
+  {
+    "original": "docs/concepts/nanites-v04/gallery.html",
+    "archive": "docs/Old/2026-10-25/docs/concepts/nanites-v04/gallery.html",
+    "sha256": "0f7f67e544a8d2d7d2a3bffdb19794262f787f8b646a9564f64f38afa8b938a4"
+  },
+  {
+    "original": "docs/concepts/nanites-v04/manifest.json",
+    "archive": "docs/Old/2026-10-25/docs/concepts/nanites-v04/manifest.json",
+    "sha256": "5c3337c662f557d5a300cd63819560df2aef5709297b7d2cfef9caaa0acb9d39"
+  },
+  {
+    "original": "docs/concepts/nanites-v04/prompts.md",
+    "archive": "docs/Old/2026-10-25/docs/concepts/nanites-v04/prompts.md",
+    "sha256": "0be7235b03b65a2a509c93e9852ef4fea1fd93959dbfc96c023affb6b3fcb271"
+  },
+  {
+    "original": "docs/concepts/nanites-v04/README.md",
+    "archive": "docs/Old/2026-10-25/docs/concepts/nanites-v04/README.md",
+    "sha256": "e1335dfc3f6eca9046729907f225cb32b0c3c0c3d653b2362ef220f55ec5543e"
+  },
+  {
+    "original": "docs/concepts/factions-v01/01-human-ground.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/01-human-ground.png",
+    "sha256": "1fde962946dcaf9e0baa38e24b9c1e20e3ada252f0fcff566e3830c29ee5cecc"
+  },
+  {
+    "original": "docs/concepts/factions-v01/02-human-air.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/02-human-air.png",
+    "sha256": "5eb1c4b66c61b80fe82c5e8e890bd595d45d0571e99047431552c116e7ea1612"
+  },
+  {
+    "original": "docs/concepts/factions-v01/03-nanite-ground.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/03-nanite-ground.png",
+    "sha256": "8884381d283feec7c852fe6e7c83f8f89b155b70fc29c1329b1dd142da113068"
+  },
+  {
+    "original": "docs/concepts/factions-v01/04-nanite-air.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/04-nanite-air.png",
+    "sha256": "d3fe9d7d410c8d9b2e99d3f13d6e0c6a123eaf6928e331637767e3c47bdb782f"
+  },
+  {
+    "original": "docs/concepts/factions-v01/05-human-buildings.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/05-human-buildings.png",
+    "sha256": "3c479c38dc04974edfdb170e5f5f4a9b6e82c463d890bc284b27da028c3f83b3"
+  },
+  {
+    "original": "docs/concepts/factions-v01/06-nanite-buildings.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/06-nanite-buildings.png",
+    "sha256": "97844b1ef8e52578bcabe32575ddc2329b5262029af07d38d7c6f2a3a8d05437"
+  },
+  {
+    "original": "docs/concepts/factions-v01/08-human-upgrades-support.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/08-human-upgrades-support.png",
+    "sha256": "daa04b026778f033f7b2d5c6b163384b2f9eae358df766d9382fcd73b015aa02"
+  },
+  {
+    "original": "docs/concepts/factions-v01/09-nanite-upgrades-ground.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/09-nanite-upgrades-ground.png",
+    "sha256": "aadddc987a1b07074d2b1b5e8cc95861f37453e6ac4f39558db50b2a054aef34"
+  },
+  {
+    "original": "docs/concepts/factions-v01/10-nanite-upgrades-air.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/10-nanite-upgrades-air.png",
+    "sha256": "e88dc03daf8f862f29f5dc30ef453ba22e8fe0a31ea31cb0a72fefdcb52e1781"
+  },
+  {
+    "original": "docs/concepts/factions-v01/12-nanite-transformations.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/12-nanite-transformations.png",
+    "sha256": "d19c243ae2faa2c9bf212f73d8318d3ec8b0090c2f69da1aa3cfdff878fae664"
+  },
+  {
+    "original": "docs/concepts/factions-v01/13-resources-and-mining.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/13-resources-and-mining.png",
+    "sha256": "0a2240ca1a67c45e3737c18abaad5c72a7eda7ab14d7798452207ae420116070"
+  },
+  {
+    "original": "docs/concepts/factions-v01/14-nanite-effects.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/14-nanite-effects.png",
+    "sha256": "2f9d35ca956dfa5480a3ff02a020d8c11f5b35d175f8b94cfd6a56f8467395ef"
+  },
+  {
+    "original": "docs/concepts/factions-v01/gallery.html",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/gallery.html",
+    "sha256": "a70146a2e08af9af12451d80866b2aa301210cabe8729a311548a218f2a91237"
+  },
+  {
+    "original": "docs/concepts/factions-v01/manifest.json",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/manifest.json",
+    "sha256": "92efffa4a7a65a120bd3ab6169e702289e9cd7b0c2466ae05fa97d9c9a467da3"
+  },
+  {
+    "original": "docs/concepts/factions-v01/prompts.md",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/prompts.md",
+    "sha256": "cddc66fa7240a547c67d5fc719523b9bdbcd120841980bcc79200e7914f06e95"
+  },
+  {
+    "original": "docs/concepts/factions-v01/README.md",
+    "archive": "docs/Old/2026-10-25/docs/concepts/factions-v01/README.md",
+    "sha256": "9e7aeefe20ed98da1147b74fc5ffef740ff194c37a8710de8a9ebcf51b24cb16"
+  },
+  {
+    "original": "docs/concepts/ui-v01/01-human-hud.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/01-human-hud.png",
+    "sha256": "5c952f3e718af74d41aeba4e3bf2409c70bd47cf96e0ac779137b42601bb95c1"
+  },
+  {
+    "original": "docs/concepts/ui-v01/02-nanite-hud.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/02-nanite-hud.png",
+    "sha256": "0f5147426dfa4fbbcf762b9606ef01f5b4c8c918775360baef8469ee57a507fe"
+  },
+  {
+    "original": "docs/concepts/ui-v01/03-human-roster-icons.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/03-human-roster-icons.png",
+    "sha256": "78ffd67422bfa48591d160917dff4e3b4a6396c20b4fd59fc9a398b8c236724e"
+  },
+  {
+    "original": "docs/concepts/ui-v01/04-nanite-roster-icons.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/04-nanite-roster-icons.png",
+    "sha256": "12d9218e6b5e783e1112488d5bb96624da01a0ac686985458cfe9ccf62d26320"
+  },
+  {
+    "original": "docs/concepts/ui-v01/05-command-icons.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/05-command-icons.png",
+    "sha256": "2e8a1ff0cc8c5ab76f11a57c8c1ea5386fe6a358031791af6f1672aabe924828"
+  },
+  {
+    "original": "docs/concepts/ui-v01/06-human-abilities-upgrades.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/06-human-abilities-upgrades.png",
+    "sha256": "400bfe648f0fb48b98f647f88a67b06856088f7d7ac008d670154638d5e87776"
+  },
+  {
+    "original": "docs/concepts/ui-v01/07-nanite-abilities-upgrades.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/07-nanite-abilities-upgrades.png",
+    "sha256": "71414ffa4b6d163ca0b44a0ead61168b7dfdf8fc561a64805ee84f338c6f39d8"
+  },
+  {
+    "original": "docs/concepts/ui-v01/08-panels-and-states.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/08-panels-and-states.png",
+    "sha256": "dd2c1b5b1ceddfaaae6c9b0befbcd43a92272df225861769a7f754227c567d11"
+  },
+  {
+    "original": "docs/concepts/ui-v01/09-assistant-and-feedback.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/09-assistant-and-feedback.png",
+    "sha256": "350fff448cc7c49d89d42ea563fb97c570f64c313d491ac04b0825fd02170d3d"
+  },
+  {
+    "original": "docs/concepts/ui-v01/10-human-hud-compact.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/10-human-hud-compact.png",
+    "sha256": "ccfe3406a30c6e9c7a17529ac7b11c0a858db62107016f132e7f4bc6c234660c"
+  },
+  {
+    "original": "docs/concepts/ui-v01/11-nanite-hud-compact.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/11-nanite-hud-compact.png",
+    "sha256": "b39f7c11e86e16844cddc7d18a7976cf002a0a1e32081880c2a45ad994591a29"
+  },
+  {
+    "original": "docs/concepts/ui-v01/gallery.html",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/gallery.html",
+    "sha256": "e0b8fb196f1d2be2693850bf5720e42c03c5f2b55873de3d9e1ccf8b3f5f7779"
+  },
+  {
+    "original": "docs/concepts/ui-v01/manifest.json",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/manifest.json",
+    "sha256": "24c51c9d5273f11e06bf9825f439eb8298d89f1776b336fdc1b4032418de6661"
+  },
+  {
+    "original": "docs/concepts/ui-v01/prompts.md",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/prompts.md",
+    "sha256": "99ffd03ba02be3fcb674f76a568ec31c081f3e6677adba4c4126839b2c8e3652"
+  },
+  {
+    "original": "docs/concepts/ui-v01/README.md",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/README.md",
+    "sha256": "33aed89f2b6d9a51e41b633b7fc8ff7f6f341b9c687bd854ec7d9dcb6bb74916"
+  },
+  {
+    "original": "docs/concepts/ui-v01/references/current-human-hud.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/references/current-human-hud.png",
+    "sha256": "d7e906c138a057fc977c635c17bda1581ce4e504eda70ea4389384c9407752aa"
+  },
+  {
+    "original": "docs/concepts/ui-v01/references/current-nanite-hud.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/ui-v01/references/current-nanite-hud.png",
+    "sha256": "09e1ab69f9711cdb81b01a40d63783b52beeb50685fa8416ad272ebb57c83ce1"
+  },
+  {
+    "original": "docs/concepts/resonance/buildings-v1.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/resonance/buildings-v1.png",
+    "sha256": "960b46b3eb8d1ea82f04365d471011ad56c6bc779a8c483f9439d9ecb07170ba"
+  },
+  {
+    "original": "docs/concepts/resonance/living-forms-v1.webp",
+    "archive": "docs/Old/2026-10-25/docs/concepts/resonance/living-forms-v1.webp",
+    "sha256": "31bdd0a1f2ac1b619213262a9b6d144f8c428201fb46d32963ba7292bcf42b5a"
+  },
+  {
+    "original": "docs/concepts/resonance/new-units-v1.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/resonance/new-units-v1.png",
+    "sha256": "f497c451e3235f4b504c4d9614e9c3f178539262d077486e5bd399c83c26b1ea"
+  },
+  {
+    "original": "docs/concepts/resonance/prompts-v1.md",
+    "archive": "docs/Old/2026-10-25/docs/concepts/resonance/prompts-v1.md",
+    "sha256": "b55da03fbba56b938306753a3c754db3374c1585ded8206d079090d95bde017f"
+  },
+  {
+    "original": "docs/concepts/resonance/README.md",
+    "archive": "docs/Old/2026-10-25/docs/concepts/resonance/README.md",
+    "sha256": "da8d9650f50d1cf7c438be6bffc06c2e21b4df9206f0699a488c35bc29ff7e63"
+  },
+  {
+    "original": "docs/concepts/resonance/visual-upgrades-v1.png",
+    "archive": "docs/Old/2026-10-25/docs/concepts/resonance/visual-upgrades-v1.png",
+    "sha256": "875b34961a671550663ffdad116bf91e6131f1ca89e81f32d69bdfec9fef060d"
+  }
+]

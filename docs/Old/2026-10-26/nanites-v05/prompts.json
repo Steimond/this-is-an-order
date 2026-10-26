@@ -1,0 +1,55 @@
+[
+  {
+    "file": "01-units.png",
+    "refs": [
+      "nanites-v04/01-units.png"
+    ],
+    "prompt": "Edit this accepted RTS robot roster sheet, preserving every design and label and the 4x3 layout. Only revise GOLEM SHELTER cell row2 column3: same four short thick legs, lowered body, TWO smooth armor plates hinged forward and outward to form one wide near-vertical FRONT screen. Plates stand in front of the body like a gently curved wall, never an umbrella or wings above it. Show 3/4 view with clear ground-level frontal barrier. Normal golem row2 column2 stays simple. All other units unchanged. Smooth pearl ceramic shells, recessed black joints, restrained cyan sensor slits. Readable uncluttered high tech design."
+  },
+  {
+    "file": "02-buildings.png",
+    "refs": [
+      "nanites-v04/02-buildings.png"
+    ],
+    "prompt": "Edit this accepted 4x3 RTS architecture roster. Preserve all designs and Russian labels except two changes. ГНЕЗДО is now an aerospace RESEARCH facility, not an aircraft factory: retain distinctive 3 curved perimeter fins but replace open landing-pad center with a CLOSED smooth domed calibration instrument with a small holographic airfoil above it. No aircraft or launch bay. СБОРОЧНЫЙ УЗЕЛ retains two flowing arches over one large open fabrication chamber, wide ground exit and open vertical clearance suitable for ground OR flying robots; no extra machinery, keep elegant silhouette. Bottom right СБОРКА replace worker example with a tiny triangular four-legged robot forming from graphite liquid into a solid white robot, three stages. Other buildings identical; smooth pearl shells, dark joints, cyan narrow seams. Labels readable."
+  },
+  {
+    "file": "03-roster-icons.png",
+    "refs": [
+      "nanites-v05/01-units.png",
+      "nanites-v05/02-buildings.png"
+    ],
+    "prompt": "Create a polished RTS inventory ICON CONCEPT SHEET, 6 columns x 4 rows, 24 equal large square tiles on near-black blue backdrop. Thin elegant graphite silver frames, pearl white solid objects, cyan tiny slits. Use reference1 exact unit designs and reference2 exact architecture designs. Each icon distinct large silhouette with generous negative space, no decorative spikes. Small Russian label below each square. Row1 Ткач (tracked rover), Паучок (triangle long4legs), Игломёт (compact3channel pod), Прыгун (2legs), Излучатель (wide disk3legs), Голем (low4legs). Row2 Взломщик (diskcrescent), Планёр (boomerang), Ловец (horseshoe), Облако (manytinytriangles), Сеятель (verticalegg ring), Ядро (tall steppedspire). Row3 Вычислитель (3blocks), Ретранслятор (2fins), Сборочный узел (2arches), Узел прошивки (crossedframes), Матрица форм (hexmolds), Гнездо (3fins centralclosedresearchdome). Row4 Глубинное ядро (squarepit), Страж (lowtriangle), Резервуар (horizontalcapsule), Металл (silveringots), Плазма (purple drop), Лимит (3node capacity glyph). Exactly24differenttiles. Concept sheet, no numbers or cost text."
+  },
+  {
+    "file": "04-abilities-states.png",
+    "refs": [
+      "nanites-v05/01-units.png"
+    ],
+    "prompt": "Design high-fidelity RTS ability and UI-state concept sheet, smooth white robot faction. Dark slate background, slim silver fluid frames, cyan symbols. Upper two-thirds grid4columns x3rows of distinct square icons labelled in Russian: Прикрытие (two forward vertical plates, no dome), Прыжок (two-legged robot curved trajectory), Саботаж (broken circuit), Метка разлома (split target brackets), Захват (U-shaped claw and tether), Поле обслуживания (egg-ring and dotted healing radius), Переработка (triangular four-legged COMBAT robot dissolving to graphite drops, never worker or human), Память фокуса (single beam memory trace), Длинные иглы (three compact recessed channels), Усиленные опоры (two smooth leg braces), Устойчивый сигнал (concentric thin signal arcs), Аварийный запас (capacitor and countdown). Lower third shows 6 identical recycling icon buttons in different states labelled Обычное, Наведение, Нажатие, Недоступно, Перезарядка, Активно. Disabled has lock and reason Нет сети; cooldown sector6с. Small footer hint card Переработка, 6 с, Требуется действующая сеть. Clear readable labels, restrained glow. These are concept icons not game screenshot."
+  },
+  {
+    "file": "05-processes-effects.png",
+    "refs": [
+      "nanites-v05/01-units.png",
+      "nanites-v05/02-buildings.png"
+    ],
+    "prompt": "Create clean professional RTS animation concept storyboard with 8 spacious panels 4rows x2columns, light cool gray background, precise simple smooth pearl-shell robots matching refs, dark graphite NANITE LIQUID only during processes. Each panel 2-3 miniature stages separated by arrows, minimal Russian labels. Panel1 Добыча: tracked worker completely dissolves to wrap a blue metal deposit, no spare worker body left next to deposit, then reforms. Panel2 Строительство: worker becomes liquid, liquid fills building footprint then forms three low compute blocks; worker consumed. Panel3 Сборочный узел: reference two-arch building, alternate output examples triangular 4legrobot OR boomerang aircraft; one queue at a time. Panel4 Переработка: small4leg combat triangle robot inside thin dotted relay coverage boundary, 6с then dissolves into drops, NEVER trackedworker. Panel5 Восстановление: same smooth golem before seam damaged then seam sealed by tiny graphite stream, no extra armor upgrade. Panel6 Излучатель: wide disk tripod firing one thin cyan beam at a neutral geometric test prism, stages narrow/dim to brighter singlebeam, no violence. Panel7 Ловец и Облако: Uframe with thin tether, separate swarmtinytriangles converges to marked groundcircle, tiny controlled effects. Panel8 Сеятель: eggwithhorizontalring light dotted servicecircle under nearby smooth robots, no electricity relay links. Preserve restrained forms and silhouettes, no industrial pipes no shapeless finished liquid creatures."
+  },
+  {
+    "file": "06-golem-upgrades.png",
+    "refs": [
+      "nanites-v05/01-units.png"
+    ],
+    "prompt": "Create a precise RTS golem and upgrade concept sheet on light gray. Upper HALF: 3 large panels named Поход, Развёртывание, Прикрытие: same low white4leg robot in reference, two large smooth armor sideplates pivot outward AND forward, becoming a wide nearvertical curved physical screen across FRONT, not a roof. Show one small tripod emitter BEHIND screen, not under golem. Lower left: clear overhead tactical diagram labeled Фронт at TOP, screen horizontal shallow curve at top edge of golem, cyan translucent SEMICIRCLE radius3 BEHIND robot below it; one ally dot inside, hostile direction arrow above. No fullcircle shield. Lower center: visibleupgrade example Усиленные опоры, compare baseline smooth spider legs and slightly thicker seamless lower leg braces, silhouette still lightweight. Lower right: research-only examples Память фокуса / Устойчивый сигнал with unchanged emitter and egg-ring seeder, small icon tag and text Без смены модели. Final tiny caption frontallines are diagram only. Keep objects exceptionally simple and readable hightech smoothpearlshells blackjoints cyanslits."
+  },
+  {
+    "file": "07-nanite-hud.png",
+    "refs": [
+      "ui/02-nanite-hud.png",
+      "nanites-v05/01-units.png",
+      "nanites-v05/02-buildings.png"
+    ],
+    "prompt": "Edit first reference RTS HUD, keep its expressive sculpted flowing polished GRAPHITE/SILVER bottom frame, jewel assistant and minimap, same lush ruins terrain camera. Replace all old black-liquid robots in world with smooth WHITE solid robots and buildings from references2&3, coherent small base +8selected combat robots, not a catalogue. Critically reduce top strip to HALF its old height, about3% imageheight. Top only МЕНЮ F10, silver INGOT icon 850 +960/мин, purple drop icon240 +240/мин, supplyicon58/80, clock08:42. REMOVE TEMPLE BASIN and words МЕТАЛЛ, ПЛАЗМА, ЛИМИТ completely. Top narrow refined graphite filigree, content centered. Bottom preserve ornateframe sameheight, assistant unchanged. Center heading РЕЗОНАНС · 8 ЮНИТОВ and exactly EIGHT identicalsize square portraits 4x2: 2spiders,2needlers,2emitters,2golems matching reference2, HP bars beneath. Controlgroups1to5. Right5x3 commandgrid: firstrow four common glyphs with keylabels M arrowmove, X squarestop, A crosshairattack, H shieldhold; fifthslot empty. Secondrow recycling triangularcombatrobottodrops icon with NO keylabel; others empty darkslots. No worker recycling. Abovebottom small notice Сеть стабильна. Cinematic crisp readable RTS screenshotconcept, not existing gameplay."
+  }
+]
