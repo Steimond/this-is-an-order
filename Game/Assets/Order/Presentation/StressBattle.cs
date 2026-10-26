@@ -7,8 +7,9 @@ namespace Order.Presentation
 {
     // The stress battle (StressLab, the simulation benchmark): up to eight sides on the eight base spots of Temple Basin —
     // the four plateaus, then the four expansions in the basin — humans and machines in turn. Each side gets a main
-    // building and an army of all its fighting units in equal shares, spawned round the building, and every army
-    // attack-moves to the middle of the map, where they all meet. No bots and no economy: only movement and combat load.
+    // building and an army of all its fighting units in equal shares (but the leaper: legacy, outside the roster),
+    // spawned round the building, and every army attack-moves to the middle of the map, where they all meet. No bots and
+    // no economy: only movement and combat load.
     public static class StressBattle
     {
         public const int MaxSides = 8;
@@ -24,7 +25,7 @@ namespace Order.Presentation
                 var main = match.AddStart(side, side, 0);
                 var kinds = new List<UnitKind>();
                 foreach (UnitKind kind in System.Enum.GetValues(typeof(UnitKind)))
-                    if (match.Roster(side).Has(kind) && match.Roster(side).Unit(kind).Damage > 0) kinds.Add(kind);
+                    if (kind != UnitKind.Leaper && match.Roster(side).Has(kind) && match.Roster(side).Unit(kind).Damage > 0) kinds.Add(kind);
                 int count = units / sides + (side < units % sides ? 1 : 0), first = match.Units.Count;
                 float x = main.X + main.Width * .5f, z = main.Z + main.Width * .5f;
                 for (int k = 0; k < kinds.Count; k++)

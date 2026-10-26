@@ -1,15 +1,15 @@
 {
   "what": "Simulation stress battle without the view: 8 sides meet in the middle of Temple Basin (StressBattle)",
-  "date": "2026-10-26T17:29",
+  "date": "2026-10-26T18:55",
   "unity": "6000.6.6f1",
   "machine": "AMD Ryzen 7 7700 8-Core Processor (16 threads), Windows 11  (10.0.26300)",
-  "where": "Editor, main thread, Mono",
+  "where": "Editor, Mono, main thread",
   "steps": 600,
   "stepSeconds": 0.05,
   "results": [
-    { "units": 500, "aliveAtEnd": 116, "setupMs": 197.5, "stepMs": { "mean": 2.20, "median": 1.84, "p95": 4.73, "max": 17.39 }, "phasesMeanMs": { "Network": 0.002, "Buildings": 0.000, "Production": 0.000, "Research": 0.000, "Bot": 0.000, "Fight": 0.905, "Move": 0.198, "Separate": 0.541, "Obstacles": 0.049, "Arrival": 0.234, "Works": 0.022, "Cleanup": 0.008, "Vision": 0.242, "FightTargets": 0.297, "FightApproach": 0.420, "FightStrikes": 0.007 } },
-    { "units": 1000, "aliveAtEnd": 355, "setupMs": 315.0, "stepMs": { "mean": 6.51, "median": 5.92, "p95": 11.97, "max": 32.12 }, "phasesMeanMs": { "Network": 0.002, "Buildings": 0.000, "Production": 0.000, "Research": 0.000, "Bot": 0.000, "Fight": 2.767, "Move": 0.602, "Separate": 1.641, "Obstacles": 0.103, "Arrival": 0.846, "Works": 0.048, "Cleanup": 0.018, "Vision": 0.485, "FightTargets": 0.942, "FightApproach": 1.300, "FightStrikes": 0.015 } },
-    { "units": 2000, "aliveAtEnd": 734, "setupMs": 613.8, "stepMs": { "mean": 16.02, "median": 14.39, "p95": 29.16, "max": 58.40 }, "phasesMeanMs": { "Network": 0.003, "Buildings": 0.000, "Production": 0.000, "Research": 0.000, "Bot": 0.000, "Fight": 6.282, "Move": 1.424, "Separate": 4.866, "Obstacles": 0.207, "Arrival": 2.170, "Works": 0.103, "Cleanup": 0.042, "Vision": 0.921, "FightTargets": 2.935, "FightApproach": 2.093, "FightStrikes": 0.045 } },
-    { "units": 3000, "aliveAtEnd": 1240, "setupMs": 942.7, "stepMs": { "mean": 27.79, "median": 26.03, "p95": 49.01, "max": 104.34 }, "phasesMeanMs": { "Network": 0.003, "Buildings": 0.000, "Production": 0.000, "Research": 0.000, "Bot": 0.000, "Fight": 9.838, "Move": 2.484, "Separate": 8.509, "Obstacles": 0.321, "Arrival": 5.042, "Works": 0.179, "Cleanup": 0.071, "Vision": 1.347, "FightTargets": 5.522, "FightApproach": 2.309, "FightStrikes": 0.080 } }
+    { "units": 500, "aliveAtEnd": 137, "setupMs": 201.4, "stepMs": { "mean": 1.65, "median": 1.30, "p95": 4.01, "max": 20.07 }, "phasesMeanMs": { "Network": 0.004, "Buildings": 0.001, "Production": 0.001, "Research": 0.001, "Bot": 0.000, "Fight": 0.625, "Move": 0.137, "Separate": 0.426, "Obstacles": 0.043, "Arrival": 0.137, "Works": 0.028, "Cleanup": 0.009, "Vision": 0.235, "FightTargets": 0.093, "FightApproach": 0.312, "FightStrikes": 0.010, "FightSiege": 0.037, "FightDisengage": 0.141, "FightLeaps": 0.000 } },
+    { "units": 1000, "aliveAtEnd": 312, "setupMs": 266.1, "stepMs": { "mean": 4.34, "median": 3.74, "p95": 9.17, "max": 15.96 }, "phasesMeanMs": { "Network": 0.002, "Buildings": 0.000, "Production": 0.000, "Research": 0.000, "Bot": 0.000, "Fight": 1.547, "Move": 0.390, "Separate": 1.313, "Obstacles": 0.092, "Arrival": 0.450, "Works": 0.049, "Cleanup": 0.018, "Vision": 0.473, "FightTargets": 0.279, "FightApproach": 0.811, "FightStrikes": 0.016, "FightSiege": 0.066, "FightDisengage": 0.313, "FightLeaps": 0.000 } },
+    { "units": 2000, "aliveAtEnd": 827, "setupMs": 522.8, "stepMs": { "mean": 11.70, "median": 10.68, "p95": 20.82, "max": 31.93 }, "phasesMeanMs": { "Network": 0.003, "Buildings": 0.000, "Production": 0.000, "Research": 0.000, "Bot": 0.000, "Fight": 3.439, "Move": 1.115, "Separate": 4.150, "Obstacles": 0.199, "Arrival": 1.746, "Works": 0.107, "Cleanup": 0.042, "Vision": 0.897, "FightTargets": 0.824, "FightApproach": 1.480, "FightStrikes": 0.045, "FightSiege": 0.146, "FightDisengage": 0.813, "FightLeaps": 0.000 } },
+    { "units": 3000, "aliveAtEnd": 1224, "setupMs": 796.4, "stepMs": { "mean": 19.73, "median": 17.61, "p95": 38.49, "max": 57.92 }, "phasesMeanMs": { "Network": 0.003, "Buildings": 0.000, "Production": 0.000, "Research": 0.000, "Bot": 0.000, "Fight": 5.438, "Move": 1.802, "Separate": 7.648, "Obstacles": 0.296, "Arrival": 3.020, "Works": 0.169, "Cleanup": 0.072, "Vision": 1.284, "FightTargets": 1.542, "FightApproach": 2.143, "FightStrikes": 0.082, "FightSiege": 0.363, "FightDisengage": 1.106, "FightLeaps": 0.000 } }
   ]
 }
