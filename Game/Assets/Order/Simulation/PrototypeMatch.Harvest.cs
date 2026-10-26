@@ -13,13 +13,13 @@ namespace Order.Simulation
     // - plasma is mined through an extractor standing on the rift, and only by its owner (see MiningBlocked).
     public sealed partial class PrototypeMatch
     {
-        const float DropReach = .7f, NeighbourReach = 3.2f, SwitchReach = 9;
+        static readonly Fix DropReach = (Fix).7f, NeighbourReach = (Fix)3.2f, SwitchReach = 9;
         readonly Dictionary<ResourceDeposit, PrototypeUnit> miners = new Dictionary<ResourceDeposit, PrototypeUnit>();
         // Everything the player's workers delivered or mined in this match: the income, without refunds or cheats.
         public int MetalHarvested { get; private set; }
         public int PlasmaHarvested { get; private set; }
 
-        void TickHarvest(float dt)
+        void TickHarvest(Fix dt)
         {
             foreach (var u in Units)
             {
@@ -70,8 +70,8 @@ namespace Order.Simulation
         // busy deposit sends it to a free one nearby. While wrapped it wears a cocoon that takes blows first and grows back
         // once it has not been hit for a while; leaving the deposit dissolves it. The wrap outlives its worker: another
         // worker of the side attaches to a deposit wrapped before at once.
-        const float CocoonCalm = 3;
-        void Weave(PrototypeUnit u, float dt)
+        static readonly Fix CocoonCalm = 3;
+        void Weave(PrototypeUnit u, Fix dt)
         {
             var deposit = u.HarvestTarget; var stats = u.Stats;
             bool there = deposit != null && u.route.Count == 0 && deposit.Remaining > 0 && NextTo(u, deposit);
@@ -92,7 +92,7 @@ namespace Order.Simulation
             miners[deposit] = u;
             if (u.Wrap < 1)
             {
-                float before = u.Wrap;
+                Fix before = u.Wrap;
                 u.Wrap = deposit.WrappedBy == u.Owner || stats.WrapSeconds <= 0 ? 1 : Math.Min(1, u.Wrap + dt / stats.WrapSeconds);
                 // A fresh wrap grows the cocoon with it; on a deposit wrapped before the cocoon grows back as usual.
                 if (deposit.WrappedBy != u.Owner) u.Cocoon = Math.Min(stats.Cocoon, u.Cocoon + (int)(stats.Cocoon * u.Wrap) - (int)(stats.Cocoon * before));
@@ -136,15 +136,15 @@ namespace Order.Simulation
             if (held != null) miners.Remove(held);
             u.harvestTimer = 0;
         }
-        static bool NextTo(PrototypeUnit u, ResourceDeposit d) => Math.Abs(u.X - d.X - .5f) <= 1.35f && Math.Abs(u.Z - d.Z - .5f) <= 1.35f;
+        static bool NextTo(PrototypeUnit u, ResourceDeposit d) => Math.Abs(u.X - d.X - (Fix).5f) <= (Fix)1.35f && Math.Abs(u.Z - d.Z - (Fix).5f) <= (Fix)1.35f;
         // The nearest finished command node of the worker's side.
         PrototypeBuilding DropOff(PrototypeUnit u)
         {
-            PrototypeBuilding best = null; float bestGap = float.MaxValue;
+            PrototypeBuilding best = null; Fix bestGap = Fix.MaxValue;
             foreach (var b in Buildings)
             {
                 if (b.Owner != u.Owner || b.Ready < 1 || !Trains(b, UnitKind.Worker)) continue;
-                float gap = Gap(u, b);
+                Fix gap = Gap(u, b);
                 if (gap < bestGap) { bestGap = gap; best = b; }
             }
             return best;
@@ -164,20 +164,20 @@ namespace Order.Simulation
         {
             if (deposit == null) { StopHarvest(u); return; }
             var message = Message;
-            PlanPath(u, deposit.X + .5f, deposit.Z + .5f);
+            PlanPath(u, deposit.X + (Fix).5f, deposit.Z + (Fix).5f);
             Message = message;
             if (u.HarvestTarget == null) StopHarvest(u);
         }
         void StopHarvest(PrototypeUnit u) { Release(u); u.HarvestTarget = null; u.Mining = false; u.delivering = false; }
         // Nearest explored deposit of the same kind within reach of this one; `free` also skips deposits being mined.
-        ResourceDeposit Nearby(ResourceDeposit from, PrototypeUnit u, float reach, bool free)
+        ResourceDeposit Nearby(ResourceDeposit from, PrototypeUnit u, Fix reach, bool free)
         {
-            ResourceDeposit best = null; float bestDistance = reach * reach;
+            ResourceDeposit best = null; Fix bestDistance = reach * reach;
             foreach (var r in Map.Resources)
             {
                 if (r == from || r.Plasma != from.Plasma || r.Remaining <= 0 || (u.Owner == Player && !Explored[r.X, r.Z]) || MiningBlocked(u.Owner, r) != null) continue;
                 if (free && miners.TryGetValue(r, out var other) && Holds(other, r)) continue;
-                float dx = r.X - from.X, dz = r.Z - from.Z, d = dx * dx + dz * dz;
+                Fix dx = r.X - from.X, dz = r.Z - from.Z, d = dx * dx + dz * dz;
                 if (d <= bestDistance) { bestDistance = d; best = r; }
             }
             return best;

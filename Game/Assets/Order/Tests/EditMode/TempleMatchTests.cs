@@ -11,16 +11,16 @@ namespace Order.Tests.EditMode
             var match=new PrototypeMatch();var worker=match.Units[0];float tx=17.23f,tz=17.81f;
             Assert.That(match.Move(worker,tx,tz),Is.True);Assert.That(worker.WaypointCount,Is.EqualTo(1));
             match.Tick(.1f);
-            Assert.That((worker.X-13.5f)/(tx-13.5f),Is.EqualTo((worker.Z-13.5f)/(tz-13.5f)).Within(.0001f));
-            match.Tick(10);Assert.That(worker.X,Is.EqualTo(tx).Within(.0001f));Assert.That(worker.Z,Is.EqualTo(tz).Within(.0001f));
+            Assert.That(((float)worker.X-13.5f)/(tx-13.5f),Is.EqualTo(((float)worker.Z-13.5f)/(tz-13.5f)).Within(.0001f));
+            match.Tick(10);Assert.That((float)worker.X,Is.EqualTo(tx).Within(.0001f));Assert.That((float)worker.Z,Is.EqualTo(tz).Within(.0001f));
         }
         [Test] public void SmoothedRoutePreservesCollisionRadiusAroundBuildings()
         {
-            var match=new PrototypeMatch();var worker=match.Units[0];float radius=worker.Stats.Radius;Sites.Place(match,15,14,0);
-            Assert.That(match.CanTravel(worker.X,worker.Z,18.7f,17.2f,radius),Is.False);
+            var match=new PrototypeMatch();var worker=match.Units[0];float radius=(float)worker.Stats.Radius;Sites.Place(match,15,14,0);
+            Assert.That(match.CanTravel((float)worker.X,(float)worker.Z,18.7f,17.2f,radius),Is.False);
             Assert.That(match.Move(worker,18.7f,17.2f),Is.True);
-            for(int i=0;i<150;i++){float x=worker.X,z=worker.Z;match.Tick(.05f);Assert.That(match.CanTravel(x,z,worker.X,worker.Z,radius),Is.True);}
-            Assert.That(worker.X,Is.EqualTo(18.7f).Within(.001f));Assert.That(worker.Z,Is.EqualTo(17.2f).Within(.001f));
+            for(int i=0;i<150;i++){float x=(float)worker.X,z=(float)worker.Z;match.Tick(.05f);Assert.That(match.CanTravel(x,z,(float)worker.X,(float)worker.Z,radius),Is.True);}
+            Assert.That((float)worker.X,Is.EqualTo(18.7f).Within(.001f));Assert.That((float)worker.Z,Is.EqualTo(17.2f).Within(.001f));
         }
         [Test] public void BalanceControlsEconomyMovementAndConstructionDuration()
         {
@@ -29,20 +29,20 @@ namespace Order.Tests.EditMode
             var match=new PrototypeMatch(balance);var worker=match.Units[0];
             Assert.That(match.Plasma,Is.EqualTo(777));Assert.That(match.Map.ResourceAt(5,5).Remaining,Is.EqualTo(111));
             var node=Sites.Place(match,15,14,0);Assert.That(match.Metal,Is.EqualTo(962));
-            match.Tick(6);Assert.That(node.Ready,Is.EqualTo(.5f));
-            match.Tick(5.9f);Assert.That(node.Ready,Is.LessThan(1));
-            match.Tick(.1f);Assert.That(node.Ready,Is.EqualTo(1).Within(.0001f));
+            match.Tick(6);Assert.That((float)node.Ready,Is.EqualTo(.5f));
+            match.Tick(5.9f);Assert.That((float)node.Ready,Is.LessThan(1));
+            match.Tick(.1f);Assert.That((float)node.Ready,Is.EqualTo(1).Within(.0001f));
             // The builder may have walked round the building: it leaves along whichever side is open.
             float dx=0,dz=0;foreach(var (ox,oz) in new[]{(-1f,0f),(1f,0f),(0f,-1f),(0f,1f)})if(match.CanTravel(worker.X,worker.Z,worker.X+ox*2,worker.Z+oz*2,worker.Stats.Radius)){dx=ox;dz=oz;break;}
-            float x=worker.X,z=worker.Z;Assert.That(match.Move(worker,x+dx*2,z+dz*2),Is.True);match.Tick(.5f);
-            Assert.That(worker.X,Is.EqualTo(x+dx).Within(.0001f));Assert.That(worker.Z,Is.EqualTo(z+dz).Within(.0001f));
+            float x=(float)worker.X,z=(float)worker.Z;Assert.That(match.Move(worker,x+dx*2,z+dz*2),Is.True);match.Tick(.5f);
+            Assert.That((float)worker.X,Is.EqualTo(x+dx).Within(.0001f));Assert.That((float)worker.Z,Is.EqualTo(z+dz).Within(.0001f));
         }
         [Test] public void FourStartsHaveEqualResourceBudgets()
         {
             var map=new TempleMap();Assert.That(map.Resources.Count,Is.EqualTo(56));
             var positions=new System.Collections.Generic.HashSet<int>();
             foreach(var resource in map.Resources)Assert.That(positions.Add(resource.Z*64+resource.X),Is.True,"Overlapping deposits");
-            for(int c=0;c<4;c++)Assert.That(map.Height((c&1)==0?12:51,(c&2)==0?12:51),Is.EqualTo(3));
+            for(int c=0;c<4;c++)Assert.That((float)map.Height((c&1)==0?12:51,(c&2)==0?12:51),Is.EqualTo(3));
         }
         [Test] public void ScoutCannotCrossCliffsButCanReachAllFourStartsViaRamps()
         {
@@ -52,8 +52,8 @@ namespace Order.Tests.EditMode
             {
                 Assert.That(match.Move(worker,destination[0],destination[1]),Is.True);
                 for(int i=0;i<500;i++)match.Tick(.1f);
-                Assert.That(worker.X,Is.EqualTo(destination[0]+.5f).Within(.01f));
-                Assert.That(worker.Z,Is.EqualTo(destination[1]+.5f).Within(.01f));
+                Assert.That((float)worker.X,Is.EqualTo(destination[0]+.5f).Within(.01f));
+                Assert.That((float)worker.Z,Is.EqualTo(destination[1]+.5f).Within(.01f));
             }
         }
         [Test] public void ConstructionRejectsOccupiedFogRampAndUnaffordableCells()
@@ -65,7 +65,7 @@ namespace Order.Tests.EditMode
             var node=Sites.Place(match,15,14,0);
             Assert.That(match.Metal,Is.EqualTo(400));
             Assert.That(match.Build(match.Units[0],15,14,0),Is.False);Assert.That(match.Metal,Is.EqualTo(400));
-            match.Tick(5);Assert.That(node.Ready,Is.EqualTo(1));
+            match.Tick(5);Assert.That((float)node.Ready,Is.EqualTo(1));
             match.Metal=0;Assert.That(match.CanBuild(17,14,0,out _),Is.False);
         }
         [Test] public void ExploredCellsRemainRememberedAndHighGroundBlocksLowGroundVision()
@@ -107,7 +107,7 @@ namespace Order.Tests.EditMode
             foreach(var unit in match.Units)
             {
                 Assert.That(ids.Add(unit.Id),Is.True);Assert.That(unit.Health,Is.EqualTo(unit.Stats.Health));
-                if(!unit.Stats.Flying)Assert.That(match.CanTravel(unit.X,unit.Z,unit.X,unit.Z,unit.Stats.Radius),Is.True,unit.Stats.Name);
+                if(!unit.Stats.Flying)Assert.That(match.CanTravel((float)unit.X,(float)unit.Z,(float)unit.X,(float)unit.Z,(float)unit.Stats.Radius),Is.True,unit.Stats.Name);
             }
         }
         [Test] public void AirUnitFliesStraightOverCliffsWhileGroundUnitsUseRamps()
@@ -117,7 +117,7 @@ namespace Order.Tests.EditMode
             Assert.That(match.Move(air,30.5f,30.5f),Is.True);Assert.That(air.WaypointCount,Is.EqualTo(1));
             Assert.That(match.Move(melee,30.5f,30.5f),Is.True);Assert.That(melee.WaypointCount,Is.GreaterThan(1));
             for(int i=0;i<300;i++)match.Tick(.1f);
-            Assert.That(air.X,Is.EqualTo(30.5f).Within(.01f));Assert.That(melee.X,Is.EqualTo(30.5f).Within(.01f));
+            Assert.That((float)air.X,Is.EqualTo(30.5f).Within(.01f));Assert.That((float)melee.X,Is.EqualTo(30.5f).Within(.01f));
             Assert.That(match.Visible[30,30],Is.True);
         }
         [Test] public void OnlyWorkersHarvestAndOnlyEnemyGroundUnitsBlockConstruction()
@@ -139,9 +139,9 @@ namespace Order.Tests.EditMode
             // A second worker right by the site places the building on the next step, across the first one's way.
             var builder=match.Spawn(UnitKind.Worker,12.6f,17);
             Assert.That(match.Build(builder,13,16,0),Is.True);match.Tick(.05f);
-            Assert.That(match.Buildings.Exists(b=>b.X==13&&b.Z==16),Is.True);Assert.That(worker.WaypointCount,Is.GreaterThan(1));
-            for(int i=0;i<100;i++){float x=worker.X,z=worker.Z;match.Tick(.05f);Assert.That(match.CanTravel(x,z,worker.X,worker.Z,worker.Stats.Radius),Is.True);}
-            Assert.That(worker.Z,Is.EqualTo(18.5f).Within(.01f));
+            Assert.That(match.Buildings.Exists(b=>b.X==13&&(float)b.Z==16),Is.True);Assert.That(worker.WaypointCount,Is.GreaterThan(1));
+            for(int i=0;i<100;i++){float x=(float)worker.X,z=(float)worker.Z;match.Tick(.05f);Assert.That(match.CanTravel(x,z,(float)worker.X,(float)worker.Z,(float)worker.Stats.Radius),Is.True);}
+            Assert.That((float)worker.Z,Is.EqualTo(18.5f).Within(.01f));
         }
     }
 }

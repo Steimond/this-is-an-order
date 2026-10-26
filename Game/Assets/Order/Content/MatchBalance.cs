@@ -10,16 +10,16 @@ namespace Order.Content
     public sealed class UnitStats
     {
         public string Name="Рабочий";
-        public float Speed=5, Radius=.28f;
+        public Fix Speed=5, Radius=.28f;
         public int Health=40, Vision=9, HarvestAmount=5, Supply=1, Damage, Metal=50, Plasma;
         // Each point of armour takes one off every blow the unit receives (down to one); upgrades add to it.
         public int Armor;
         // Hauling workers carry HarvestAmount per trip after HarvestInterval seconds at the deposit; nanite workers add
         // HarvestAmount to the stock every HarvestInterval seconds while they stay wrapped round it.
-        public float HarvestInterval=2, AttackRange, AttackCooldown=1, TrainSeconds=12;
+        public Fix HarvestInterval=2, AttackRange, AttackCooldown=1, TrainSeconds=12;
         // Nanite workers: seconds to wrap a deposit, and the cocoon they wear while wrapped — extra health that takes
         // the blows first and grows back by CocoonRegen a second once they have not been hit for a while.
-        public float WrapSeconds, CocoonRegen;
+        public Fix WrapSeconds, CocoonRegen;
         public int Cocoon;
         // Attack range is measured between the edges of the two units. A leaper attacks by jumping through its target:
         // AttackRange is the reach of the jump and AttackCooldown the time between jumps (PrototypeMatch.Leap.cs).
@@ -30,20 +30,20 @@ namespace Order.Content
         // targets nearer than MinRange (edge to edge). Splash: other enemy ground units within this radius of the target's
         // centre take half the blow (PrototypeMatch.Siege.cs).
         public bool Siege;
-        public float MinRange, Splash, DeploySeconds;
+        public Fix MinRange, Splash, DeploySeconds;
         // A beam (the machines' emitter): held on one target, its blow grows to Ramp times the damage over RampSeconds
         // (1: no beam).
-        public float Ramp=1, RampSeconds;
+        public Fix Ramp=1, RampSeconds;
     }
     public sealed class BuildingStats
     {
         public string Name;
         public int Width, Metal, Plasma, Supply, Vision=7, Health=500;
-        public float BuildSeconds=5, Height=1;
+        public Fix BuildSeconds=5, Height=1;
         // Units this building trains, in command card order.
         public UnitKind[] Trains=new UnitKind[0];
         // Machine network: the radius a core or relay covers, and how many relays a core allows.
-        public float Coverage;
+        public Fix Coverage;
         public int Relays;
         // Researches the weapon and armour upgrades of its side.
         public bool Researches;

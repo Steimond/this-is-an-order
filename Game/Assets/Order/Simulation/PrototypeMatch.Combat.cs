@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Order.Content;
 
 namespace Order.Simulation
 {
@@ -19,30 +20,30 @@ namespace Order.Simulation
         public event Action<PrototypeBuilding> Destroyed;
         // The player's units or buildings came under enemy fire at (x, z); `building` tells which. At most once in
         // AlertInterval seconds for each.
-        public event Action<float, float, bool> UnderAttack;
-        const float AlertInterval = 10;
-        float lastBaseAlert = -AlertInterval, lastArmyAlert = -AlertInterval;
+        public event Action<Fix, Fix, bool> UnderAttack;
+        static readonly Fix AlertInterval = 10;
+        Fix lastBaseAlert = -AlertInterval, lastArmyAlert = -AlertInterval;
         // -1 while the match goes on, then the side that won.
         public int Winner { get; private set; } = -1;
         // Acquire range is the attack range plus this much; a current target is kept this much farther still.
-        const float AcquireExtra = 2.5f, ChaseInterval = .4f, HelpRadius = 6, AggressorReach = 6;
+        static readonly Fix AcquireExtra = (Fix)2.5f, ChaseInterval = (Fix).4f, HelpRadius = 6, AggressorReach = 6;
 
         public bool CanAttack(PrototypeUnit attacker, PrototypeUnit target) =>
             target != null && attacker != target && attacker.Alive && target.Alive && attacker.Owner != target.Owner && attacker.Stats.Damage > 0 &&
             (target.Stats.Flying ? attacker.Stats.HitsAir : attacker.Stats.HitsGround);
         public bool CanAttack(PrototypeUnit attacker, PrototypeBuilding target) =>
             target != null && attacker.Alive && target.Health > 0 && attacker.Owner != target.Owner && attacker.Stats.Damage > 0 && attacker.Stats.HitsGround;
-        public static float Gap(PrototypeUnit a, PrototypeUnit b) =>
-            (float)Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Z - b.Z) * (a.Z - b.Z)) - a.Stats.Radius - b.Stats.Radius;
+        public static Fix Gap(PrototypeUnit a, PrototypeUnit b) =>
+            Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Z - b.Z) * (a.Z - b.Z)) - a.Stats.Radius - b.Stats.Radius;
         // From the unit's edge to the nearest point of the footprint.
-        public static float Gap(PrototypeUnit a, PrototypeBuilding b)
+        public static Fix Gap(PrototypeUnit a, PrototypeBuilding b)
         {
-            float x = Math.Max(b.X, Math.Min(a.X, b.X + b.Width)), z = Math.Max(b.Z, Math.Min(a.Z, b.Z + b.Width));
-            return (float)Math.Sqrt((a.X - x) * (a.X - x) + (a.Z - z) * (a.Z - z)) - a.Stats.Radius;
+            Fix x = Math.Max(b.X, Math.Min(a.X, b.X + b.Width)), z = Math.Max(b.Z, Math.Min(a.Z, b.Z + b.Width));
+            return Math.Sqrt((a.X - x) * (a.X - x) + (a.Z - z) * (a.Z - z)) - a.Stats.Radius;
         }
         public static bool InRange(PrototypeUnit attacker, PrototypeUnit target) => Gap(attacker, target) <= attacker.Stats.AttackRange;
-        static float AcquireRange(PrototypeUnit u) => Math.Max(u.Stats.AttackRange + AcquireExtra, 4);
-        static float Reaction(PrototypeUnit u) => u.Id * .618034f % 1 * .25f;
+        static Fix AcquireRange(PrototypeUnit u) => Math.Max(u.Stats.AttackRange + AcquireExtra, 4);
+        static Fix Reaction(PrototypeUnit u) => u.Id * (Fix).618034f % 1 * (Fix).25f;
         bool Valid(PrototypeUnit u, PrototypeUnit target) => CanAttack(u, target) && SeenBy(u.Owner, target);
         bool Valid(PrototypeUnit u, PrototypeBuilding target) => CanAttack(u, target) && SeenBy(u.Owner, target);
         // A building is seen when any of its cells is.
@@ -89,7 +90,7 @@ namespace Order.Simulation
             return any;
         }
         // Go to the point and fight every enemy met on the way; a unit without a weapon simply moves.
-        public bool AttackMove(PrototypeUnit unit, float x, float z)
+        public bool AttackMove(PrototypeUnit unit, Fix x, Fix z)
         {
             if (!InMap(x, z)) return false;
             if (unit.Stats.Damage <= 0) return Move(unit, x, z);
@@ -98,7 +99,7 @@ namespace Order.Simulation
             if (Message != Unreachable) Message = "Приказ: атака с движением.";
             return true;
         }
-        public bool AttackMoveGroup(IReadOnlyList<PrototypeUnit> units, float x, float z) => GroupOrder(units, x, z, true, false);
+        public bool AttackMoveGroup(IReadOnlyList<PrototypeUnit> units, Fix x, Fix z) => GroupOrder(units, x, z, true, false);
         public void Hold(PrototypeUnit unit)
         {
             GiveOrder(unit, UnitOrder.Hold);
@@ -117,7 +118,7 @@ namespace Order.Simulation
 
         // ---------- Steps ----------
         // Runs before movement every step: pick a target, then shoot it from where the unit stands or close in on it.
-        void Fight(PrototypeUnit u, float dt)
+        void Fight(PrototypeUnit u, Fix dt)
         {
             if (u.cooldown > 0) u.cooldown -= dt;
             if (u.leaping) return;
@@ -146,7 +147,7 @@ namespace Order.Simulation
                 else CloseIn(u, building);
             }
         }
-        void Chase(PrototypeUnit u, float x, float z)
+        void Chase(PrototypeUnit u, Fix x, Fix z)
         {
             var message = Message;
             PlanPath(u, x, z);
@@ -159,17 +160,17 @@ namespace Order.Simulation
         // A spot is taken by any unit standing there and by an ally already on its way to it for the same target.
         void CloseIn(PrototypeUnit u, PrototypeBuilding b)
         {
-            float r = u.Stats.Radius, clearance = r + Math.Min(.15f, u.Stats.AttackRange * .5f), outer = clearance + 2 * r + .05f;
-            float perimeter = b.Width * 4 + 2 * (float)Math.PI * clearance, outerPerimeter = b.Width * 4 + 2 * (float)Math.PI * outer;
-            float level = Map.Height(b.X, b.Z);
-            int count = Math.Max(8, (int)(perimeter / Math.Max(.4f, r * 2.05f)));
+            Fix r = u.Stats.Radius, clearance = r + Math.Min((Fix).15f, u.Stats.AttackRange * (Fix).5f), outer = clearance + 2 * r + (Fix).05f;
+            Fix perimeter = b.Width * 4 + 2 * Math.PI * clearance, outerPerimeter = b.Width * 4 + 2 * Math.PI * outer;
+            Fix level = Map.Height(b.X, b.Z);
+            int count = Math.Max(8, (int)(perimeter / Math.Max((Fix).4f, r * (Fix)2.05f)));
             spots.Clear();
             for (int i = 0; i < count; i++)
             {
-                float along = (i + .5f) / count;
+                Fix along = (i + (Fix).5f) / count;
                 var (px, pz) = AroundFootprint(b, clearance, perimeter * along);
                 var (ox, oz) = AroundFootprint(b, outer, outerPerimeter * along);
-                bool usable = u.Stats.Flying || (InMap(px, pz) && Math.Abs(HeightAt(px, pz) - level) <= .51f && CanTravel(px, pz, px, pz, r));
+                bool usable = u.Stats.Flying || (InMap(px, pz) && Math.Abs(HeightAt(px, pz) - level) <= (Fix).51f && CanTravel(px, pz, px, pz, r));
                 spots.Add((px, pz, usable, ox, oz));
             }
             int spot = BestSpot(u, b, perimeter / count, out int entry);
@@ -180,35 +181,35 @@ namespace Order.Simulation
         void CloseIn(PrototypeUnit u, PrototypeUnit t)
         {
             if (u.Stats.AttackRange >= 1 || u.Stats.Flying != t.Stats.Flying || Gap(u, t) > 3) { Chase(u, t.X, t.Z); return; }
-            float r = u.Stats.Radius, ring = t.Stats.Radius + r + Math.Min(.22f, u.Stats.AttackRange * .75f), outer = ring + 2 * r + .05f;
-            int count = Math.Max(6, (int)(2 * Math.PI * ring / (r * 2.05f)));
+            Fix r = u.Stats.Radius, ring = t.Stats.Radius + r + Math.Min((Fix).22f, u.Stats.AttackRange * (Fix).75f), outer = ring + 2 * r + (Fix).05f;
+            int count = Math.Max(6, (int)(2 * Math.PI * ring / (r * (Fix)2.05f)));
             spots.Clear();
             for (int i = 0; i < count; i++)
             {
-                double a = 2 * Math.PI * i / count;
-                float c = (float)Math.Cos(a), s = (float)Math.Sin(a), px = t.X + c * ring, pz = t.Z + s * ring;
+                Fix a = 2 * Math.PI * i / count;
+                Fix c = Math.Cos(a), s = Math.Sin(a), px = t.X + c * ring, pz = t.Z + s * ring;
                 spots.Add((px, pz, u.Stats.Flying || (InMap(px, pz) && CanTravel(px, pz, px, pz, r)), t.X + c * outer, t.Z + s * outer));
             }
-            int spot = BestSpot(u, t, 2 * (float)Math.PI * ring / count, out int entry);
+            int spot = BestSpot(u, t, 2 * Math.PI * ring / count, out int entry);
             if (spot < 0) Chase(u, t.X, t.Z); else GoRound(u, spot, entry);
         }
-        readonly List<(float x, float z, bool usable, float outerX, float outerZ)> spots = new List<(float, float, bool, float, float)>();
+        readonly List<(Fix x, Fix z, bool usable, Fix outerX, Fix outerZ)> spots = new List<(Fix, Fix, bool, Fix, Fix)>();
         // The unit meets the outline at the spot nearest to it; from there it walks round, `step` apart from spot to spot.
-        int BestSpot(PrototypeUnit u, object target, float step, out int entry)
+        int BestSpot(PrototypeUnit u, object target, Fix step, out int entry)
         {
-            entry = 0; float entryDistance = float.MaxValue;
+            entry = 0; Fix entryDistance = Fix.MaxValue;
             for (int i = 0; i < spots.Count; i++)
             {
-                float d = (spots[i].x - u.X) * (spots[i].x - u.X) + (spots[i].z - u.Z) * (spots[i].z - u.Z);
+                Fix d = (spots[i].x - u.X) * (spots[i].x - u.X) + (spots[i].z - u.Z) * (spots[i].z - u.Z);
                 if (d < entryDistance) { entryDistance = d; entry = i; }
             }
-            entryDistance = (float)Math.Sqrt(entryDistance);
-            int best = -1; float bestScore = float.MaxValue;
+            entryDistance = Math.Sqrt(entryDistance);
+            int best = -1; Fix bestScore = Fix.MaxValue;
             for (int i = 0; i < spots.Count; i++)
             {
                 if (!spots[i].usable) continue;
                 int around = Math.Abs(i - entry); around = Math.Min(around, spots.Count - around);
-                float score = entryDistance + around * step + (Taken(u, spots[i].x, spots[i].z, target) ? 1000 : 0);
+                Fix score = entryDistance + around * step + (Taken(u, spots[i].x, spots[i].z, target) ? 1000 : 0);
                 if (score < bestScore) { bestScore = score; best = i; }
             }
             return best;
@@ -220,7 +221,7 @@ namespace Order.Simulation
             int n = spots.Count, forward = (spot - entry + n) % n, way = forward <= n - forward ? 1 : -1, steps = Math.Min(forward, n - forward);
             if (steps <= 1) { Chase(u, spots[spot].x, spots[spot].z); return; }
             var route = new List<Waypoint>();
-            float x = u.X, z = u.Z;
+            Fix x = u.X, z = u.Z;
             for (int k = 0; k < steps; k++)
             {
                 var p = spots[(entry + way * k + n) % n];
@@ -230,39 +231,39 @@ namespace Order.Simulation
             var end = spots[spot];
             if (!u.Stats.Flying && !CanTravel(x, z, end.x, end.z, u.Stats.Radius)) { Chase(u, end.x, end.z); return; }
             route.Add(new Waypoint(end.x, end.z));
-            u.HarvestTarget = null; u.arrived = false; u.stuckTime = 0; u.bestDistance = float.MaxValue; u.replans = 0;
+            u.HarvestTarget = null; u.arrived = false; u.stuckTime = 0; u.bestDistance = Fix.MaxValue; u.replans = 0;
             SetRoute(u, route);
             u.engaged = true; u.chaseTimer = ChaseInterval;
         }
         // A point at `distance` along the outline that runs `clearance` outside the footprint: sides and rounded corners.
-        static (float, float) AroundFootprint(PrototypeBuilding b, float clearance, float distance)
+        static (Fix, Fix) AroundFootprint(PrototypeBuilding b, Fix clearance, Fix distance)
         {
-            float w = b.Width, arc = (float)Math.PI * .5f * clearance;
-            float[] cornerX = { b.X + w, b.X + w, b.X, b.X }, cornerZ = { b.Z, b.Z + w, b.Z + w, b.Z };
+            Fix w = b.Width, arc = Math.PI * (Fix).5f * clearance;
+            Fix[] cornerX = { b.X + w, b.X + w, b.X, b.X }, cornerZ = { b.Z, b.Z + w, b.Z + w, b.Z };
             for (int s = 0; s < 4; s++)
             {
                 // Side s runs towards corner s, then the arc round that corner turns to the next side.
-                float sx = s == 0 ? b.X : s == 1 ? b.X + w + clearance : s == 2 ? b.X + w : b.X - clearance;
-                float sz = s == 0 ? b.Z - clearance : s == 1 ? b.Z : s == 2 ? b.Z + w + clearance : b.Z + w;
-                float dx = s == 0 ? 1 : s == 2 ? -1 : 0, dz = s == 1 ? 1 : s == 3 ? -1 : 0;
+                Fix sx = s == 0 ? b.X : s == 1 ? b.X + w + clearance : s == 2 ? b.X + w : b.X - clearance;
+                Fix sz = s == 0 ? b.Z - clearance : s == 1 ? b.Z : s == 2 ? b.Z + w + clearance : b.Z + w;
+                Fix dx = s == 0 ? 1 : s == 2 ? -1 : 0, dz = s == 1 ? 1 : s == 3 ? -1 : 0;
                 if (distance <= w) return (sx + dx * distance, sz + dz * distance);
                 distance -= w;
                 if (distance <= arc || s == 3)
                 {
-                    double a = -Math.PI * .5 + s * Math.PI * .5 + Math.Min(distance, arc) / clearance;
-                    return (cornerX[s] + (float)Math.Cos(a) * clearance, cornerZ[s] + (float)Math.Sin(a) * clearance);
+                    Fix a = -Math.PI * (Fix).5 + s * Math.PI * (Fix).5 + Math.Min(distance, arc) / clearance;
+                    return (cornerX[s] + Math.Cos(a) * clearance, cornerZ[s] + Math.Sin(a) * clearance);
                 }
                 distance -= arc;
             }
             return (b.X - clearance, b.Z);
         }
-        bool Taken(PrototypeUnit u, float x, float z, object target)
+        bool Taken(PrototypeUnit u, Fix x, Fix z, object target)
         {
             foreach (var v in Units)
             {
                 if (v == u || v.Stats.Flying != u.Stats.Flying || Ghost(v)) continue;
-                float reach = (u.Stats.Radius + v.Stats.Radius) * .95f;
-                float dx = v.X - x, dz = v.Z - z;
+                Fix reach = (u.Stats.Radius + v.Stats.Radius) * (Fix).95f;
+                Fix dx = v.X - x, dz = v.Z - z;
                 if (dx * dx + dz * dz < reach * reach) return true;
                 if (!v.Moving || !v.engaged || (v.Target != target && v.TargetBuilding != target)) continue;
                 dx = v.goalX - x; dz = v.goalZ - z;
@@ -271,13 +272,13 @@ namespace Order.Simulation
             return false;
         }
         // The point just outside the footprint nearest the unit.
-        static (float, float) Approach(PrototypeUnit u, PrototypeBuilding b)
+        static (Fix, Fix) Approach(PrototypeUnit u, PrototypeBuilding b)
         {
-            float cx = b.X + b.Width * .5f, cz = b.Z + b.Width * .5f;
-            float x = Math.Max(b.X, Math.Min(u.X, b.X + b.Width)), z = Math.Max(b.Z, Math.Min(u.Z, b.Z + b.Width));
-            float dx = x - cx, dz = z - cz, l = (float)Math.Sqrt(dx * dx + dz * dz);
-            if (l < 1e-4f) { dx = 0; dz = -1; l = 1; }
-            float clearance = u.Stats.Radius + .15f;
+            Fix cx = b.X + b.Width * (Fix).5f, cz = b.Z + b.Width * (Fix).5f;
+            Fix x = Math.Max(b.X, Math.Min(u.X, b.X + b.Width)), z = Math.Max(b.Z, Math.Min(u.Z, b.Z + b.Width));
+            Fix dx = x - cx, dz = z - cz, l = Math.Sqrt(dx * dx + dz * dz);
+            if (l < (Fix)1e-4f) { dx = 0; dz = -1; l = 1; }
+            Fix clearance = u.Stats.Radius + (Fix).15f;
             return (x + dx / l * clearance, z + dz / l * clearance);
         }
         // Nothing left to fight: an attack-move goes on to its point, any other unit stays where the fight ended.
@@ -301,14 +302,14 @@ namespace Order.Simulation
             bool keep = Valid(u, current);
             if (keep && InRange(u, current)) return current;
             bool hold = u.Order == UnitOrder.Hold;
-            float acquire = hold ? u.Stats.AttackRange : AcquireRange(u);
-            PrototypeUnit inRange = null, near = null; float inRangeScore = float.MaxValue, nearScore = float.MaxValue;
+            Fix acquire = hold ? u.Stats.AttackRange : AcquireRange(u);
+            PrototypeUnit inRange = null, near = null; Fix inRangeScore = Fix.MaxValue, nearScore = Fix.MaxValue;
             foreach (var v in Units)
             {
                 if (v.Owner == u.Owner || !Valid(u, v)) continue;
-                float gap = Gap(u, v);
+                Fix gap = Gap(u, v);
                 if (gap > acquire) continue;
-                float score = gap + (CanAttack(v, u) ? 0 : 100);
+                Fix score = gap + (CanAttack(v, u) ? 0 : 100);
                 if (gap <= u.Stats.AttackRange && score < inRangeScore) { inRangeScore = score; inRange = v; }
                 if (score < nearScore) { nearScore = score; near = v; }
             }
@@ -325,14 +326,14 @@ namespace Order.Simulation
                 if (Valid(u, u.orderedBuilding)) return u.orderedBuilding;
                 u.Order = UnitOrder.Idle; u.orderedBuilding = null;
             }
-            float acquire = u.Order == UnitOrder.Hold ? u.Stats.AttackRange : AcquireRange(u);
+            Fix acquire = u.Order == UnitOrder.Hold ? u.Stats.AttackRange : AcquireRange(u);
             var current = u.TargetBuilding;
             if (Valid(u, current) && Gap(u, current) <= acquire + AcquireExtra) return current;
-            PrototypeBuilding best = null; float bestGap = acquire;
+            PrototypeBuilding best = null; Fix bestGap = acquire;
             foreach (var b in Buildings)
             {
                 if (b.Owner == u.Owner || !Valid(u, b)) continue;
-                float gap = Gap(u, b);
+                Fix gap = Gap(u, b);
                 if (gap <= bestGap) { bestGap = gap; best = b; }
             }
             return best;
@@ -359,22 +360,22 @@ namespace Order.Simulation
         {
             if (!(Invulnerable && target.Owner == Player)) { target.Health = Math.Max(0, target.Health - Strike(attacker, target)); target.sinceHit = 0; }
             AttackedBuilding?.Invoke(attacker, target);
-            if (target.Owner == Player && attacker.Owner != Player) Alert(target.X + target.Width * .5f, target.Z + target.Width * .5f, true);
-            if (target.Health > 0) CallForHelp(target.Owner, target.X + target.Width * .5f, target.Z + target.Width * .5f, attacker, null);
+            if (target.Owner == Player && attacker.Owner != Player) Alert(target.X + target.Width * (Fix).5f, target.Z + target.Width * (Fix).5f, true);
+            if (target.Health > 0) CallForHelp(target.Owner, target.X + target.Width * (Fix).5f, target.Z + target.Width * (Fix).5f, attacker, null);
         }
-        void Alert(float x, float z, bool building)
+        void Alert(Fix x, Fix z, bool building)
         {
             if (building) { if (Clock - lastBaseAlert < AlertInterval) return; lastBaseAlert = Clock; }
             else { if (Clock - lastArmyAlert < AlertInterval) return; lastArmyAlert = Clock; }
             UnderAttack?.Invoke(x, z, building);
         }
         // Idle allies near the spot that can hit the attacker come to help.
-        void CallForHelp(int side, float x, float z, PrototypeUnit attacker, PrototypeUnit victim)
+        void CallForHelp(int side, Fix x, Fix z, PrototypeUnit attacker, PrototypeUnit victim)
         {
             foreach (var v in Units)
             {
                 if (v.Owner != side || v == victim || v.Order != UnitOrder.Idle || v.Target != null || v.HarvestTarget != null || !CanAttack(v, attacker)) continue;
-                float dx = v.X - x, dz = v.Z - z;
+                Fix dx = v.X - x, dz = v.Z - z;
                 if (dx * dx + dz * dz < HelpRadius * HelpRadius) v.aggressor = attacker;
             }
         }

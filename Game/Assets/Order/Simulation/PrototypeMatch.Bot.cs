@@ -21,27 +21,27 @@ namespace Order.Simulation
     {
         public bool BotEnabled { get; private set; }
         public int Waves { get; private set; }
-        const float BotThink = 1, FirstWave = 300, DefenseRadius = 12, ExpandAt = 360;
+        static readonly Fix BotThink = 1, FirstWave = 300, DefenseRadius = 12, ExpandAt = 360;
         const int BotWorkers = 12, FirstWaveSupply = 10, WaveGrowth = 4, MaxWaveSupply = 40;
-        float botTimer;
+        Fix botTimer;
         int waveSupply = FirstWaveSupply;
         bool waveNow;
         readonly HashSet<PrototypeUnit> raiders = new HashSet<PrototypeUnit>();
         // Where the bot's army waits: on its plateau at the top of its ramp.
-        const float StageX = 46.5f, StageZ = 52.5f;
+        static readonly Fix StageX = (Fix)46.5f, StageZ = (Fix)52.5f;
 
         public void StartBot()
         {
             BotEnabled = true;
             var hq = BotHeadquarters();
             // Starting workers are part of the bot's base, not a cheat.
-            if (hq != null && !Units.Exists(u => u.Owner == Enemy && u.Kind == UnitKind.Worker)) SpawnAround(UnitKind.Worker, 4, hq.X + hq.Width * .5f, hq.Z - 1.5f, Enemy);
+            if (hq != null && !Units.Exists(u => u.Owner == Enemy && u.Kind == UnitKind.Worker)) SpawnAround(UnitKind.Worker, 4, hq.X + hq.Width * (Fix).5f, hq.Z - (Fix)1.5f, Enemy);
         }
         public bool ToggleBot() { if (BotEnabled) BotEnabled = false; else StartBot(); return Cheat(BotEnabled, "бот противника"); }
         // Cheat: the next think sends the army at the player whatever its size and the time.
         public void SendWaveNow() { Cheated = true; waveNow = true; if (!BotEnabled) StartBot(); Message = "Чит: противник атакует."; }
 
-        void TickBot(float dt)
+        void TickBot(Fix dt)
         {
             if (!BotEnabled || Winner >= 0 || (botTimer += dt) < BotThink) return;
             botTimer = 0;
@@ -54,8 +54,8 @@ namespace Order.Simulation
             Message = message;
         }
         PrototypeBuilding BotHeadquarters() => Buildings.Find(b => b.Owner == Enemy && Trains(b, UnitKind.Worker));
-        static readonly (UnitKind, float)[] HumanMix = { (UnitKind.Ranged, 3f), (UnitKind.Melee, 2f), (UnitKind.Tank, 1.5f), (UnitKind.Artillery, 1f), (UnitKind.Air, 1f), (UnitKind.Fighter, 1f) },
-            MachineMix = { (UnitKind.Melee, 3f), (UnitKind.Leaper, 2f), (UnitKind.Ranged, 2f), (UnitKind.Air, 1f) };
+        static readonly (UnitKind, Fix)[] HumanMix = { (UnitKind.Ranged, (Fix)3f), (UnitKind.Melee, (Fix)2f), (UnitKind.Tank, (Fix)1.5f), (UnitKind.Artillery, (Fix)1f), (UnitKind.Air, (Fix)1f), (UnitKind.Fighter, (Fix)1f) },
+            MachineMix = { (UnitKind.Melee, (Fix)3f), (UnitKind.Leaper, (Fix)2f), (UnitKind.Ranged, (Fix)2f), (UnitKind.Air, (Fix)1f) };
 
         void BotEconomy()
         {
@@ -76,7 +76,7 @@ namespace Order.Simulation
                 bool plasma = onPlasma < wantPlasma;
                 var deposit = BotDeposit(bases, plasma, workers) ?? BotDeposit(bases, !plasma, workers);
                 if (deposit == null) continue;
-                Move(w, deposit.X + .5f, deposit.Z + .5f);
+                Move(w, deposit.X + (Fix).5f, deposit.Z + (Fix).5f);
                 if (w.HarvestTarget != null && w.HarvestTarget.Plasma) onPlasma++;
             }
             // Busy miners are moved to plasma too, between trips.
@@ -85,7 +85,7 @@ namespace Order.Simulation
                 var plasma = BotDeposit(bases, true, workers);
                 var miner = workers.Find(w => w.HarvestTarget != null && !w.HarvestTarget.Plasma && w.Carrying == 0);
                 if (plasma == null || miner == null) break;
-                Move(miner, plasma.X + .5f, plasma.Z + .5f);
+                Move(miner, plasma.X + (Fix).5f, plasma.Z + (Fix).5f);
                 if (miner.HarvestTarget != plasma) break;
                 onPlasma++;
             }
@@ -96,7 +96,7 @@ namespace Order.Simulation
             foreach (var b in bases)
             {
                 var rally = BotDeposit(new List<PrototypeBuilding> { b }, false, workers);
-                if (rally != null && (!b.HasRally || Map.ResourceAt((int)b.RallyX, (int)b.RallyZ) == null)) SetRally(b, rally.X + .5f, rally.Z + .5f);
+                if (rally != null && (!b.HasRally || Map.ResourceAt((int)b.RallyX, (int)b.RallyZ) == null)) SetRally(b, rally.X + (Fix).5f, rally.Z + (Fix).5f);
             }
         }
         int DepositsNear(List<PrototypeBuilding> bases)
@@ -106,13 +106,13 @@ namespace Order.Simulation
             return count;
         }
         // From the deposit to the nearest of the bases.
-        static float Reach(List<PrototypeBuilding> bases, ResourceDeposit r)
+        static Fix Reach(List<PrototypeBuilding> bases, ResourceDeposit r)
         {
-            float best = float.MaxValue;
+            Fix best = Fix.MaxValue;
             foreach (var hq in bases)
             {
-                float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f;
-                best = Math.Min(best, (float)Math.Sqrt((r.X + .5f - cx) * (r.X + .5f - cx) + (r.Z + .5f - cz) * (r.Z + .5f - cz)));
+                Fix cx = hq.X + hq.Width * (Fix).5f, cz = hq.Z + hq.Width * (Fix).5f;
+                best = Math.Min(best, Math.Sqrt((r.X + (Fix).5f - cx) * (r.X + (Fix).5f - cx) + (r.Z + (Fix).5f - cz) * (r.Z + (Fix).5f - cz)));
             }
             return best;
         }
@@ -121,15 +121,15 @@ namespace Order.Simulation
         ResourceDeposit BotDeposit(List<PrototypeBuilding> bases, bool plasma, List<PrototypeUnit> workers)
         {
             bool nanites = Roster(Enemy).NaniteMining;
-            ResourceDeposit best = null; float bestScore = float.MaxValue;
+            ResourceDeposit best = null; Fix bestScore = Fix.MaxValue;
             foreach (var r in Map.Resources)
             {
                 if (r.Plasma != plasma || r.Remaining <= 0 || MiningBlocked(Enemy, r) != null) continue;
-                float d = Reach(bases, r);
+                Fix d = Reach(bases, r);
                 if (d > 10) continue;
                 int on = 0; foreach (var w in workers) if (w.HarvestTarget == r) on++;
                 if (nanites && (on > 0 || (miners.TryGetValue(r, out var holder) && Holds(holder, r)))) continue;
-                float score = on * 100 + d;
+                Fix score = on * 100 + d;
                 if (score < bestScore) { bestScore = score; best = r; }
             }
             return best;
@@ -143,7 +143,7 @@ namespace Order.Simulation
             foreach (var b in Buildings)
             {
                 if (b.Owner != Enemy || b.Ready >= 1 || b.SelfBuilt || b.Builder != null) continue;
-                var worker = BotBuilder(b.X + b.Width * .5f, b.Z + b.Width * .5f);
+                var worker = BotBuilder(b.X + b.Width * (Fix).5f, b.Z + b.Width * (Fix).5f);
                 if (worker != null) Resume(worker, b);
                 return;
             }
@@ -153,7 +153,7 @@ namespace Order.Simulation
                 {
                     if (b.Owner != Enemy || b.Ready < 1 || b.Health >= b.Stats.Health || Units.Exists(u => u.Repairing == b)) continue;
                     if (Units.Exists(u => u.Owner != Enemy && u.Alive && Gap(u, b) < DefenseRadius)) continue;
-                    var worker = BotBuilder(b.X + b.Width * .5f, b.Z + b.Width * .5f);
+                    var worker = BotBuilder(b.X + b.Width * (Fix).5f, b.Z + b.Width * (Fix).5f);
                     if (worker != null) Repair(worker, b);
                     break;
                 }
@@ -185,15 +185,15 @@ namespace Order.Simulation
         bool BotExpand(PrototypeBuilding hq)
         {
             if (!ExpansionDue() || metalStock[Enemy] < Roster(Enemy).Buildings[FactionBalance.Main].Metal) return false;
-            float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f, best = float.MaxValue; int bx = 0, bz = 0;
+            Fix cx = hq.X + hq.Width * (Fix).5f, cz = hq.Z + hq.Width * (Fix).5f, best = Fix.MaxValue; int bx = 0, bz = 0;
             foreach (var (x, z) in Map.Bases)
             {
-                float d = (x + 1.5f - cx) * (x + 1.5f - cx) + (z + 1.5f - cz) * (z + 1.5f - cz);
+                Fix d = (x + (Fix)1.5f - cx) * (x + (Fix)1.5f - cx) + (z + (Fix)1.5f - cz) * (z + (Fix)1.5f - cz);
                 if (d < 1 || d >= best || !CanBuild(x, z, FactionBalance.Main, out _, Enemy)) continue;
                 best = d; bx = x; bz = z;
             }
-            if (best == float.MaxValue) return false;
-            var builder = BotBuilder(bx + 1.5f, bz + 1.5f);
+            if (best == Fix.MaxValue) return false;
+            var builder = BotBuilder(bx + (Fix)1.5f, bz + (Fix)1.5f);
             return builder != null && Build(builder, bx, bz, FactionBalance.Main);
         }
         // A free spot near the command node that leaves a cell of room all round and keeps off the metal line.
@@ -201,18 +201,18 @@ namespace Order.Simulation
         {
             var stats = Roster(Enemy).Buildings[kind];
             if (metalStock[Enemy] < stats.Metal || plasmaStock[Enemy] < stats.Plasma) return false;
-            int w = stats.Width; float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f, level = Map.Height(hq.X, hq.Z);
-            int bestX = 0, bestZ = 0; float best = float.MaxValue;
+            int w = stats.Width; Fix cx = hq.X + hq.Width * (Fix).5f, cz = hq.Z + hq.Width * (Fix).5f, level = Map.Height(hq.X, hq.Z);
+            int bestX = 0, bestZ = 0; Fix best = Fix.MaxValue;
             for (int z = hq.Z - 10; z <= hq.Z + 10; z++)
             for (int x = hq.X - 10; x <= hq.X + 10; x++)
             {
-                float d = (x + w * .5f - cx) * (x + w * .5f - cx) + (z + w * .5f - cz) * (z + w * .5f - cz);
+                Fix d = (x + w * (Fix).5f - cx) * (x + w * (Fix).5f - cx) + (z + w * (Fix).5f - cz) * (z + w * (Fix).5f - cz);
                 if (d >= best || d < 9 || !Room(x, z, w, level) || !CanBuild(x, z, kind, out _, Enemy)) continue;
                 best = d; bestX = x; bestZ = z;
             }
             // No room inside the coverage: a machine bot extends it with a relay next.
-            if (best == float.MaxValue) { cramped = Roster(Enemy).Network; return false; }
-            var builder = BotBuilder(bestX + w * .5f, bestZ + w * .5f);
+            if (best == Fix.MaxValue) { cramped = Roster(Enemy).Network; return false; }
+            var builder = BotBuilder(bestX + w * (Fix).5f, bestZ + w * (Fix).5f);
             return builder != null && Build(builder, bestX, bestZ, kind);
         }
         // Machines tie their bases into one network: a relay between two cores that do not reach each other, so each base
@@ -229,30 +229,30 @@ namespace Order.Simulation
                 PrototypeBuilding a = cores[i], c = cores[j];
                 if (Distance(a, c) <= a.Stats.Coverage || Distance(a, c) > a.Stats.Coverage + c.Stats.Coverage) continue;
                 if (Buildings.Exists(r => r.Owner == Enemy && r.Kind == FactionBalance.Relay && Distance(r, a) <= a.Stats.Coverage && Distance(r, c) <= c.Stats.Coverage)) continue;
-                float mx = (a.X + c.X) * .5f + 1.5f, mz = (a.Z + c.Z) * .5f + 1.5f;
+                Fix mx = (a.X + c.X) * (Fix).5f + (Fix)1.5f, mz = (a.Z + c.Z) * (Fix).5f + (Fix)1.5f;
                 if (BotRelayAt(mx, mz, r => Near(r, a) && Near(r, c))) return true;
             }
             if (!cramped) return false;
             cramped = false;
-            float cx = hq.X + hq.Width * .5f, cz = hq.Z + hq.Width * .5f, dx = 32 - cx, dz = 32 - cz, d = (float)Math.Sqrt(dx * dx + dz * dz), reach = hq.Stats.Coverage - 1.5f;
+            Fix cx = hq.X + hq.Width * (Fix).5f, cz = hq.Z + hq.Width * (Fix).5f, dx = 32 - cx, dz = 32 - cz, d = Math.Sqrt(dx * dx + dz * dz), reach = hq.Stats.Coverage - (Fix)1.5f;
             return d > 0 && BotRelayAt(cx + dx / d * reach, cz + dz / d * reach, r => Near(r, hq));
             bool Near(PrototypeBuilding relay, PrototypeBuilding core) => Distance(relay, core) <= core.Stats.Coverage;
         }
         // A relay on a free spot near the point that passes the check: a stand-in building tells where it would stand.
-        bool BotRelayAt(float x, float z, Func<PrototypeBuilding, bool> fits)
+        bool BotRelayAt(Fix x, Fix z, Func<PrototypeBuilding, bool> fits)
         {
             var stats = Roster(Enemy).Buildings[FactionBalance.Relay];
-            int bestX = 0, bestZ = 0; float best = float.MaxValue;
+            int bestX = 0, bestZ = 0; Fix best = Fix.MaxValue;
             for (int zz = (int)z - 3; zz <= (int)z + 3; zz++)
             for (int xx = (int)x - 3; xx <= (int)x + 3; xx++)
             {
-                float d = (xx + .5f - x) * (xx + .5f - x) + (zz + .5f - z) * (zz + .5f - z);
+                Fix d = (xx + (Fix).5f - x) * (xx + (Fix).5f - x) + (zz + (Fix).5f - z) * (zz + (Fix).5f - z);
                 if (d >= best || !Map.Inside(xx, zz) || !CanBuild(xx, zz, FactionBalance.Relay, out _, Enemy)) continue;
                 if (!fits(new PrototypeBuilding { X = xx, Z = zz, Width = 1, Stats = stats })) continue;
                 best = d; bestX = xx; bestZ = zz;
             }
-            if (best == float.MaxValue) return false;
-            var builder = BotBuilder(bestX + .5f, bestZ + .5f);
+            if (best == Fix.MaxValue) return false;
+            var builder = BotBuilder(bestX + (Fix).5f, bestZ + (Fix).5f);
             return builder != null && Build(builder, bestX, bestZ, FactionBalance.Relay);
         }
         // A side that mines plasma through extractors puts one on the rift by each finished base once it has eight workers.
@@ -264,25 +264,25 @@ namespace Order.Simulation
             foreach (var r in Map.Resources)
             {
                 if (!r.Plasma || r.Remaining <= 0 || Reach(bases, r) > 10 || ExtractorOn(r) != null || !CanBuild(r.X, r.Z, kind, out _, Enemy)) continue;
-                var builder = BotBuilder(r.X + .5f, r.Z + .5f);
+                var builder = BotBuilder(r.X + (Fix).5f, r.Z + (Fix).5f);
                 return builder != null && Build(builder, r.X, r.Z, kind);
             }
             return false;
         }
         // The worker nearest the spot that is not building: a metal miner with empty hands if there is one.
-        PrototypeUnit BotBuilder(float x, float z)
+        PrototypeUnit BotBuilder(Fix x, Fix z)
         {
-            PrototypeUnit best = null; float bestScore = float.MaxValue;
+            PrototypeUnit best = null; Fix bestScore = Fix.MaxValue;
             foreach (var u in Units)
             {
                 if (u.Owner != Enemy || u.Kind != UnitKind.Worker || Busy(u)) continue;
-                float score = (u.X - x) * (u.X - x) + (u.Z - z) * (u.Z - z);
+                Fix score = (u.X - x) * (u.X - x) + (u.Z - z) * (u.Z - z);
                 if (u.Carrying > 0 || (u.HarvestTarget != null && u.HarvestTarget.Plasma)) score += 10000;
                 if (score < bestScore) { bestScore = score; best = u; }
             }
             return best;
         }
-        bool Room(int x, int z, int w, float level)
+        bool Room(int x, int z, int w, Fix level)
         {
             for (int zz = z - 1; zz <= z + w; zz++)
             for (int xx = x - 1; xx <= x + w; xx++)
@@ -305,7 +305,7 @@ namespace Order.Simulation
                 // one, interceptors only against a player who has air units; machines: spiders, leapers, emitters and gliders
                 // about three to two to two to one; as far as resources allow.
                 bool air = Units.Exists(u => u.Owner != Enemy && u.Stats.Flying);
-                UnitKind? pick = null; float least = float.MaxValue;
+                UnitKind? pick = null; Fix least = Fix.MaxValue;
                 foreach (var (kind, weight) in Roster(Enemy).Has(UnitKind.Leaper) ? MachineMix : HumanMix)
                 {
                     var stats = Roster(Enemy).Unit(kind);
@@ -323,14 +323,14 @@ namespace Order.Simulation
             raiders.RemoveWhere(u => !u.Alive);
             var home = Units.FindAll(u => u.Owner == Enemy && u.Stats.Damage > 0 && !raiders.Contains(u));
             // Defence: the army at home goes for the player's units near the bot's buildings.
-            PrototypeUnit threat = null; float threatDistance = float.MaxValue;
+            PrototypeUnit threat = null; Fix threatDistance = Fix.MaxValue;
             foreach (var u in Units)
             {
                 if (u.Owner != Player || !SeenBy(Enemy, u)) continue;
                 foreach (var b in Buildings)
                 {
                     if (b.Owner != Enemy) continue;
-                    float dx = u.X - (b.X + b.Width * .5f), dz = u.Z - (b.Z + b.Width * .5f), d = dx * dx + dz * dz;
+                    Fix dx = u.X - (b.X + b.Width * (Fix).5f), dz = u.Z - (b.Z + b.Width * (Fix).5f), d = dx * dx + dz * dz;
                     if (d < DefenseRadius * DefenseRadius && d < threatDistance) { threatDistance = d; threat = u; }
                 }
             }
@@ -349,7 +349,7 @@ namespace Order.Simulation
                 var target = PlayerTarget(StageX, StageZ);
                 if (target != null)
                 {
-                    AttackMoveGroup(home, target.X + target.Width * .5f, target.Z + target.Width * .5f);
+                    AttackMoveGroup(home, target.X + target.Width * (Fix).5f, target.Z + target.Width * (Fix).5f);
                     foreach (var u in home) raiders.Add(u);
                     Waves++; waveSupply = Math.Min(MaxWaveSupply, waveSupply + WaveGrowth); waveNow = false;
                 }
@@ -359,17 +359,17 @@ namespace Order.Simulation
             {
                 if (u.Order != UnitOrder.Idle || u.Target != null || u.TargetBuilding != null || u.Moving) continue;
                 var next = PlayerTarget(u.X, u.Z);
-                if (next != null) AttackMove(u, next.X + next.Width * .5f, next.Z + next.Width * .5f);
+                if (next != null) AttackMove(u, next.X + next.Width * (Fix).5f, next.Z + next.Width * (Fix).5f);
             }
         }
         // The player's building nearest a point.
-        PrototypeBuilding PlayerTarget(float x, float z)
+        PrototypeBuilding PlayerTarget(Fix x, Fix z)
         {
-            PrototypeBuilding best = null; float bestScore = float.MaxValue;
+            PrototypeBuilding best = null; Fix bestScore = Fix.MaxValue;
             foreach (var b in Buildings)
             {
                 if (b.Owner != Player) continue;
-                float dx = b.X + b.Width * .5f - x, dz = b.Z + b.Width * .5f - z, score = dx * dx + dz * dz;
+                Fix dx = b.X + b.Width * (Fix).5f - x, dz = b.Z + b.Width * (Fix).5f - z, score = dx * dx + dz * dz;
                 if (score < bestScore) { bestScore = score; best = b; }
             }
             return best;

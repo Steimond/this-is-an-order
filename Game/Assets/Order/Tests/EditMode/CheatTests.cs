@@ -15,9 +15,9 @@ namespace Order.Tests.EditMode
             Assert.That(match.ToggleFastBuild(),Is.True);Assert.That(match.Cheated,Is.True);
             var node=Sites.Place(match,15,7,0);
             var hq=match.Buildings.Find(b=>b.Kind==2&&b.Owner==PrototypeMatch.Player);Assert.That(match.Train(hq,UnitKind.Worker),Is.True);
-            Run(match,match.Balance.Expedition.Buildings[0].BuildSeconds/PrototypeMatch.FastFactor+.1f);
-            Assert.That(node.Ready,Is.EqualTo(1));
-            Run(match,match.Balance.Expedition.Worker.TrainSeconds/PrototypeMatch.FastFactor+.1f);
+            Run(match,(float)match.Balance.Expedition.Buildings[0].BuildSeconds/(float)PrototypeMatch.FastFactor+.1f);
+            Assert.That((float)node.Ready,Is.EqualTo(1));
+            Run(match,(float)match.Balance.Expedition.Worker.TrainSeconds/(float)PrototypeMatch.FastFactor+.1f);
             Assert.That(match.Units.FindAll(u=>u.Kind==UnitKind.Worker).Count,Is.EqualTo(2));
             Assert.That(match.ToggleFastBuild(),Is.False);
         }
@@ -26,7 +26,7 @@ namespace Order.Tests.EditMode
             var match=new PrototypeMatch();match.AddTestSquad();var hq=match.Buildings[0];
             Assert.That(match.SupplyUsed,Is.EqualTo(match.SupplyLimit));
             match.ToggleNoSupply();match.Train(hq,UnitKind.Worker);
-            Run(match,match.Balance.Expedition.Worker.TrainSeconds+.1f);
+            Run(match,(float)match.Balance.Expedition.Worker.TrainSeconds+.1f);
             Assert.That(hq.SupplyBlocked,Is.False);Assert.That(match.SupplyUsed,Is.GreaterThan(match.SupplyLimit));
         }
         [Test] public void RevealShowsTheWholeMapAndInvulnerabilityStopsDamage()
@@ -49,9 +49,9 @@ namespace Order.Tests.EditMode
             Assert.That(squad.Count,Is.EqualTo(12));Assert.That(enemies.Count,Is.EqualTo(3));Assert.That(enemies[0].Owner,Is.EqualTo(PrototypeMatch.Enemy));
             for(int i=0;i<squad.Count;i++)
             {
-                Assert.That(match.CanTravel(squad[i].X,squad[i].Z,squad[i].X,squad[i].Z,squad[i].Stats.Radius),Is.True);
+                Assert.That(match.CanTravel((float)squad[i].X,(float)squad[i].Z,(float)squad[i].X,(float)squad[i].Z,(float)squad[i].Stats.Radius),Is.True);
                 for(int j=i+1;j<squad.Count;j++)
-                    Assert.That(System.Math.Sqrt((squad[i].X-squad[j].X)*(squad[i].X-squad[j].X)+(squad[i].Z-squad[j].Z)*(squad[i].Z-squad[j].Z)),Is.GreaterThan(squad[i].Stats.Radius*1.9f));
+                    Assert.That(System.Math.Sqrt(((float)squad[i].X-(float)squad[j].X)*((float)squad[i].X-(float)squad[j].X)+((float)squad[i].Z-(float)squad[j].Z)*((float)squad[i].Z-(float)squad[j].Z)),Is.GreaterThan((float)squad[i].Stats.Radius*1.9f));
             }
             match.WinNow();Run(match,.1f);
             Assert.That(match.Winner,Is.EqualTo(PrototypeMatch.Player));Assert.That(match.Buildings.Exists(b=>b.Owner!=PrototypeMatch.Player),Is.False);

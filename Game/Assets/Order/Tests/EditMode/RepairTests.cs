@@ -21,7 +21,7 @@ namespace Order.Tests.EditMode
             var stats=factory.Stats;factory.Health=stats.Health/2;
             int metal=match.Metal,plasma=match.Plasma;
             Assert.That(match.Repair(worker,factory),Is.True,match.Message);Assert.That(worker.Repairing,Is.SameAs(factory));
-            float seconds=System.Math.Max(PrototypeMatch.MinRepairSeconds,stats.BuildSeconds);
+            float seconds=System.Math.Max((float)PrototypeMatch.MinRepairSeconds,(float)stats.BuildSeconds);
             Run(match,seconds*.25f);
             Assert.That(factory.Health,Is.GreaterThan(stats.Health/2));Assert.That(factory.Health,Is.LessThan(stats.Health),"Health comes back over time");
             Assert.That(worker.Welding,Is.True);
@@ -29,8 +29,8 @@ namespace Order.Tests.EditMode
             Assert.That(factory.Health,Is.EqualTo(stats.Health),"Half the health in half the repair time, plus the walk");
             Assert.That(worker.Repairing,Is.Null);Assert.That(match.Message,Does.Contain("Отремонтировано"));
             // Half the health for a quarter of half the price, in whole units.
-            Assert.That(metal-match.Metal,Is.EqualTo((int)(stats.Metal*PrototypeMatch.RepairShare/2)));
-            Assert.That(plasma-match.Plasma,Is.EqualTo((int)(stats.Plasma*PrototypeMatch.RepairShare/2)));
+            Assert.That(metal-match.Metal,Is.EqualTo((int)(stats.Metal*(float)PrototypeMatch.RepairShare/2)));
+            Assert.That(plasma-match.Plasma,Is.EqualTo((int)(stats.Plasma*(float)PrototypeMatch.RepairShare/2)));
         }
         [Test] public void SeveralWorkersRepairFaster()
         {
@@ -109,7 +109,7 @@ namespace Order.Tests.EditMode
             Assert.That(match.Attack(raider,inside),Is.True);
             for(int i=0;i<200&&inside.Health==inside.Stats.Health;i++)match.Tick(.05f);
             raider.Health=0;int hit=inside.Health;Assert.That(hit,Is.LessThan(inside.Stats.Health));
-            Run(match,PrototypeMatch.MendCalm-.5f);
+            Run(match,(float)PrototypeMatch.MendCalm-.5f);
             Assert.That(inside.Health,Is.EqualTo(hit),"Not right after the blow");
             Run(match,6);
             Assert.That(inside.Health,Is.GreaterThan(hit));
@@ -128,8 +128,8 @@ namespace Order.Tests.EditMode
             var (backMetal,backPlasma)=match.DisassemblyReturn(leaper);
             Assert.That((backMetal,backPlasma),Is.EqualTo(((int)(stats.Metal*.25f),(int)(stats.Plasma*.25f))));
             Assert.That(match.Disassemble(leaper),Is.True,match.Message);
-            Run(match,PrototypeMatch.DisassemblySeconds-.5f);
-            Assert.That(leaper.Alive,Is.True);Assert.That(leaper.Disassembly,Is.GreaterThan(.5f));
+            Run(match,(float)PrototypeMatch.DisassemblySeconds-.5f);
+            Assert.That(leaper.Alive,Is.True);Assert.That((float)leaper.Disassembly,Is.GreaterThan(.5f));
             Run(match,.6f);
             Assert.That(match.Units.Contains(leaper),Is.False,"Taken apart");
             Assert.That(match.Metal,Is.EqualTo(metal+backMetal));Assert.That(match.Plasma,Is.EqualTo(plasma+backPlasma));

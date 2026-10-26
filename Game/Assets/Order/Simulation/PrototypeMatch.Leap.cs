@@ -15,68 +15,68 @@ namespace Order.Simulation
     // Against buildings it strikes in melee.
     public sealed partial class PrototypeMatch
     {
-        const float LeapSpeed = 13, LeapShare = .5f, BuildingReach = .3f;
+        static readonly Fix LeapSpeed = 13, LeapShare = (Fix).5f, BuildingReach = (Fix).3f;
         enum LeapStart { Jumped, Recharging, Blocked, OutOfReach }
 
         LeapStart TryLeap(PrototypeUnit u, PrototypeUnit target)
         {
             if (target.Stats.Flying || Gap(u, target) > u.Stats.AttackRange) return LeapStart.OutOfReach;
             if (u.cooldown > 0) return LeapStart.Recharging;
-            float dx = target.X - u.X, dz = target.Z - u.Z, d = (float)Math.Sqrt(dx * dx + dz * dz), r = u.Stats.Radius;
-            if (d < 1e-3f) return LeapStart.Blocked;
+            Fix dx = target.X - u.X, dz = target.Z - u.Z, d = Math.Sqrt(dx * dx + dz * dz), r = u.Stats.Radius;
+            if (d < (Fix)1e-3f) return LeapStart.Blocked;
             dx /= d; dz /= d;
             if (!CanTravel(u.X, u.Z, target.X, target.Z, r)) return LeapStart.Blocked;
             // The first unit on the line before the target, if any.
-            float stop = float.MaxValue;
+            Fix stop = Fix.MaxValue;
             foreach (var v in Units)
             {
                 if (v == u || v == target || v.Stats.Flying || !v.Alive) continue;
-                float along = (v.X - u.X) * dx + (v.Z - u.Z) * dz, across = Math.Abs((v.X - u.X) * dz - (v.Z - u.Z) * dx), reach = r + v.Stats.Radius;
+                Fix along = (v.X - u.X) * dx + (v.Z - u.Z) * dz, across = Math.Abs((v.X - u.X) * dz - (v.Z - u.Z) * dx), reach = r + v.Stats.Radius;
                 if (along <= 0 || along >= d || across >= reach) continue;
-                stop = Math.Min(stop, along - (float)Math.Sqrt(reach * reach - across * across));
+                stop = Math.Min(stop, along - Math.Sqrt(reach * reach - across * across));
             }
-            if (stop < float.MaxValue)
+            if (stop < Fix.MaxValue)
             {
                 // Pressed against that unit already: nothing to jump, it walks round instead.
-                if (stop < .25f) return LeapStart.Blocked;
+                if (stop < (Fix).25f) return LeapStart.Blocked;
                 StartLeap(u, u.X + dx * stop, u.Z + dz * stop, null, 0);
                 return LeapStart.Jumped;
             }
             // Behind the target, as far as the ground and the units there allow.
-            float pass = target.Stats.Radius + r + .02f, land = Math.Max(pass, Math.Min(d * LeapShare, d - .05f));
+            Fix pass = target.Stats.Radius + r + (Fix).02f, land = Math.Max(pass, Math.Min(d * LeapShare, d - (Fix).05f));
             if (!CanTravel(target.X, target.Z, target.X + dx * pass, target.Z + dz * pass, r)) return LeapStart.Blocked;
-            for (float step = land; ; step -= .1f)
+            for (Fix step = land; ; step -= (Fix).1f)
             {
                 if (step <= pass) { land = pass; break; }
-                float lx = target.X + dx * step, lz = target.Z + dz * step;
+                Fix lx = target.X + dx * step, lz = target.Z + dz * step;
                 if (CanTravel(target.X, target.Z, lx, lz, r) && LandingFree(u, target, lx, lz)) { land = step; break; }
             }
             StartLeap(u, target.X + dx * land, target.Z + dz * land, target, d - target.Stats.Radius);
             return LeapStart.Jumped;
         }
-        bool LandingFree(PrototypeUnit u, PrototypeUnit target, float x, float z)
+        bool LandingFree(PrototypeUnit u, PrototypeUnit target, Fix x, Fix z)
         {
             foreach (var v in Units)
             {
                 if (v == u || v == target || v.Stats.Flying || !v.Alive) continue;
-                float reach = u.Stats.Radius + v.Stats.Radius;
+                Fix reach = u.Stats.Radius + v.Stats.Radius;
                 if ((v.X - x) * (v.X - x) + (v.Z - z) * (v.Z - z) < reach * reach) return false;
             }
             return true;
         }
-        void StartLeap(PrototypeUnit u, float x, float z, PrototypeUnit target, float passAt)
+        void StartLeap(PrototypeUnit u, Fix x, Fix z, PrototypeUnit target, Fix passAt)
         {
             u.leaping = true; u.leapFromX = u.X; u.leapFromZ = u.Z; u.leapToX = x; u.leapToZ = z;
-            u.leapLength = Math.Max(.01f, (float)Math.Sqrt((x - u.X) * (x - u.X) + (z - u.Z) * (z - u.Z)));
+            u.leapLength = Math.Max((Fix).01f, Math.Sqrt((x - u.X) * (x - u.X) + (z - u.Z) * (z - u.Z)));
             u.leapDone = 0; u.leapPass = passAt; u.leapTarget = target; u.leapHit = false;
             u.cooldown = u.Stats.AttackCooldown;
             u.route.Clear(); u.hasGoal = false; u.arrived = false;
         }
         // One step of flight along the line; the target takes the blow as the leaper goes through it.
-        void StepLeap(PrototypeUnit u, float dt)
+        void StepLeap(PrototypeUnit u, Fix dt)
         {
             u.leapDone = Math.Min(u.leapLength, u.leapDone + LeapSpeed * dt);
-            float t = u.leapDone / u.leapLength;
+            Fix t = u.leapDone / u.leapLength;
             u.X = u.leapFromX + (u.leapToX - u.leapFromX) * t; u.Z = u.leapFromZ + (u.leapToZ - u.leapFromZ) * t;
             var target = u.leapTarget;
             if (target != null && !u.leapHit && u.leapDone >= u.leapPass) { u.leapHit = true; if (target.Alive) Hit(u, target); }
@@ -85,7 +85,7 @@ namespace Order.Simulation
             u.arrived = true; u.restX = u.X; u.restZ = u.Z; u.calmTime = 0;
         }
         // A leaper's part of Fight: jump, wait for the next jump within reach, or walk up to the target.
-        void FightByLeaps(PrototypeUnit u, PrototypeUnit target, float dt)
+        void FightByLeaps(PrototypeUnit u, PrototypeUnit target, Fix dt)
         {
             var start = TryLeap(u, target);
             u.engaged = true;

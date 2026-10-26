@@ -33,13 +33,16 @@ namespace Order.Content
             int u = Math.Min(x, 63-x), v = Math.Min(z, 63-z);
             return u >= 20 && u < 26 && v >= 9 && v < 13;
         }
-        public float Height(int x, int z, float dx = .5f)
+        // The height of a cell, on a ramp at dx across the cell along its slope (by default its middle). Fix, for the
+        // simulation; the view converts.
+        public Fix Height(int x, int z) => Height(x, z, Fix.Half);
+        public Fix Height(int x, int z, Fix dx)
         {
             int u = Math.Min(x, 63-x), v = Math.Min(z, 63-z);
             if (u < 20 && v < 20) return 3;
             if (!Ramp(x,z)) return 0;
-            float along = x < 32 ? x+dx : 64-x-dx;
-            return Math.Max(0, Math.Min(3, (26-along)*.5f));
+            Fix along = x < 32 ? x+dx : 64-x-dx;
+            return Fix.Max(0, Fix.Min(3, (26-along)*Fix.Half));
         }
         public ResourceDeposit ResourceAt(int x, int z) => Resources.Find(r => r.X == x && r.Z == z && r.Remaining > 0);
     }

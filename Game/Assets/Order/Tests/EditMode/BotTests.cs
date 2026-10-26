@@ -31,8 +31,8 @@ namespace Order.Tests.EditMode
             var first=site.Builder;Assert.That(first,Is.Not.Null);Assert.That(first.Kind,Is.EqualTo(UnitKind.Worker));
             first.Health=0;Run(match,3);
             Assert.That(site.Builder,Is.Not.Null.And.Not.SameAs(first),"Another worker takes the building over");
-            Run(match,match.Balance.Expedition.Buildings[site.Kind].BuildSeconds+4);
-            Assert.That(site.Ready,Is.EqualTo(1));
+            Run(match,(float)match.Balance.Expedition.Buildings[site.Kind].BuildSeconds+4);
+            Assert.That((float)site.Ready,Is.EqualTo(1));
         }
         [Test] public void IdleBotDoesNothing()
         {
@@ -65,7 +65,7 @@ namespace Order.Tests.EditMode
         [Test] public void BotAttacksThePlayerAfterTheFifthMinuteAndWarns()
         {
             var match=Game();match.StartBot();int alerts=0;float last=-100,shortest=float.MaxValue;
-            match.UnderAttack+=(x,z,building)=>{alerts++;if(building){shortest=System.Math.Min(shortest,match.Clock-last);last=match.Clock;}};
+            match.UnderAttack+=(x,z,building)=>{alerts++;if(building){shortest=System.Math.Min(shortest,(float)match.Clock-last);last=(float)match.Clock;}};
             Run(match,299);Assert.That(match.Waves,Is.Zero);
             Run(match,90);
             Assert.That(match.Waves,Is.GreaterThanOrEqualTo(1));Assert.That(alerts,Is.GreaterThan(0),"The wave reached the player");

@@ -36,13 +36,13 @@ namespace Order.Tests.EditMode
         }
         [Test] public void LeaperJumpsThroughItsTargetHitsOnceAndLandsBehindIt()
         {
-            var (match,leaper,target)=Duel();var stats=leaper.Stats;float before=target.X-leaper.X;
+            var (match,leaper,target)=Duel();var stats=leaper.Stats;float before=(float)target.X-(float)leaper.X;
             RunUntilLanded(match,leaper);
             Assert.That(target.Health,Is.EqualTo(target.Stats.Health-stats.Damage),"Hit as the leaper passes through");
-            Assert.That(leaper.X,Is.GreaterThan(target.X),"Lands behind the target");
-            Assert.That(leaper.X-target.X,Is.LessThan(before),"Closer to it than before the jump");
-            Assert.That(match.CanTravel(leaper.X,leaper.Z,leaper.X,leaper.Z,stats.Radius),Is.True);
-            int health=target.Health;Run(match,stats.AttackCooldown-.5f);
+            Assert.That((float)leaper.X,Is.GreaterThan((float)target.X),"Lands behind the target");
+            Assert.That((float)leaper.X-(float)target.X,Is.LessThan(before),"Closer to it than before the jump");
+            Assert.That(match.CanTravel((float)leaper.X,(float)leaper.Z,(float)leaper.X,(float)leaper.Z,(float)stats.Radius),Is.True);
+            int health=target.Health;Run(match,(float)stats.AttackCooldown-.5f);
             Assert.That(target.Health,Is.EqualTo(health),"Nothing until the jump recharges");
             Run(match,2);Assert.That(target.Alive,Is.False,"The next jump finishes it");
         }
@@ -52,17 +52,17 @@ namespace Order.Tests.EditMode
             var blocker=match.Spawn(UnitKind.Worker,32.3f,25.5f);
             RunUntilLanded(match,leaper);
             Assert.That(target.Health,Is.EqualTo(target.Stats.Health),"No damage");
-            Assert.That(leaper.X,Is.LessThan(blocker.X),"Stopped before the unit in the way");
-            Assert.That(blocker.X-leaper.X,Is.EqualTo(leaper.Stats.Radius+blocker.Stats.Radius).Within(.1f));
+            Assert.That((float)leaper.X,Is.LessThan((float)blocker.X),"Stopped before the unit in the way");
+            Assert.That((float)blocker.X-(float)leaper.X,Is.EqualTo((float)leaper.Stats.Radius+(float)blocker.Stats.Radius).Within(.1f));
         }
         [Test] public void TakenLandingSpotStopsTheLeaperRightBeforeTheObstacle()
         {
             var (match,leaper,target)=Duel();
-            float landing=target.X+(target.X-leaper.X)*.5f;var standing=match.Spawn(UnitKind.Worker,landing,25.5f);
+            float landing=(float)target.X+((float)target.X-(float)leaper.X)*.5f;var standing=match.Spawn(UnitKind.Worker,landing,25.5f);
             RunUntilLanded(match,leaper);
             Assert.That(target.Health,Is.EqualTo(target.Stats.Health-leaper.Stats.Damage),"It still went through the target");
-            Assert.That(leaper.X,Is.GreaterThan(target.X));
-            Assert.That(standing.X-leaper.X,Is.GreaterThanOrEqualTo(leaper.Stats.Radius+standing.Stats.Radius-.01f).And.LessThan(leaper.Stats.Radius+standing.Stats.Radius+.15f));
+            Assert.That((float)leaper.X,Is.GreaterThan((float)target.X));
+            Assert.That((float)standing.X-(float)leaper.X,Is.GreaterThanOrEqualTo((float)leaper.Stats.Radius+(float)standing.Stats.Radius-.01f).And.LessThan((float)leaper.Stats.Radius+(float)standing.Stats.Radius+.15f));
         }
         [Test] public void LeaperDoesNotJumpAcrossObstacles()
         {
@@ -77,20 +77,20 @@ namespace Order.Tests.EditMode
         {
             var match=new PrototypeMatch(null,FactionId.Resonance,FactionId.Expedition);match.ToggleReveal();match.AddEnemyBase();
             var emitter=match.Spawn(UnitKind.Ranged,48.8f,49.5f);var stats=emitter.Stats;match.UpdateVision();
-            Assert.That(stats.Ramp,Is.EqualTo(3));Assert.That(stats.Name,Is.EqualTo("Излучатель"));
+            Assert.That((float)stats.Ramp,Is.EqualTo(3));Assert.That(stats.Name,Is.EqualTo("Излучатель"));
             var supply=match.Buildings.Find(b=>b.Owner==Enemy&&b.Kind==0);var hq=match.Buildings.Find(b=>b.Owner==Enemy&&b.Kind==FactionBalance.Main);
             // The size of the next blow on the building.
             int Blow(PrototypeBuilding b){int health=b.Health;for(int i=0;i<40&&b.Health==health;i++)match.Tick(.05f);return health-b.Health;}
             Assert.That(match.Attack(emitter,supply),Is.True);
             Assert.That(Blow(supply),Is.EqualTo(stats.Damage),"The beam starts weak");
-            Run(match,stats.RampSeconds+.2f);
-            Assert.That(Blow(supply),Is.EqualTo((int)(stats.Damage*stats.Ramp)),"Held on one target it grows to three times");
-            Assert.That(match.Focus(emitter),Is.EqualTo(1).Within(1e-3f));
+            Run(match,(float)stats.RampSeconds+.2f);
+            Assert.That(Blow(supply),Is.EqualTo((int)(stats.Damage*(float)stats.Ramp)),"Held on one target it grows to three times");
+            Assert.That((float)match.Focus(emitter),Is.EqualTo(1).Within(1e-3f));
             Assert.That(match.Attack(emitter,hq),Is.True);
             Assert.That(Blow(hq),Is.EqualTo(stats.Damage),"A new target starts it over");
             // A real pause: it walks off out of reach (left alone next to a building, an idle unit goes on striking it).
             Run(match,2);Assert.That(match.Move(emitter,40.5f,44.5f),Is.True);Run(match,1.5f);
-            Assert.That(match.Focus(emitter),Is.Zero,"A pause drops it");
+            Assert.That((float)match.Focus(emitter),Is.Zero,"A pause drops it");
             Assert.That(match.Attack(emitter,hq),Is.True);Assert.That(Blow(hq),Is.EqualTo(stats.Damage));
         }
     }

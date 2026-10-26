@@ -33,8 +33,8 @@ namespace Order.Tests.EditMode
             Run(match,6);
             foreach(var u in squad)
             {
-                Assert.That(PrototypeMatch.Gap(u,factory),Is.LessThanOrEqualTo(u.Stats.AttackRange),$"#{u.Id} at {u.X:0.00},{u.Z:0.00} did not reach the building");
-                Assert.That(match.CanTravel(u.X,u.Z,u.X,u.Z,u.Stats.Radius),Is.True);
+                Assert.That((float)PrototypeMatch.Gap(u,factory),Is.LessThanOrEqualTo((float)u.Stats.AttackRange),$"#{u.Id} at {(float)u.X:0.00},{(float)u.Z:0.00} did not reach the building");
+                Assert.That(match.CanTravel((float)u.X,(float)u.Z,(float)u.X,(float)u.Z,(float)u.Stats.Radius),Is.True);
             }
         }
         [Test] public void MeleeSquadSurroundsASingleEnemy()
@@ -43,7 +43,7 @@ namespace Order.Tests.EditMode
             var squad=new List<PrototypeUnit>();for(int i=0;i<6;i++)squad.Add(match.Spawn(UnitKind.Melee,27+(i%3)*.9f,31+(i/3)*.9f));
             match.UpdateVision();Assert.That(match.AttackGroup(squad,enemy),Is.True);
             Run(match,5);
-            foreach(var u in squad)Assert.That(PrototypeMatch.InRange(u,enemy),Is.True,$"#{u.Id} at {u.X:0.00},{u.Z:0.00} is not striking");
+            foreach(var u in squad)Assert.That(PrototypeMatch.InRange(u,enemy),Is.True,$"#{u.Id} at {(float)u.X:0.00},{(float)u.Z:0.00} is not striking");
         }
         [Test] public void UnitsComeBeforeBuildingsAndIdleUnitsHitBuildingsNearby()
         {
@@ -72,7 +72,7 @@ namespace Order.Tests.EditMode
             var match=new PrototypeMatch();var stats=match.Balance.Expedition.Buildings[0];
             var node=Sites.Place(match,15,7,0);
             Assert.That(node.Health,Is.EqualTo(stats.Health/10));
-            Run(match,stats.BuildSeconds+.1f);
+            Run(match,(float)stats.BuildSeconds+.1f);
             Assert.That(node.Health,Is.EqualTo(stats.Health));Assert.That(match.SupplyLimit,Is.EqualTo(18));
             var raider=match.Spawn(UnitKind.Melee,17.5f,7.5f,PrototypeMatch.Enemy);match.UpdateVision();
             Assert.That(match.Attack(raider,node),Is.True);

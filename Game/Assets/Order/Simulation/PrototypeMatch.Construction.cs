@@ -17,8 +17,8 @@ namespace Order.Simulation
     public sealed partial class PrototypeMatch
     {
         // How close to the footprint a worker builds; the view uses it for the welding beam too.
-        public const float BuildReach = 1;
-        const float SiteWait = 3, CancelRefund = .75f;
+        public static readonly Fix BuildReach = 1;
+        static readonly Fix SiteWait = 3, CancelRefund = (Fix).75f;
         const int MainRoom = 2;
 
         // Whether the site can take the building now. The player builds only where it sees; the bot builds anywhere on its
@@ -36,7 +36,7 @@ namespace Order.Simulation
         {
             var roster=Roster(owner);
             if(Array.IndexOf(roster.Buildable,kind)<0){reason="Это здание не строится";return false;}
-            var stats=roster.Buildings[kind];int w=stats.Width;float h=Map.Inside(x,z)?Map.Height(x,z):0;
+            var stats=roster.Buildings[kind];int w=stats.Width;Fix h=Map.Inside(x,z)?Map.Height(x,z):0;
             // An extractor goes over a plasma rift: the rift's own cell is taken by it, every other cell must be free.
             ResourceDeposit rift=null;
             for(int zz=z;zz<z+w;zz++)for(int xx=x;xx<x+w;xx++)
@@ -54,7 +54,7 @@ namespace Order.Simulation
                 if(miners.TryGetValue(rift,out var holder)&&holder.Owner!=owner&&Holds(holder,rift)){reason="Разлом занят противником";return false;}
             }
             // Machines build only inside the coverage of their network (the core itself starts a network).
-            if(roster.Network&&kind!=FactionBalance.Main&&!Covered(owner,x+w*.5f,z+w*.5f)){reason="Вне покрытия сети";return false;}
+            if(roster.Network&&kind!=FactionBalance.Main&&!Covered(owner,x+w*(Fix).5f,z+w*(Fix).5f)){reason="Вне покрытия сети";return false;}
             // As in StarCraft, a main building keeps a little room from the deposits it serves: two free cells all round.
             if(kind==FactionBalance.Main)foreach(var r in Map.Resources)
                 if(r.Remaining>0&&r.X>=x-MainRoom&&r.X<x+w+MainRoom&&r.Z>=z-MainRoom&&r.Z<z+w+MainRoom){reason="Слишком близко к залежам";return false;}
@@ -65,7 +65,7 @@ namespace Order.Simulation
         static bool On(PrototypeUnit u,int x,int z,int w)
         {
             if(u.Stats.Flying)return false;
-            float nx=Math.Max(x,Math.Min(u.X,x+w)),nz=Math.Max(z,Math.Min(u.Z,z+w));
+            Fix nx=Math.Max(x,Math.Min(u.X,x+w)),nz=Math.Max(z,Math.Min(u.Z,z+w));
             return (u.X-nx)*(u.X-nx)+(u.Z-nz)*(u.Z-nz)<u.Stats.Radius*u.Stats.Radius;
         }
 
@@ -77,7 +77,7 @@ namespace Order.Simulation
             if(!CanBuild(x,z,kind,out var reason,owner)){if(owner==Player)Message=reason;return false;}
             var stats=Roster(owner).Buildings[kind];
             // A machine worker goes to the very middle of the site, where it melts down into the building.
-            float sx=x+stats.Width*.5f,sz=z+stats.Width*.5f;
+            Fix sx=x+stats.Width*(Fix).5f,sz=z+stats.Width*(Fix).5f;
             if(!Roster(owner).ConsumesWorker&&!SiteSpot(worker,x,z,stats.Width,out sx,out sz)){if(owner==Player)Message="К месту стройки не подойти";return false;}
             var message=Message;
             GiveOrder(worker,UnitOrder.Move);PlanPath(worker,sx,sz);
@@ -102,7 +102,7 @@ namespace Order.Simulation
         // The worker goes to an unfinished building of its side that nobody is building and carries on with it.
         public bool Resume(PrototypeUnit worker,PrototypeBuilding building)
         {
-            float sx=0,sz=0;
+            Fix sx=0,sz=0;
             string reason=worker==null||!worker.Alive||worker.Kind!=UnitKind.Worker?"Строить может только рабочий."
                 :building==null||building.Health<=0||building.Ready>=1||building.Owner!=worker.Owner?"Это здание не строится."
                 :building.SelfBuilt?"Это здание строится само."
@@ -128,7 +128,7 @@ namespace Order.Simulation
             var builder=building.Builder;if(builder!=null)builder.Constructing=null;
             building.builder=null;Buildings.Remove(building);NavigationChanged(building.X,building.Z,building.Width);
             // A machine site gives back the worker it was made of: the nanites gather into it again on the freed spot.
-            var worker=building.holdsWorker?Spawn(UnitKind.Worker,building.X+building.Width*.5f,building.Z+building.Width*.5f,building.Owner):null;
+            var worker=building.holdsWorker?Spawn(UnitKind.Worker,building.X+building.Width*(Fix).5f,building.Z+building.Width*(Fix).5f,building.Owner):null;
             Cancelled?.Invoke(building,worker);
             if(building.Owner==Player)Message=$"Стройка отменена: {stats.Name}. Возвращено: металл {metal}"+(plasma>0?$", плазма {plasma}":"")+(worker!=null?$" и {worker.Stats.Name.ToLowerInvariant()}.":".");
             return true;
@@ -137,7 +137,7 @@ namespace Order.Simulation
         static bool Busy(PrototypeUnit u)=>u.Constructing!=null||u.SiteKind>=0||u.Repairing!=null||u.RepairingUnit!=null||u.Disassembling;
 
         // Buildings rise while their worker is by them.
-        void TickBuildings(float dt)
+        void TickBuildings(Fix dt)
         {
             foreach(var b in Buildings)
             {
@@ -147,18 +147,18 @@ namespace Order.Simulation
                 // A building under construction gains its health as it rises, from a tenth of the full value: by whole points
                 // of the progress made, so short frames do not round it up faster than the building rises. Damage taken
                 // on the way stays.
-                var stats=b.Stats;float rate=FastBuild&&b.Owner==Player?FastFactor:1,step=Math.Min(dt*rate/stats.BuildSeconds,1-b.Ready);
-                float before=b.Ready;
+                var stats=b.Stats;Fix rate=FastBuild&&b.Owner==Player?FastFactor:1,step=Math.Min(dt*rate/stats.BuildSeconds,1-b.Ready);
+                Fix before=b.Ready;
                 b.Ready=Math.Min(1,b.Ready+step);
-                if(1-b.Ready<1e-5f)b.Ready=1;
-                b.Health=Math.Min(stats.Health,b.Health+(int)Math.Round(stats.Health*.9f*b.Ready)-(int)Math.Round(stats.Health*.9f*before));
+                if(1-b.Ready<(Fix)1e-5f)b.Ready=1;
+                b.Health=Math.Min(stats.Health,b.Health+(int)Math.Round(stats.Health*(Fix).9f*b.Ready)-(int)Math.Round(stats.Health*(Fix).9f*before));
                 if(b.Ready<1)continue;
                 if(builder!=null)builder.Constructing=null;b.builder=null;
                 if(b.Owner==Player)Message=$"Построено: {stats.Name}.";
             }
         }
         // Workers on their way to a site place the building on arrival; builders pushed away from theirs walk back.
-        void TickConstruction(float dt)
+        void TickConstruction(Fix dt)
         {
             foreach(var u in Units)
             {
@@ -172,7 +172,7 @@ namespace Order.Simulation
                     if((u.siteTimer+=dt)<(near?WanderSeconds:1))continue;
                     u.siteTimer=0;
                     // Now and then the builder moves on round the building, as an SCV does; pushed away, it comes back.
-                    float bx,bz;
+                    Fix bx,bz;
                     if(near?Round(u,b,out bx,out bz):SiteSpot(u,b.X,b.Z,b.Width,out bx,out bz)){var message=Message;PlanPath(u,bx,bz);Message=message;}
                     continue;
                 }
@@ -186,7 +186,7 @@ namespace Order.Simulation
                 {
                     if(v==u||!v.Alive||!On(v,x,z,w))continue;
                     blocked=true;
-                    if(v.Owner==u.Owner&&v.Order==UnitOrder.Idle&&!v.Moving&&v.HarvestTarget==null&&!Busy(v)&&SiteSpot(v,x,z,w,out float vx,out float vz))
+                    if(v.Owner==u.Owner&&v.Order==UnitOrder.Idle&&!v.Moving&&v.HarvestTarget==null&&!Busy(v)&&SiteSpot(v,x,z,w,out Fix vx,out Fix vz))
                     {var message=Message;PlanPath(v,vx,vz);Message=message;}
                 }
                 if(blocked){if((u.siteTimer+=dt)>SiteWait)EndSite(u,"Место стройки занято.");continue;}
@@ -206,18 +206,18 @@ namespace Order.Simulation
             }
         }
         void EndSite(PrototypeUnit u,string reason){u.SiteKind=-1;u.siteTimer=0;if(u.Owner==Player)Message=reason;}
-        static float SiteGap(PrototypeUnit u,int x,int z,int w)
+        static Fix SiteGap(PrototypeUnit u,int x,int z,int w)
         {
-            float nx=Math.Max(x,Math.Min(u.X,x+w)),nz=Math.Max(z,Math.Min(u.Z,z+w));
-            return (float)Math.Sqrt((u.X-nx)*(u.X-nx)+(u.Z-nz)*(u.Z-nz))-u.Stats.Radius;
+            Fix nx=Math.Max(x,Math.Min(u.X,x+w)),nz=Math.Max(z,Math.Min(u.Z,z+w));
+            return Math.Sqrt((u.X-nx)*(u.X-nx)+(u.Z-nz)*(u.Z-nz))-u.Stats.Radius;
         }
         // A spot a little farther round the footprint, clockwise, where the builder can stand; it keeps building on the way.
-        const float WanderSeconds = 2.5f, WanderStep = 1.2f;
-        bool Round(PrototypeUnit u,PrototypeBuilding b,out float sx,out float sz)
+        static readonly Fix WanderSeconds = (Fix)2.5f, WanderStep = (Fix)1.2f;
+        bool Round(PrototypeUnit u,PrototypeBuilding b,out Fix sx,out Fix sz)
         {
-            float r=u.Stats.Radius,m=r+.05f,x0=b.X-m,x1=b.X+b.Width+m,z0=b.Z-m,z1=b.Z+b.Width+m,side=x1-x0,level=Map.Height(b.X,b.Z);
+            Fix r=u.Stats.Radius,m=r+(Fix).05f,x0=b.X-m,x1=b.X+b.Width+m,z0=b.Z-m,z1=b.Z+b.Width+m,side=x1-x0,level=Map.Height(b.X,b.Z);
             // Perimeter position of a point on the outline: bottom, right, top, left.
-            (float,float) At(float s)
+            (Fix,Fix) At(Fix s)
             {
                 s=(s%(4*side)+4*side)%(4*side);
                 if(s<side)return (x0+s,z0);
@@ -225,34 +225,34 @@ namespace Order.Simulation
                 if(s<3*side)return (x1-(s-2*side),z1);
                 return (x0,z1-(s-3*side));
             }
-            float here=0,best=float.MaxValue;
-            for(float s=0;s<4*side;s+=.1f){var (px,pz)=At(s);float d=(px-u.X)*(px-u.X)+(pz-u.Z)*(pz-u.Z);if(d<best){best=d;here=s;}}
-            for(float s=WanderStep;s<4*side;s+=.25f)
+            Fix here=0,best=Fix.MaxValue;
+            for(Fix s=0;s<4*side;s+=(Fix).1f){var (px,pz)=At(s);Fix d=(px-u.X)*(px-u.X)+(pz-u.Z)*(pz-u.Z);if(d<best){best=d;here=s;}}
+            for(Fix s=WanderStep;s<4*side;s+=(Fix).25f)
             {
                 var (px,pz)=At(here+s);
-                if(InMap(px,pz)&&Math.Abs(HeightAt(px,pz)-level)<=.01f&&CanTravel(u.X,u.Z,px,pz,r)){sx=px;sz=pz;return true;}
+                if(InMap(px,pz)&&Math.Abs(HeightAt(px,pz)-level)<=(Fix).01f&&CanTravel(u.X,u.Z,px,pz,r)){sx=px;sz=pz;return true;}
             }
             sx=sz=0;return false;
         }
         // The point just outside the footprint nearest the unit where it can stand, on the footprint's level.
-        bool SiteSpot(PrototypeUnit u,int x,int z,int w,out float sx,out float sz)
+        bool SiteSpot(PrototypeUnit u,int x,int z,int w,out Fix sx,out Fix sz)
         {
-            float r=u.Stats.Radius,m=r+.05f,x0=x-m,x1=x+w+m,z0=z-m,z1=z+w+m,level=Map.Inside(x,z)?Map.Height(x,z):0,best=float.MaxValue;
-            float bestX=0,bestZ=0;
-            void Try(float px,float pz)
+            Fix r=u.Stats.Radius,m=r+(Fix).05f,x0=x-m,x1=x+w+m,z0=z-m,z1=z+w+m,level=Map.Inside(x,z)?Map.Height(x,z):0,best=Fix.MaxValue;
+            Fix bestX=0,bestZ=0;
+            void Try(Fix px,Fix pz)
             {
-                if(!InMap(px,pz)||Math.Abs(HeightAt(px,pz)-level)>.01f||!CanTravel(px,pz,px,pz,r))return;
-                float d=(px-u.X)*(px-u.X)+(pz-u.Z)*(pz-u.Z);
+                if(!InMap(px,pz)||Math.Abs(HeightAt(px,pz)-level)>(Fix).01f||!CanTravel(px,pz,px,pz,r))return;
+                Fix d=(px-u.X)*(px-u.X)+(pz-u.Z)*(pz-u.Z);
                 if(d<best){best=d;bestX=px;bestZ=pz;}
             }
-            int count=(int)Math.Ceiling((w+2*m)/.25f);
+            int count=(int)Math.Ceiling((w+2*m)/(Fix).25f);
             for(int i=0;i<=count;i++)
             {
-                float t=(float)i/count,px=x0+(x1-x0)*t,pz=z0+(z1-z0)*t;
+                Fix t=(Fix)i/count,px=x0+(x1-x0)*t,pz=z0+(z1-z0)*t;
                 Try(px,z0);Try(px,z1);Try(x0,pz);Try(x1,pz);
             }
             sx=bestX;sz=bestZ;
-            return best<float.MaxValue;
+            return best<Fix.MaxValue;
         }
     }
 }

@@ -192,10 +192,10 @@ namespace Order.Presentation
                     var route = unit.Route.ToList();
                     if (route.Count == 0) continue;
                     p.lineWidth = 1.5f; p.strokeColor = HudPaint.Alpha(Hot, .85f); p.BeginPath();
-                    p.MoveTo(M(unit.X, unit.Z));
-                    foreach (var point in route) p.LineTo(M(point.X, point.Z));
+                    p.MoveTo(M((float)unit.X, (float)unit.Z));
+                    foreach (var point in route) p.LineTo(M((float)point.X, (float)point.Z));
                     p.Stroke();
-                    var end = M(route[route.Count - 1].X, route[route.Count - 1].Z);
+                    var end = M((float)route[route.Count - 1].X, (float)route[route.Count - 1].Z);
                     p.BeginPath(); HudPaint.Polygon(p, end, 4, 4, 45); p.Stroke();
                 }
 
@@ -225,7 +225,7 @@ namespace Order.Presentation
                         if (b.Owner != PrototypeMatch.Player || b.Stats.Coverage <= 0 || b.Ready < 1) continue;
                         var center = M(b.X + b.Width * .5f, b.Z + b.Width * .5f);
                         p.strokeColor = b.Linked ? HudPaint.Alpha(Accent, .7f) : new Color(.55f, .55f, .6f, .5f);
-                        p.BeginPath(); HudPaint.Circle(p, center, b.Stats.Coverage / size * r.width); p.Stroke();
+                        p.BeginPath(); HudPaint.Circle(p, center, (float)b.Stats.Coverage / size * r.width); p.Stroke();
                     }
                 }
 
@@ -250,7 +250,7 @@ namespace Order.Presentation
             {
                 var own = unit.Owner == PrototypeMatch.Player;
                 if (!own && !match.SeenBy(PrototypeMatch.Player, unit)) return;
-                var at = M(unit.X, unit.Z);
+                var at = M((float)unit.X, (float)unit.Z);
                 p.fillColor = host.Selection.Contains(unit) ? Selected : own ? Own : Enemy; p.BeginPath();
                 if (unit.Stats.Flying) HudPaint.Polygon(p, at, 3.4f, 4, 0); else HudPaint.Circle(p, at, unit.Kind == UnitKind.Worker ? 2.2f : 2.6f);
                 p.Fill();

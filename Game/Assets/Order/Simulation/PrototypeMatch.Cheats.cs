@@ -9,7 +9,7 @@ namespace Order.Simulation
     public sealed partial class PrototypeMatch
     {
         // Construction and training run this many times faster with FastBuild (StarCraft's "operation cwal").
-        public const float FastFactor = 10;
+        public static readonly Fix FastFactor = 10;
         public bool FastBuild { get; private set; }
         public bool NoSupply { get; private set; }
         public bool Revealed { get; private set; }
@@ -30,7 +30,7 @@ namespace Order.Simulation
             if (!Buildings.Exists(b => b.Owner != Player)) { Winner = Player; Message = "Победа: все здания противника уничтожены."; }
         }
         // Cheat: new units of either side on free ground around a point, nearest first.
-        public List<PrototypeUnit> SpawnSquad(UnitKind kind, int count, float x, float z, int owner = Player)
+        public List<PrototypeUnit> SpawnSquad(UnitKind kind, int count, Fix x, Fix z, int owner = Player)
         {
             Cheated = true;
             var spawned = SpawnAround(kind, count, x, z, owner);
@@ -38,18 +38,18 @@ namespace Order.Simulation
             return spawned;
         }
         // Units on free ground around a point, nearest first: for cheats and for the bot's starting workers.
-        List<PrototypeUnit> SpawnAround(UnitKind kind, int count, float x, float z, int owner)
+        List<PrototypeUnit> SpawnAround(UnitKind kind, int count, Fix x, Fix z, int owner)
         {
             var spawned = new List<PrototypeUnit>();
             var stats = Roster(owner).Unit(kind);
-            float spacing = stats.Radius * 2.1f;
+            Fix spacing = stats.Radius * (Fix)2.1f;
             for (int ring = 0; ring < 30 && spawned.Count < count; ring++)
             {
                 int around = ring == 0 ? 1 : (int)(2 * Math.PI * ring);
                 for (int i = 0; i < around && spawned.Count < count; i++)
                 {
-                    double a = 2 * Math.PI * i / around;
-                    float px = x + (float)Math.Cos(a) * ring * spacing, pz = z + (float)Math.Sin(a) * ring * spacing;
+                    Fix a = 2 * Math.PI * i / around;
+                    Fix px = x + Math.Cos(a) * ring * spacing, pz = z + Math.Sin(a) * ring * spacing;
                     if (!InMap(px, pz) || px < stats.Radius || pz < stats.Radius || px > 64 - stats.Radius || pz > 64 - stats.Radius) continue;
                     if (!SpawnRoom(stats, px, pz)) continue;
                     spawned.Add(Spawn(kind, px, pz, owner));
@@ -63,20 +63,20 @@ namespace Order.Simulation
         // everywhere, so the lab's machine buildings never go dark.
         public bool WholeNetwork { get; private set; }
         public void ReachEverywhere() { WholeNetwork = true; Cheated = true; }
-        public PrototypeBuilding PlaceBuilding(int kind, int x, int z, int owner, float ready)
+        public PrototypeBuilding PlaceBuilding(int kind, int x, int z, int owner, Fix ready)
         {
             var building = AddBuilding(kind, x, z, owner, Math.Min(1, ready));
             building.SelfBuilt = ready < 1 && Roster(owner).SelfBuilding;
             Cheated = true; UpdateVision();
             return building;
         }
-        bool SpawnRoom(UnitStats stats, float x, float z)
+        bool SpawnRoom(UnitStats stats, Fix x, Fix z)
         {
             if (!stats.Flying && !CanTravel(x, z, x, z, stats.Radius)) return false;
             foreach (var v in Units)
             {
                 if (v.Stats.Flying != stats.Flying) continue;
-                float reach = (stats.Radius + v.Stats.Radius) * .95f, dx = v.X - x, dz = v.Z - z;
+                Fix reach = (stats.Radius + v.Stats.Radius) * (Fix).95f, dx = v.X - x, dz = v.Z - z;
                 if (dx * dx + dz * dz < reach * reach) return false;
             }
             return true;

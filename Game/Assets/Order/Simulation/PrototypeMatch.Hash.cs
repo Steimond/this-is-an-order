@@ -1,10 +1,10 @@
-using System;
+using Order.Content;
 
 namespace Order.Simulation
 {
     // A fingerprint of the match state: two runs of the same match with the same orders on the same frames must give the
     // same hash on every frame. Lockstep machines compare it to catch a desync; tests compare twin runs. It reads the
-    // numbers bit for bit, so a difference in the last bit of a position shows.
+    // numbers bit for bit (Fix raw values), so a difference in the last bit of a position shows.
     public sealed partial class PrototypeMatch
     {
         public ulong StateHash()
@@ -44,7 +44,8 @@ namespace Order.Simulation
                 if(value==0)value=14695981039346656037UL;
                 for(int i=0;i<4;i++){value^=(byte)(v>>(i*8));value*=1099511628211UL;}
             }
-            public void Add(float v)=>Add(BitConverter.SingleToInt32Bits(v));
+            public void Add(long v){Add((int)v);Add((int)(v>>32));}
+            public void Add(Fix v)=>Add(v.Raw);
             public void Add(bool v)=>Add(v?1:0);
         }
     }

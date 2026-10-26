@@ -113,7 +113,7 @@ namespace Order.Presentation
             MapCamera.nearClipPlane=.3f;MapCamera.farClipPlane=180;
             cameraObject.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
             scenery=new TempleScenery(Match.Map,worldRoot.transform,MapCamera);
-            focusHeight=Match.HeightAt(focus.x,focus.z);
+            focusHeight=(float)Match.HeightAt(focus.x,focus.z);
             // The HUD comes first: models take the team colour of its faction theme.
             BuildUI();Shader.SetGlobalColor("_OrderTeamColor",hud.OwnColor);
             buildingMaterial=scenery.Prop("Buildings",m=>{m.SetFloat("_Panels",1);m.SetFloat("_Gloss",.35f);});
@@ -138,7 +138,7 @@ namespace Order.Presentation
             {
                 var r=Match.Map.Resources[i];
                 var go=scenery.Model(r.Plasma?"Plasma rift":"Metal vein",r.Plasma?rift:veins[i%veins.Length],r.Plasma?riftMaterial:oreMaterial,worldRoot.transform);
-                go.transform.position=new Vector3(r.X+.5f,Match.Map.Height(r.X,r.Z),r.Z+.5f);go.transform.rotation=Quaternion.Euler(0,i*67%360,0);
+                go.transform.position=new Vector3((float)r.X+.5f,(float)Match.Map.Height(r.X,r.Z),(float)r.Z+.5f);go.transform.rotation=Quaternion.Euler(0,i*67%360,0);
                 if(r.Plasma)scenery.PlasmaWisps(go.transform,new Vector3(0,.2f,0));
                 depositViews.Add(go);
             }
@@ -186,7 +186,7 @@ namespace Order.Presentation
         Mesh BuildingMesh(FactionId faction,int kind)
         {
             int f=(int)faction;
-            if(buildingMeshes[f,kind]==null){var stats=Match.Balance.Of(faction).Buildings[kind];buildingMeshes[f,kind]=scenery.Own(faction==FactionId.Resonance?MachineModels.Building(kind,stats.Width,stats.Height):MatchModels.Building(kind,stats.Width,stats.Height));}
+            if(buildingMeshes[f,kind]==null){var stats=Match.Balance.Of(faction).Buildings[kind];buildingMeshes[f,kind]=scenery.Own(faction==FactionId.Resonance?MachineModels.Building(kind,stats.Width,(float)stats.Height):MatchModels.Building(kind,stats.Width,(float)stats.Height));}
             return buildingMeshes[f,kind];
         }
         void Update()
@@ -298,7 +298,7 @@ namespace Order.Presentation
             PlayMatch();
             focus.x=Mathf.Clamp(focus.x,0,64);focus.z=Mathf.Clamp(focus.z,0,64);
             zoom=Mathf.Lerp(zoom,targetZoom,1-Mathf.Exp(-Time.deltaTime*12));
-            focusHeight=Mathf.Lerp(focusHeight,Match.HeightAt(Mathf.Clamp(focus.x,0,63.9f),Mathf.Clamp(focus.z,0,63.9f)),1-Mathf.Exp(-Time.deltaTime*4));
+            focusHeight=Mathf.Lerp(focusHeight,(float)Match.HeightAt(Mathf.Clamp(focus.x,0,63.9f),Mathf.Clamp(focus.z,0,63.9f)),1-Mathf.Exp(-Time.deltaTime*4));
             UpdateCamera();
             ShowCombat();
             AnimateUnits();
@@ -311,7 +311,7 @@ namespace Order.Presentation
             if(footprint.activeSelf)
             {
                 bool valid=Match.CanBuild(hoverX,hoverZ,buildKind,out var reason);int w=Match.Roster(PrototypeMatch.Player).Buildings[buildKind].Width;
-                footprint.transform.position=new Vector3(hoverX+w*.5f,Match.Map.Height(hoverX,hoverZ)+.03f,hoverZ+w*.5f);
+                footprint.transform.position=new Vector3(hoverX+w*.5f,(float)Match.Map.Height(hoverX,hoverZ)+.03f,hoverZ+w*.5f);
                 footprint.transform.localScale=new Vector3(w,1,w);footprintMaterial.SetColor("_Color",valid?new Color(.2f,1,.4f,.5f):new Color(1,.15f,.15f,.55f));
                 ModeHint=Match.Roster(PrototypeMatch.Player).Buildings[buildKind].Name+": "+reason+" · ПКМ / Esc — отмена";
                 if(ghostKind!=buildKind)
@@ -341,12 +341,12 @@ namespace Order.Presentation
             for(int steps=0;pending>=PrototypeMatch.TickSeconds;steps++)
             {
                 if(steps==MaxStepsPerFrame){pending=0;break;}
-                Match.Advance();pending-=PrototypeMatch.TickSeconds;
+                Match.Advance();pending-=(float)PrototypeMatch.TickSeconds;
             }
-            blend=Mathf.Clamp01(pending/PrototypeMatch.TickSeconds);
+            blend=Mathf.Clamp01(pending/(float)PrototypeMatch.TickSeconds);
         }
         // Where a unit is drawn this frame: between where it stood before the last match step and where it stands now.
-        Vector2 Place(PrototypeUnit unit)=>new Vector2(Mathf.Lerp(unit.PreviousX,unit.X,blend),Mathf.Lerp(unit.PreviousZ,unit.Z,blend));
+        Vector2 Place(PrototypeUnit unit)=>new Vector2(Mathf.Lerp((float)unit.PreviousX,(float)unit.X,blend),Mathf.Lerp((float)unit.PreviousZ,(float)unit.Z,blend));
         sealed class UnitView
         {
             public GameObject Root;
@@ -372,10 +372,10 @@ namespace Order.Presentation
                 model=key.Item1==FactionId.Resonance?MachineModels.Unit(unit.Kind):MatchModels.Unit(unit.Kind);unitModels[key]=model;
                 scenery.Own(model.Body);if(model.Leg!=null)scenery.Own(model.Leg);if(model.Rotor!=null)scenery.Own(model.Rotor);if(model.Gun!=null)scenery.Own(model.Gun);
             }
-            var view=new UnitView{Model=model,Root=new GameObject(unit.Stats.Name+" #"+unit.Id),Height=Match.HeightAt(unit.X,unit.Z)};
+            var view=new UnitView{Model=model,Root=new GameObject(unit.Stats.Name+" #"+unit.Id),Height=(float)Match.HeightAt((float)unit.X,(float)unit.Z)};
             view.Root.transform.SetParent(worldRoot.transform);view.Root.transform.localScale=Vector3.one*model.Scale;
             // Enemies start facing south-west, toward the player's base.
-            view.Root.transform.SetPositionAndRotation(new Vector3(unit.X,view.Height,unit.Z),Quaternion.Euler(0,unit.Owner==PrototypeMatch.Player?180:225,0));
+            view.Root.transform.SetPositionAndRotation(new Vector3((float)unit.X,(float)view.Height,(float)unit.Z),Quaternion.Euler(0,unit.Owner==PrototypeMatch.Player?180:225,0));
             var material=unit.Owner==PrototypeMatch.Player?unitMaterial:enemyMaterial;
             view.Body=scenery.Model("Body",model.Body,material,view.Root.transform).transform;view.Body.localPosition=Vector3.up*model.Hover;
             view.Legs=new Transform[model.Hips.Length];
@@ -383,7 +383,7 @@ namespace Order.Presentation
             view.Rotors=new Transform[model.Rotors.Length];
             for(int i=0;i<view.Rotors.Length;i++){view.Rotors[i]=scenery.Model("Rotor",model.Rotor,material,view.Body).transform;view.Rotors[i].localPosition=model.Rotors[i];}
             if(model.Gun!=null){view.Gun=scenery.Model("Gun",model.Gun,material,view.Body).transform;view.Gun.localPosition=model.GunPivot;}
-            if(unit.Stats.Flying){view.Shadow=scenery.Model("Shadow",shadowMesh,shadowMaterial,worldRoot.transform,false).transform;view.Shadow.localScale=Vector3.one*unit.Stats.Radius*3.2f;}
+            if(unit.Stats.Flying){view.Shadow=scenery.Model("Shadow",shadowMesh,shadowMaterial,worldRoot.transform,false).transform;view.Shadow.localScale=Vector3.one*(float)unit.Stats.Radius*3.2f;}
             return view;
         }
         // Walkers swing their legs with the distance covered, air units hover and bank with spinning rotors, the drone floats.
@@ -399,7 +399,7 @@ namespace Order.Presentation
                 bool seen=Match.SeenBy(PrototypeMatch.Player,unit)&&!Gathering(unit);
                 if(view.Root.activeSelf!=seen){view.Root.SetActive(seen);if(view.Shadow!=null)view.Shadow.gameObject.SetActive(seen);}
                 var at=Place(unit);
-                float ground=Match.HeightAt(at.x,at.y);
+                float ground=(float)Match.HeightAt(at.x,at.y);
                 if(unit.Stats.Flying)
                 {
                     // Climb early and fast, sink late and slowly: the flight level follows the highest ground around
@@ -408,7 +408,7 @@ namespace Order.Presentation
                     view.Height=Mathf.Lerp(view.Height,level,1-Mathf.Exp(-dt*(level>view.Height?8:2.2f)));
                 }
                 // A leaper flies its jump in an arc.
-                else view.Height=ground+(unit.Leaping?Mathf.Sin(unit.LeapShare*Mathf.PI)*.9f:0);
+                else view.Height=ground+(unit.Leaping?Mathf.Sin((float)unit.LeapShare*Mathf.PI)*.9f:0);
                 var position=new Vector3(at.x,view.Height,at.y);
                 var root=view.Root.transform;
                 var direction=position-root.position;direction.y=0;
@@ -416,7 +416,7 @@ namespace Order.Presentation
                 var target=unit.HarvestTarget;bool nanite=unit.Kind==UnitKind.Worker&&Match.Roster(unit.Owner).NaniteMining;
                 // A hauling worker mines with a beam; a nanite worker wraps its deposit (facing it from the start of the wrap).
                 bool mining=target!=null&&target.Remaining>0&&(nanite?unit.Wrap>0:unit.Mining);
-                var deposit=mining?new Vector3(target.X+.5f,Match.Map.Height(target.X,target.Z),target.Z+.5f):Vector3.zero;
+                var deposit=mining?new Vector3((float)target.X+.5f,(float)Match.Map.Height(target.X,target.Z),(float)target.Z+.5f):Vector3.zero;
                 if(mining){direction=deposit-position;direction.y=0;}
                 // A building worker faces its building and welds it with the same beam: into the footprint, at the top of
                 // the part that has risen so far, the end wandering along it like a welding torch.
@@ -424,12 +424,12 @@ namespace Order.Presentation
                 var weld=Vector3.zero;
                 if(welding)
                 {
-                    float top=site.Stats.Height*site.Ready,cx=site.X+site.Width*.5f,cz=site.Z+site.Width*.5f;
-                    var edge=new Vector2(Mathf.Clamp(unit.X,site.X,site.X+site.Width),Mathf.Clamp(unit.Z,site.Z,site.Z+site.Width));
+                    float top=(float)site.Stats.Height*(float)site.Ready,cx=(float)site.X+site.Width*.5f,cz=(float)site.Z+site.Width*.5f;
+                    var edge=new Vector2(Mathf.Clamp((float)unit.X,(float)site.X,(float)site.X+site.Width),Mathf.Clamp((float)unit.Z,(float)site.Z,(float)site.Z+site.Width));
                     var into=Vector2.Lerp(edge,new Vector2(cx,cz),.3f+.12f*Mathf.Sin(time*2.3f+unit.Id));
                     var along=new Vector2(-(cz-edge.y),cx-edge.x).normalized*.35f*Mathf.Sin(time*1.7f+unit.Id*.7f);
-                    weld=new Vector3(into.x+along.x,Match.Map.Height(site.X,site.Z)+Mathf.Max(.18f,top*.9f),into.y+along.y);
-                    direction=new Vector3(cx-unit.X,0,cz-unit.Z);
+                    weld=new Vector3(into.x+along.x,(float)Match.Map.Height(site.X,site.Z)+Mathf.Max(.18f,top*.9f),into.y+along.y);
+                    direction=new Vector3(cx-(float)unit.X,0,cz-(float)unit.Z);
                 }
                 // A repairing worker welds its target the same way: a building along its side, machinery at its middle.
                 else if(!mining&&unit.Welding)
@@ -438,23 +438,23 @@ namespace Order.Presentation
                     if(mend!=null)
                     {
                         float cx=mend.X+mend.Width*.5f,cz=mend.Z+mend.Width*.5f;
-                        var edge=new Vector2(Mathf.Clamp(unit.X,mend.X,mend.X+mend.Width),Mathf.Clamp(unit.Z,mend.Z,mend.Z+mend.Width));
+                        var edge=new Vector2(Mathf.Clamp((float)unit.X,(float)mend.X,(float)mend.X+mend.Width),Mathf.Clamp((float)unit.Z,(float)mend.Z,(float)mend.Z+mend.Width));
                         var along=new Vector2(-(cz-edge.y),cx-edge.x).normalized*.4f*Mathf.Sin(time*1.7f+unit.Id*.7f);
-                        weld=new Vector3(edge.x+along.x,Match.Map.Height(mend.X,mend.Z)+mend.Stats.Height*(.35f+.2f*Mathf.Sin(time*2.3f+unit.Id)),edge.y+along.y);
-                        direction=new Vector3(cx-unit.X,0,cz-unit.Z);
+                        weld=new Vector3(edge.x+along.x,(float)Match.Map.Height(mend.X,mend.Z)+(float)mend.Stats.Height*(.35f+.2f*Mathf.Sin(time*2.3f+unit.Id)),edge.y+along.y);
+                        direction=new Vector3(cx-(float)unit.X,0,cz-(float)unit.Z);
                     }
                     else if(unit.RepairingUnit!=null)
                     {
                         var other=unit.RepairingUnit;
-                        weld=unitViews.TryGetValue(other.Id,out var otherView)?Center(other,otherView):new Vector3(other.X,Match.HeightAt(other.X,other.Z)+.4f,other.Z);
-                        direction=new Vector3(other.X-unit.X,0,other.Z-unit.Z);
+                        weld=unitViews.TryGetValue(other.Id,out var otherView)?Center(other,otherView):new Vector3((float)other.X,(float)Match.HeightAt((float)other.X,(float)other.Z)+.4f,(float)other.Z);
+                        direction=new Vector3((float)other.X-(float)unit.X,0,(float)other.Z-(float)unit.Z);
                     }
                 }
                 // A moving unit faces its next waypoint, so shoves do not twist it; a shoved idle unit keeps its facing.
                 if(unit.Leaping){/* In flight a leaper faces the way it flies: this frame's movement. */}
-                else if(unit.Moving&&!mining)foreach(var next in unit.Route){direction=new Vector3(next.X-unit.X,0,next.Z-unit.Z);break;}
-                else if(unit.Target!=null)direction=new Vector3(unit.Target.X-unit.X,0,unit.Target.Z-unit.Z);
-                else if(unit.TargetBuilding!=null){var b=unit.TargetBuilding;direction=new Vector3(Mathf.Clamp(unit.X,b.X,b.X+b.Width)-unit.X,0,Mathf.Clamp(unit.Z,b.Z,b.Z+b.Width)-unit.Z);}
+                else if(unit.Moving&&!mining)foreach(var next in unit.Route){direction=new Vector3((float)next.X-(float)unit.X,0,(float)next.Z-(float)unit.Z);break;}
+                else if(unit.Target!=null)direction=new Vector3((float)unit.Target.X-(float)unit.X,0,(float)unit.Target.Z-(float)unit.Z);
+                else if(unit.TargetBuilding!=null){var b=unit.TargetBuilding;direction=new Vector3(Mathf.Clamp((float)unit.X,(float)b.X,(float)b.X+b.Width)-(float)unit.X,0,Mathf.Clamp((float)unit.Z,(float)b.Z,(float)b.Z+b.Width)-(float)unit.Z);}
                 else if(!mining&&!welding)direction=Vector3.zero;
                 if(direction.sqrMagnitude>.0001f)root.rotation=Quaternion.Slerp(root.rotation,Quaternion.LookRotation(direction),dt*10);
                 root.position=position;
@@ -485,7 +485,7 @@ namespace Order.Presentation
                 }
                 for(int i=0;i<view.Rotors.Length;i++)view.Rotors[i].localRotation=Quaternion.Euler(0,time*1300*(i%2==0?1:-1)+i*40,0);
                 // A howitzer lifts its barrel as it deploys and lowers it to travel.
-                if(view.Gun!=null)view.Gun.localRotation=Quaternion.Euler(-view.Model.GunLift*unit.DeployShare,0,0);
+                if(view.Gun!=null)view.Gun.localRotation=Quaternion.Euler(-view.Model.GunLift*(float)unit.DeployShare,0,0);
                 if(view.Shadow!=null)view.Shadow.position=new Vector3(at.x,ground+.06f,at.y);
                 bool beam=(mining&&!nanite)||welding;
                 if(beam&&view.Beam==null)
@@ -516,7 +516,7 @@ namespace Order.Presentation
                     if(carrying)view.Cargo.GetComponent<MeshRenderer>().sharedMaterial=unit.CarriesPlasma?plasmaCargoMaterial:oreMaterial;
                 }
                 if(seen&&(unit.Health<unit.Stats.Health||selection.Contains(unit)||hovered.Contains(unit)))
-                    combat.Bar(Top(unit,view)+Vector3.up*.22f,Mathf.Max(.62f,unit.Stats.Radius*2.3f),unit.Health/(float)unit.Stats.Health);
+                    combat.Bar(Top(unit,view)+Vector3.up*.22f,Mathf.Max(.62f,(float)unit.Stats.Radius*2.3f),unit.Health/(float)unit.Stats.Health);
                 Machine(unit,view,seen);
             }
             foreach(var (b,view) in buildingViews)
@@ -524,15 +524,15 @@ namespace Order.Presentation
                 var stats=b.Stats;
                 if(!view.Model.activeSelf||(b.Owner!=PrototypeMatch.Player&&!Match.SeenBy(PrototypeMatch.Player,b)))continue;
                 if(b.Health<stats.Health||selectedBuilding==b)
-                    combat.Bar(new Vector3(b.X+b.Width*.5f,Match.Map.Height(b.X,b.Z)+stats.Height+.45f,b.Z+b.Width*.5f),b.Width*.8f,b.Health/(float)stats.Health);
+                    combat.Bar(new Vector3((float)b.X+b.Width*.5f,(float)Match.Map.Height(b.X,b.Z)+(float)stats.Height+.45f,(float)b.Z+b.Width*.5f),b.Width*.8f,b.Health/(float)stats.Health);
                 // A machine building cut off from the network blinks amber on its grace, then a dark one gives a faint grey pulse.
                 if(!b.Linked&&b.Ready>=1&&UnityEngine.Random.value<Time.deltaTime*(b.Powered?2.5f:.7f))
-                    combat.Flash(new Vector3(b.X+b.Width*.5f,Match.Map.Height(b.X,b.Z)+stats.Height+.15f,b.Z+b.Width*.5f),b.Powered?new Color(1,.7f,.28f)*2:new Color(.5f,.52f,.58f),.22f*b.Width,.35f,1.6f);
+                    combat.Flash(new Vector3((float)b.X+b.Width*.5f,(float)Match.Map.Height(b.X,b.Z)+(float)stats.Height+.15f,(float)b.Z+b.Width*.5f),b.Powered?new Color(1,.7f,.28f)*2:new Color(.5f,.52f,.58f),.22f*b.Width,.35f,1.6f);
                 // A machine building mending in the network glints here and there over its body.
                 if(b.Mending&&UnityEngine.Random.value<Time.deltaTime*3*b.Width)
                 {
                     var r=UnityEngine.Random.insideUnitCircle*b.Width*.45f;
-                    combat.Flash(new Vector3(b.X+b.Width*.5f+r.x,Match.Map.Height(b.X,b.Z)+stats.Height*UnityEngine.Random.Range(.2f,.95f),b.Z+b.Width*.5f+r.y),NaniteGlow*1.8f,.14f,.5f,2);
+                    combat.Flash(new Vector3((float)b.X+b.Width*.5f+r.x,(float)Match.Map.Height(b.X,b.Z)+(float)stats.Height*UnityEngine.Random.Range(.2f,.95f),(float)b.Z+b.Width*.5f+r.y),NaniteGlow*1.8f,.14f,.5f,2);
                 }
             }
             combat.EndBars();
@@ -552,14 +552,14 @@ namespace Order.Presentation
             {
                 view.Renderers??=view.Root.GetComponentsInChildren<MeshRenderer>(true);
                 float bottom=view.Root.transform.position.y-.05f,top=bottom+(view.Model.Height+view.Model.Hover)*view.Model.Scale+.25f;
-                if(unit.Disassembling){revealBlock.SetFloat("_RevealBelow",Mathf.Lerp(bottom,top,unit.Disassembly));revealBlock.SetColor("_RevealColor",NaniteGlow*2.2f);}
+                if(unit.Disassembling){revealBlock.SetFloat("_RevealBelow",Mathf.Lerp(bottom,top,(float)unit.Disassembly));revealBlock.SetColor("_RevealColor",NaniteGlow*2.2f);}
                 else revealBlock.Clear();
                 foreach(var r in view.Renderers)if(r!=null)r.SetPropertyBlock(revealBlock);
                 revealBlock.Clear();view.Dissolving=unit.Disassembling;
             }
             if(!seen||!unit.Mending||(view.Mend-=Time.deltaTime)>0)return;
             view.Mend=.35f+.3f*Mathf.PerlinNoise(Time.time*2,unit.Id);
-            var at=Center(unit,view)+new Vector3(Mathf.Sin(Time.time*7+unit.Id),Mathf.Cos(Time.time*5),Mathf.Cos(Time.time*6+unit.Id))*unit.Stats.Radius*.7f;
+            var at=Center(unit,view)+new Vector3(Mathf.Sin(Time.time*7+unit.Id),Mathf.Cos(Time.time*5),Mathf.Cos(Time.time*6+unit.Id))*(float)unit.Stats.Radius*.7f;
             combat.Flash(at,NaniteGlow*1.8f,.1f,.45f,2);
         }
         // A nanite worker wraps its deposit: glowing threads spiral from its arms round the deposit and climb it as the
@@ -576,7 +576,7 @@ namespace Order.Presentation
             if(view.Nanites!=null)view.Nanites.enabled=wrapping;
             if(wrapping)
             {
-                var from=view.Body.TransformPoint(new Vector3(0,.3f,.3f));float climb=.08f+.62f*unit.Wrap;
+                var from=view.Body.TransformPoint(new Vector3(0,.3f,.3f));float climb=.08f+.62f*(float)unit.Wrap;
                 for(int i=0;i<NaniteThread;i++)
                 {
                     float t=i/(NaniteThread-1f),a=t*Mathf.PI*5+time*1.3f+unit.Id,r=.42f-.12f*t;
@@ -614,14 +614,14 @@ namespace Order.Presentation
         // Highest terrain within a body's width of the unit and up to two and a half cells ahead on its route.
         float FlightGround(PrototypeUnit unit)
         {
-            float H(float x,float z)=>Match.HeightAt(Mathf.Clamp(x,0,63.99f),Mathf.Clamp(z,0,63.99f));
-            float r=unit.Stats.Radius+.3f,level=H(unit.X,unit.Z);
-            for(int i=0;i<8;i++){float a=i*Mathf.PI/4;level=Mathf.Max(level,H(unit.X+Mathf.Cos(a)*r,unit.Z+Mathf.Sin(a)*r));}
+            float H(float x,float z)=>(float)Match.HeightAt(Mathf.Clamp(x,0,63.99f),Mathf.Clamp(z,0,63.99f));
+            float r=(float)unit.Stats.Radius+.3f,level=H((float)unit.X,(float)unit.Z);
+            for(int i=0;i<8;i++){float a=i*Mathf.PI/4;level=Mathf.Max(level,H((float)unit.X+Mathf.Cos(a)*r,(float)unit.Z+Mathf.Sin(a)*r));}
             foreach(var next in unit.Route)
             {
-                var ahead=new Vector2(next.X-unit.X,next.Z-unit.Z);float distance=Mathf.Min(2.5f,ahead.magnitude);
+                var ahead=new Vector2((float)next.X-(float)unit.X,(float)next.Z-(float)unit.Z);float distance=Mathf.Min(2.5f,ahead.magnitude);
                 if(distance<.01f)break;ahead/=ahead.magnitude;
-                for(float d=.5f;d<=distance;d+=.5f)level=Mathf.Max(level,H(unit.X+ahead.x*d,unit.Z+ahead.y*d));
+                for(float d=.5f;d<=distance;d+=.5f)level=Mathf.Max(level,H((float)unit.X+ahead.x*d,(float)unit.Z+ahead.y*d));
                 break;
             }
             return level;
@@ -640,15 +640,15 @@ namespace Order.Presentation
             var ring=pool[index];ring.SetActive(true);ring.GetComponent<MeshRenderer>().sharedMaterial=material;
             float y;Quaternion tilt;var at=Place(unit);
             if(unit.Stats.Flying&&unitViews.TryGetValue(unit.Id,out var view)){y=view.Body.position.y-.3f;tilt=Quaternion.identity;}
-            else{y=Match.HeightAt(at.x,at.y)+.03f;tilt=Quaternion.FromToRotation(Vector3.up,GroundNormal(at.x,at.y));}
+            else{y=(float)Match.HeightAt(at.x,at.y)+.03f;tilt=Quaternion.FromToRotation(Vector3.up,GroundNormal(at.x,at.y));}
             ring.transform.SetPositionAndRotation(new Vector3(at.x,y,at.y),tilt);
-            ring.transform.localScale=Vector3.one*(unit.Stats.Radius+.16f)*scale;
+            ring.transform.localScale=Vector3.one*((float)unit.Stats.Radius+.16f)*scale;
         }
         // Slope under a point for circles and markers: ramps tilt them, a nearby cliff does not (samples across a drop count as level).
         Vector3 GroundNormal(float x,float z)
         {
             const float e=.3f;
-            float H(float px,float pz)=>Match.HeightAt(Mathf.Clamp(px,0,63.99f),Mathf.Clamp(pz,0,63.99f));
+            float H(float px,float pz)=>(float)Match.HeightAt(Mathf.Clamp(px,0,63.99f),Mathf.Clamp(pz,0,63.99f));
             float h=H(x,z);
             float S(float px,float pz){float s=H(px,pz);return Mathf.Abs(s-h)>.51f?h:s;}
             return new Vector3(S(x-e,z)-S(x+e,z),2*e,S(x,z-e)-S(x,z+e)).normalized;
@@ -693,7 +693,7 @@ namespace Order.Presentation
             var low=model.Hover>0?view.Body.position+Vector3.down*.25f:foot+Vector3.up*.1f*model.Scale;
             var high=model.Hover>0?view.Body.position+Vector3.up*.25f:foot+Vector3.up*model.Height*model.Scale;
             Vector3 sa=MapCamera.WorldToScreenPoint(low),sb=MapCamera.WorldToScreenPoint(high);if(sa.z<=0||sb.z<=0)return false;
-            a=sa;b=sb;reach=Vector2.Distance(a,MapCamera.WorldToScreenPoint(low+MapCamera.transform.right*(unit.Stats.Radius*1.2f+.12f)));
+            a=sa;b=sb;reach=Vector2.Distance(a,MapCamera.WorldToScreenPoint(low+MapCamera.transform.right*((float)unit.Stats.Radius*1.2f+.12f)));
             return true;
         }
         PrototypeUnit UnitAt(Vector2 screen)
@@ -718,14 +718,14 @@ namespace Order.Presentation
                 foreach(var unit in selection.Units)
                 {
                     if(unit.Queued.Count==0)continue;
-                    Vector3 G(float x,float z)=>new Vector3(x,Match.HeightAt(Mathf.Clamp(x,0,63.99f),Mathf.Clamp(z,0,63.99f))+.1f,z);
+                    Vector3 G(float x,float z)=>new Vector3(x,(float)Match.HeightAt(Mathf.Clamp(x,0,63.99f),Mathf.Clamp(z,0,63.99f))+.1f,z);
                     var from=Place(unit);waypointPoints.Clear();waypointPoints.Add(G(from.x,from.y));
-                    bool any=false;float lx=0,lz=0;foreach(var p in unit.Route){lx=p.X;lz=p.Z;any=true;}
+                    bool any=false;float lx=0,lz=0;foreach(var p in unit.Route){lx=(float)p.X;lz=(float)p.Z;any=true;}
                     if(any)waypointPoints.Add(G(lx,lz));
                     bool attack=unit.Order==UnitOrder.AttackMove||unit.Order==UnitOrder.Attack;
                     foreach(var order in unit.Queued)
                     {
-                        float x=order.Unit!=null?order.Unit.X:order.X,z=order.Unit!=null?order.Unit.Z:order.Z;
+                        float x=order.Unit!=null?(float)order.Unit.X:(float)order.X,z=order.Unit!=null?(float)order.Unit.Z:(float)order.Z;
                         var at=G(x,z);waypointPoints.Add(at);
                         bool hit=order.Order!=UnitOrder.Move;attack|=hit;
                         while(waypointDots.Count<=dots)waypointDots.Add(scenery.Model("Waypoint",selectionMesh,markerMaterial,worldRoot.transform,false));
@@ -755,7 +755,7 @@ namespace Order.Presentation
         // Points on a unit's model: the top (health bar), the middle (where hits land) and the muzzle of a ground unit.
         static Vector3 Top(PrototypeUnit unit,UnitView view)=>unit.Stats.Flying?view.Body.position+Vector3.up*.35f:view.Root.transform.position+Vector3.up*view.Model.Height*view.Model.Scale;
         static Vector3 Center(PrototypeUnit unit,UnitView view)=>unit.Stats.Flying?view.Body.position:view.Root.transform.position+Vector3.up*view.Model.Height*view.Model.Scale*.5f;
-        static Vector3 Muzzle(PrototypeUnit unit,UnitView view)=>view.Root.transform.position+Vector3.up*view.Model.Height*view.Model.Scale*.6f+view.Root.transform.forward*(unit.Stats.Radius+.12f);
+        static Vector3 Muzzle(PrototypeUnit unit,UnitView view)=>view.Root.transform.position+Vector3.up*(float)view.Model.Height*view.Model.Scale*.6f+view.Root.transform.forward*((float)unit.Stats.Radius+.12f);
         // Strikes and deaths from the last simulation steps, shown where the player can see them: a rifleman fires a tracer,
         // the gunship a pair from its wings, an assault unit slashes; a dead unit explodes and leaves a scorch mark.
         void ShowCombat()
@@ -765,7 +765,7 @@ namespace Order.Presentation
                 if(!unitViews.TryGetValue(attacker.Id,out var a)||!unitViews.TryGetValue(target.Id,out var t))continue;
                 if(!Match.SeenBy(PrototypeMatch.Player,attacker)&&!Match.SeenBy(PrototypeMatch.Player,target))continue;
                 a.Kick=1;
-                var hit=Center(target,t)+UnityEngine.Random.insideUnitSphere*target.Stats.Radius*.4f;
+                var hit=Center(target,t)+UnityEngine.Random.insideUnitSphere*(float)target.Stats.Radius*.4f;
                 Shot(attacker,a,hit);
             }
             strikes.Clear();
@@ -775,7 +775,7 @@ namespace Order.Presentation
                 if(!Match.SeenBy(PrototypeMatch.Player,attacker)&&!Match.SeenBy(PrototypeMatch.Player,target))continue;
                 a.Kick=1;
                 // Hits land on the side facing the attacker, somewhere up the wall.
-                var center=view.Model.GetComponent<MeshRenderer>().bounds.center;var toward=new Vector3(attacker.X-center.x,0,attacker.Z-center.z).normalized;
+                var center=view.Model.GetComponent<MeshRenderer>().bounds.center;var toward=new Vector3((float)attacker.X-center.x,0,(float)attacker.Z-center.z).normalized;
                 var hit=center+toward*target.Width*.42f+new Vector3(UnityEngine.Random.Range(-.4f,.4f),UnityEngine.Random.Range(-.3f,.4f),UnityEngine.Random.Range(-.4f,.4f));
                 Shot(attacker,a,hit);
             }
@@ -784,7 +784,7 @@ namespace Order.Presentation
             foreach(var b in ruins)
             {
                 if(!Match.SeenBy(PrototypeMatch.Player,b)&&b.Owner!=PrototypeMatch.Player)continue;
-                float ground=Match.Map.Height(b.X,b.Z),h=b.Stats.Height;
+                float ground=(float)Match.Map.Height(b.X,b.Z),h=(float)b.Stats.Height;
                 for(int i=0;i<3;i++)
                 {
                     var at=new Vector3(b.X+b.Width*(.3f+.2f*i),ground+h*.5f,b.Z+b.Width*(i==1?.7f:.35f));
@@ -796,11 +796,11 @@ namespace Order.Presentation
                 if(unitViews.TryGetValue(unit.Id,out var view)&&Match.SeenBy(PrototypeMatch.Player,unit))
                 {
                     // A machine taken apart leaves no wreck: a last cold flash where its nanites flow away.
-                    if(unit.Disassembling){combat.Flash(Center(unit,view),new Color(.62f,.86f,1)*2.6f,Mathf.Max(.5f,unit.Stats.Radius*2),.5f,2.2f);continue;}
+                    if(unit.Disassembling){combat.Flash(Center(unit,view),new Color(.62f,.86f,1)*2.6f,Mathf.Max(.5f,(float)unit.Stats.Radius*2),.5f,2.2f);continue;}
                     // A worker spent on a building melts into it. The building's view comes at once, not with the next refresh,
                     // so the puddle grows under the worker from its first frame.
                     if(unit.AbsorbedInto!=null){StartMelt(unit,view);SyncBuildings();continue;}
-                    combat.Explosion(Center(unit,view),Match.HeightAt(unit.X,unit.Z),unit.Stats.Flying?1.3f:Mathf.Max(1,unit.Stats.Radius*2.6f));
+                    combat.Explosion(Center(unit,view),(float)Match.HeightAt((float)unit.X,(float)unit.Z),unit.Stats.Flying?1.3f:Mathf.Max(1,(float)unit.Stats.Radius*2.6f));
                 }
             deaths.Clear();
         }
@@ -819,14 +819,14 @@ namespace Order.Presentation
             {
                 var muzzle=a.Gun!=null?a.Gun.TransformPoint(new Vector3(0,0,a.Model.GunLength)):Muzzle(attacker,a);
                 combat.Flash(muzzle,new Color(3.2f,1.8f,.7f),.55f,.25f,2.2f);
-                float flight=Mathf.Clamp(Vector3.Distance(muzzle,hit)/22,.15f,.6f),burst=Mathf.Max(.8f,stats.Splash*1.5f);
+                float flight=Mathf.Clamp(Vector3.Distance(muzzle,hit)/22,.15f,.6f),burst=Mathf.Max(.8f,(float)stats.Splash*1.5f);
                 combat.Flash(hit,new Color(3.2f,1.6f,.55f),burst*.6f,.45f,3.2f,flight);
                 combat.Flash(hit+Vector3.up*.2f,new Color(.35f,.33f,.3f),burst*.7f,1.1f,2.2f,flight+.08f);
             }
             else if(stats.Ramp>1)
             {
                 // The emitter's beam thickens and brightens as it builds up on one target.
-                float focus=Match.Focus(attacker);
+                float focus=(float)Match.Focus(attacker);
                 var lens=a.Body.TransformPoint(new Vector3(0,.8f,.22f));
                 combat.Tracer(lens,hit,Color.Lerp(new Color(.62f,.86f,1),Color.white,focus*.6f),.035f+.075f*focus);
                 if(focus>.6f)combat.Flash(hit,NaniteGlow*(1.5f+focus),.12f+.12f*focus,.12f,1.6f);
@@ -897,7 +897,7 @@ namespace Order.Presentation
         {
             var view=scenery.Model("Order marker",markerMesh,markerMaterial,worldRoot.transform,false);
             float x=Mathf.Clamp(point.x,0,63.99f),z=Mathf.Clamp(point.y,0,63.99f);
-            view.transform.SetPositionAndRotation(new Vector3(point.x,Match.HeightAt(x,z)+.04f,point.y),Quaternion.FromToRotation(Vector3.up,GroundNormal(x,z)));
+            view.transform.SetPositionAndRotation(new Vector3(point.x,(float)Match.HeightAt(x,z)+.04f,point.y),Quaternion.FromToRotation(Vector3.up,GroundNormal(x,z)));
             markers.Add(new Marker{View=view,Start=Time.time,Color=!ok?FailMark:attack?AttackMark:MoveMark});
         }
         void MarkTarget(PrototypeUnit unit)
@@ -913,9 +913,9 @@ namespace Order.Presentation
                 if(t>=1||(marker.Unit!=null&&!marker.Unit.Alive)){Destroy(marker.View);markers.RemoveAt(i);continue;}
                 if(marker.Unit!=null)
                 {
-                    var unit=marker.Unit;var at=Place(unit);float y=unit.Stats.Flying&&unitViews.TryGetValue(unit.Id,out var view)?view.Body.position.y-.3f:Match.HeightAt(at.x,at.y)+.05f;
+                    var unit=marker.Unit;var at=Place(unit);float y=unit.Stats.Flying&&unitViews.TryGetValue(unit.Id,out var view)?view.Body.position.y-.3f:(float)Match.HeightAt(at.x,at.y)+.05f;
                     marker.View.transform.position=new Vector3(at.x,y,at.y);
-                    marker.View.transform.localScale=Vector3.one*(unit.Stats.Radius+.16f)*Mathf.Lerp(1.9f,1.05f,Mathf.Sqrt(t));
+                    marker.View.transform.localScale=Vector3.one*((float)unit.Stats.Radius+.16f)*Mathf.Lerp(1.9f,1.05f,Mathf.Sqrt(t));
                 }
                 else if(marker.Size>0)marker.View.transform.localScale=Vector3.one*marker.Size*Mathf.Lerp(1.35f,1,Mathf.Sqrt(t));
                 else marker.View.transform.localScale=Vector3.one*Mathf.Lerp(1.3f,.55f,Mathf.Sqrt(t));
@@ -938,12 +938,12 @@ namespace Order.Presentation
             Vector3 position=default;float radius=0;
             if(selectedBuilding!=null)
             {
-                var b=selectedBuilding;position=new Vector3(b.X+b.Width*.5f,Match.Map.Height(b.X,b.Z),b.Z+b.Width*.5f);radius=b.Width*.76f;
+                var b=selectedBuilding;position=new Vector3((float)b.X+b.Width*.5f,(float)Match.Map.Height(b.X,b.Z),(float)b.Z+b.Width*.5f);radius=b.Width*.76f;
                 focusRing.GetComponent<MeshRenderer>().sharedMaterial=b.Owner==PrototypeMatch.Player?selectedMaterial:enemyRingMaterial;
             }
             else if(selectedDeposit!=null&&selectedDeposit.Remaining>0)
             {
-                position=new Vector3(selectedDeposit.X+.5f,Match.Map.Height(selectedDeposit.X,selectedDeposit.Z),selectedDeposit.Z+.5f);radius=.68f;
+                position=new Vector3((float)selectedDeposit.X+.5f,(float)Match.Map.Height(selectedDeposit.X,selectedDeposit.Z),(float)selectedDeposit.Z+.5f);radius=.68f;
                 focusRing.GetComponent<MeshRenderer>().sharedMaterial=neutralMaterial;
             }
             focusRing.SetActive(radius>0);
@@ -956,8 +956,8 @@ namespace Order.Presentation
             var b=selectedBuilding;bool show=b!=null&&b.HasRally&&b.Owner==PrototypeMatch.Player;
             rallyFlag.SetActive(show);rallyLine.enabled=show;
             if(!show)return;
-            float H(float x,float z)=>Match.HeightAt(Mathf.Clamp(x,0,63.99f),Mathf.Clamp(z,0,63.99f))+.12f;
-            var from=new Vector2(b.X+b.Width*.5f,b.Z+b.Width*.5f);var to=new Vector2(b.RallyX,b.RallyZ);
+            float H(float x,float z)=>(float)Match.HeightAt(Mathf.Clamp(x,0,63.99f),Mathf.Clamp(z,0,63.99f))+.12f;
+            var from=new Vector2((float)b.X+b.Width*.5f,(float)b.Z+b.Width*.5f);var to=new Vector2((float)b.RallyX,(float)b.RallyZ);
             int count=Mathf.Clamp(Mathf.CeilToInt(Vector2.Distance(from,to)/.5f)+1,2,160);
             rallyLine.positionCount=count;
             for(int i=0;i<count;i++){var p=Vector2.Lerp(from,to,i/(count-1f));rallyLine.SetPosition(i,new Vector3(p.x,H(p.x,p.y),p.y));}
@@ -993,12 +993,12 @@ namespace Order.Presentation
         {
             foreach(var (b,view) in buildingViews)
             {
-                float h=b.Stats.Height,ground=Match.Map.Height(b.X,b.Z);
+                float h=(float)b.Stats.Height,ground=(float)Match.Map.Height(b.X,b.Z);
                 bool shown=BuildingShown(b);
                 if(view.Model.activeSelf!=shown)view.Model.SetActive(shown);
                 if(b.SelfBuilt&&(b.Ready<1||view.Revealing)){Liquid(b,view,shown,h,ground);continue;}
                 // The full-sized model rises through the opaque terrain; it never scales up.
-                view.Model.transform.position=new Vector3(b.X+b.Width*.5f,ground-h*(1-b.Ready),b.Z+b.Width*.5f);
+                view.Model.transform.position=new Vector3((float)b.X+b.Width*.5f,ground-h*(1-(float)b.Ready),(float)b.Z+b.Width*.5f);
                 view.Ring.SetActive(b.Ready<1&&shown);
                 // The ring pulses while a worker builds; a construction that waits for its worker keeps it still.
                 bool rising=b.Builder!=null&&PrototypeMatch.Gap(b.Builder,b)<=PrototypeMatch.BuildReach;
@@ -1117,7 +1117,7 @@ namespace Order.Presentation
             float top=ground+view.Span.y+.03f,bottom=ground+view.Span.x-.03f,full=ground+view.Span.z+.03f;
             view.Ring.SetActive(false);
             var renderer=view.Model.GetComponent<MeshRenderer>();
-            float build=b.Stats.BuildSeconds,fill=Mathf.Clamp(3/build,.2f,.45f),drain=(1-fill)*build;
+            float build=(float)b.Stats.BuildSeconds,fill=Mathf.Clamp(3/build,.2f,.45f),drain=(1-fill)*build;
             // The worker's melt comes first: while it lasts only the puddle grows under it.
             float melt=Mathf.Min(MeltSeconds/build,fill*.6f);
             // The film is as tall as the edge travels while it dries, so it reads the same on a quick node and a slow core.
@@ -1137,7 +1137,7 @@ namespace Order.Presentation
             view.Liquid.transform.SetPositionAndRotation(view.Model.transform.position,view.Model.transform.rotation);
             view.Liquid.transform.localScale=view.Model.transform.localScale;
             // The puddle at the middle of the site: it spreads while the worker melts, then sinks into the rising liquid.
-            float sinking=Mathf.InverseLerp(melt,melt+(fill-melt)*.4f,b.Ready),radius=w*.42f*Mathf.SmoothStep(0,1,b.Ready/Mathf.Max(1e-4f,melt*.8f))*(1-Mathf.SmoothStep(0,1,sinking));
+            float sinking=Mathf.InverseLerp(melt,melt+(fill-melt)*.4f,(float)b.Ready),radius=w*.42f*Mathf.SmoothStep(0,1,(float)b.Ready/Mathf.Max(1e-4f,melt*.8f))*(1-Mathf.SmoothStep(0,1,sinking));
             if(radius>.02f)
             {
                 if(view.Puddle==null)view.Puddle=WithSpikes(scenery.Model("Nanite puddle",PuddleMesh(),liquidMaterial,worldRoot.transform),PuddleSpikeMesh());
@@ -1154,7 +1154,7 @@ namespace Order.Presentation
             if(b.Ready<fill)
             {
                 // Filling: the front sets off gently, rises fast and settles at the top; the building itself is not there yet.
-                float progress=Mathf.InverseLerp(melt,fill,b.Ready),s=Mathf.SmoothStep(0,1,progress);
+                float progress=Mathf.InverseLerp(melt,fill,(float)b.Ready),s=Mathf.SmoothStep(0,1,progress);
                 front=view.Front=Mathf.Lerp(ground-LiquidRough*.35f-.02f,full,1-(1-s)*(1-s));flow=1.1f;view.Pool=new Vector4(cx,cz,w*.5f,-pool);
                 rough=LiquidRough*(1-Ease(.8f,1,progress));
                 revealBlock.SetFloat("_RevealBelow",1000);
@@ -1164,7 +1164,7 @@ namespace Order.Presentation
                 // Draining: one edge for both, so the building shows exactly where the liquid has left. It picks up speed
                 // over the first tenth or so and keeps its pace to the end, so the last of the liquid leaves just as the
                 // building is ready.
-                float s=(b.Ready-fill)/(1-fill);const float Start=.06f;
+                float s=((float)b.Ready-fill)/(1-fill);const float Start=.06f;
                 float travelled=(s-Start*(1-Mathf.Exp(-s/Start)))/(1-Start*(1-Mathf.Exp(-1/Start)));
                 front=Mathf.Lerp(top,bottom,travelled);flow=-1.2f;view.Front=top;view.Pool=drainPool;
                 rough=LiquidRough*Ease(0,.15f,s)*(1-Ease(.85f,1,s));
@@ -1184,7 +1184,7 @@ namespace Order.Presentation
         {
             var body=view.Body;
             var melt=scenery.Model("Melting "+unit.Stats.Name,LiquidMesh(view.Model.Body,.08f),liquidMaterial,worldRoot.transform);
-            melts.Add(new Melt{View=melt,At=body.position,Scale=body.lossyScale,Turn=body.rotation,Start=Time.time,Ground=Match.HeightAt(unit.X,unit.Z)});
+            melts.Add(new Melt{View=melt,At=body.position,Scale=body.lossyScale,Turn=body.rotation,Start=Time.time,Ground=(float)Match.HeightAt((float)unit.X,(float)unit.Z)});
             AnimateMelts();
         }
         void AnimateMelts()
@@ -1209,9 +1209,9 @@ namespace Order.Presentation
         {
             // The site's own view goes at once, not with the next refresh: left standing, it would hide the start of the gathering.
             if(!b.SelfBuilt||!buildingViews.TryGetValue(b,out var view)||!view.Model.activeSelf){SyncBuildings();return;}
-            float ground=Match.Map.Height(b.X,b.Z);
+            float ground=(float)Match.Map.Height(b.X,b.Z);
             // It starts from where the liquid is: as high as it has filled, flowing as it flowed, the puddle as wide as it was.
-            var g=new Gather{Worker=worker,Start=Time.time,Ground=ground,Top=view.Liquid!=null?view.Front:ground+b.Stats.Height*1.08f+.15f,Radius=b.Width*.42f,
+            var g=new Gather{Worker=worker,Start=Time.time,Ground=ground,Top=view.Liquid!=null?view.Front:ground+(float)b.Stats.Height*1.08f+.15f,Radius=b.Width*.42f,
                 Flow=view.Flow,Shift=view.Shift,PuddleFrom=view.PuddleRadius,Pool=view.Pool,Center=new Vector3(b.X+b.Width*.5f,ground,b.Z+b.Width*.5f)};
             var shape=view.Model.GetComponent<MeshFilter>().sharedMesh;
             g.Form=WithSpikes(scenery.Model("Nanite form",LiquidMesh(shape),liquidMaterial,worldRoot.transform),SpikeMesh(shape));
@@ -1244,7 +1244,7 @@ namespace Order.Presentation
                 LiquidBlock(g.Form.GetComponent<MeshRenderer>(),Mathf.Lerp(g.Top,g.Ground-.4f,slump),g.Shift,g.Ground,1-slump,pool:g.Pool);
                 // The puddle spreads as the shape slumps, then draws in under the worker.
                 float spread=Mathf.SmoothStep(0,1,Mathf.Clamp01(s*2.5f-.3f)),draw=Mathf.SmoothStep(0,1,Mathf.Clamp01(s*2-1));
-                var at=g.Worker!=null&&g.Worker.Alive?new Vector3(g.Worker.X,Match.HeightAt(g.Worker.X,g.Worker.Z),g.Worker.Z):g.Center;
+                var at=g.Worker!=null&&g.Worker.Alive?new Vector3((float)g.Worker.X,(float)Match.HeightAt((float)g.Worker.X,(float)g.Worker.Z),(float)g.Worker.Z):g.Center;
                 g.Puddle.transform.position=Vector3.Lerp(g.Center,at,draw)+Vector3.down*.02f;
                 float radius=Mathf.Lerp(Mathf.Max(g.PuddleFrom,g.Radius*spread),.12f,draw);g.Puddle.transform.localScale=new Vector3(radius,1,radius);
                 LiquidBlock(g.Puddle.GetComponent<MeshRenderer>(),1000,0,g.Ground-1,Mathf.Clamp01(radius));
@@ -1274,11 +1274,11 @@ namespace Order.Presentation
                     coverageRings.Add(ring);
                 }
                 var line=coverageRings[shown++];line.enabled=true;line.sharedMaterial=b.Linked?coverageMaterial:darkCoverageMaterial;
-                float cx=b.X+b.Width*.5f,cz=b.Z+b.Width*.5f,r=b.Stats.Coverage;
+                float cx=(float)b.X+b.Width*.5f,cz=(float)b.Z+b.Width*.5f,r=(float)b.Stats.Coverage;
                 for(int i=0;i<CoverageSegments;i++)
                 {
                     float a=i*Mathf.PI*2/CoverageSegments,x=cx+Mathf.Cos(a)*r,z=cz+Mathf.Sin(a)*r;
-                    line.SetPosition(i,new Vector3(x,Match.HeightAt(Mathf.Clamp(x,0,63.99f),Mathf.Clamp(z,0,63.99f))+.07f,z));
+                    line.SetPosition(i,new Vector3(x,(float)Match.HeightAt(Mathf.Clamp(x,0,63.99f),Mathf.Clamp(z,0,63.99f))+.07f,z));
                 }
             }
             for(int i=shown;i<coverageRings.Count;i++)coverageRings[i].enabled=false;
@@ -1295,7 +1295,7 @@ namespace Order.Presentation
                 if(siteGhosts.Count<=shown)siteGhosts.Add(scenery.Model("Planned site",BuildingMesh(faction,kind),ghostMaterial,worldRoot.transform,false));
                 var ghost=siteGhosts[shown++];ghost.SetActive(true);ghost.GetComponent<MeshFilter>().sharedMesh=BuildingMesh(faction,kind);
                 int w=Match.Balance.Of(faction).Buildings[kind].Width;
-                ghost.transform.position=new Vector3(x+w*.5f,Match.Map.Height(x,z)+.03f,z+w*.5f);
+                ghost.transform.position=new Vector3(x+w*.5f,(float)Match.Map.Height(x,z)+.03f,z+w*.5f);
             }
             var own=Match.FactionOf(PrototypeMatch.Player);
             foreach(var u in Match.Units)
@@ -1397,7 +1397,7 @@ namespace Order.Presentation
             int started=0;string reason=null;
             foreach(var w in workers){if(building!=null?Match.Repair(w,building):Match.Repair(w,unit))started++;else reason??=Match.Message;}
             if(started==0){Match.Message=reason;hud?.Refresh();return false;}
-            float cx=building!=null?building.X+building.Width*.5f:unit.X,cz=building!=null?building.Z+building.Width*.5f:unit.Z;
+            float cx=building!=null?(float)building.X+building.Width*.5f:(float)unit.X,cz=building!=null?(float)building.Z+building.Width*.5f:(float)unit.Z;
             var rest=new List<PrototypeUnit>(selection.Orderable);rest.RemoveAll(u=>workers.Contains(u)||u==unit);
             var message=$"{(started>1?$"Рабочие ×{started}":workers[0].Stats.Name)}: ремонт — {(building!=null?building.Stats.Name:unit.Stats.Name)}.";
             if(rest.Count>0)Match.MoveGroup(rest,cx,cz);
@@ -1411,7 +1411,7 @@ namespace Order.Presentation
             foreach(var w in workers){if(building!=null?Match.QueueRepair(w,building):Match.QueueRepair(w,unit))queued++;else reason??=Match.Message;}
             if(queued==0){if(reason!=null)Match.Message=reason;hud?.Refresh();return false;}
             Match.Message=$"Ремонт добавлен в очередь: {(building!=null?building.Stats.Name:unit.Stats.Name)}.";
-            Mark(building!=null?new Vector2(building.X+building.Width*.5f,building.Z+building.Width*.5f):new Vector2(unit.X,unit.Z),true);hud?.Refresh();
+            Mark(building!=null?new Vector2((float)building.X+building.Width*.5f,(float)building.Z+building.Width*.5f):new Vector2((float)unit.X,(float)unit.Z),true);hud?.Refresh();
             return true;
         }
         // Any packed howitzer in the selection deploys where it stands; when all of them are deployed, they pack up.
@@ -1469,14 +1469,14 @@ namespace Order.Presentation
         }
         public void Focus(Vector2 point)=>focus=new Vector3(Mathf.Clamp(point.x,0,64),0,Mathf.Clamp(point.y,0,64));
         // The camera moved at once, from this distance (the visual lab's presets).
-        public void LookAt(Vector2 point,float distance){Focus(point);zoom=targetZoom=Mathf.Clamp(distance,MinZoom,MaxZoom);focusHeight=Match.HeightAt(focus.x,focus.z);}
+        public void LookAt(Vector2 point,float distance){Focus(point);zoom=targetZoom=Mathf.Clamp(distance,MinZoom,MaxZoom);focusHeight=(float)Match.HeightAt(focus.x,focus.z);}
         public Vector2 CameraFocus=>new Vector2(focus.x,focus.z);
-        public void FocusWorker(){var worker=Match.Units.Find(u=>u.Owner==PrototypeMatch.Player&&u.Kind==UnitKind.Worker);if(worker!=null)focus=new Vector3(worker.X,0,worker.Z);}
+        public void FocusWorker(){var worker=Match.Units.Find(u=>u.Owner==PrototypeMatch.Player&&u.Kind==UnitKind.Worker);if(worker!=null)focus=new Vector3((float)worker.X,0,(float)worker.Z);}
         // Camera to the middle of the selected units; without a selection, to the worker.
         public void FocusSelection()
         {
             if(selection.Count==0){FocusWorker();return;}
-            float x=0,z=0;foreach(var u in selection.Units){x+=u.X;z+=u.Z;}
+            float x=0,z=0;foreach(var u in selection.Units){x+=(float)u.X;z+=(float)u.Z;}
             focus=new Vector3(x/selection.Count,0,z/selection.Count);
         }
         // A group order (formation or gathering on the point, see PrototypeMatch.MoveGroup); workers harvest a deposit there,
@@ -1527,13 +1527,13 @@ namespace Order.Presentation
             if(worker==null)foreach(var u in selection.Orderable)
             {
                 if(u.Kind!=UnitKind.Worker||(next&&u.SiteKind>=0))continue;
-                float d=(u.X-cx)*(u.X-cx)+(u.Z-cz)*(u.Z-cz);
+                float d=((float)u.X-cx)*((float)u.X-cx)+((float)u.Z-cz)*((float)u.Z-cz);
                 if(d<best){best=d;worker=u;}
             }
             if(worker==null)foreach(var u in Match.Units)
             {
                 if(u.Owner!=PrototypeMatch.Player||u.Kind!=UnitKind.Worker||u.Constructing!=null||u.SiteKind>=0)continue;
-                float d=(u.X-cx)*(u.X-cx)+(u.Z-cz)*(u.Z-cz)+(u.HarvestTarget==null&&!u.Moving?0:u.Carrying>0||(u.HarvestTarget!=null&&u.HarvestTarget.Plasma)?20000:10000);
+                float d=((float)u.X-cx)*((float)u.X-cx)+((float)u.Z-cz)*((float)u.Z-cz)+(u.HarvestTarget==null&&!u.Moving?0:u.Carrying>0||(u.HarvestTarget!=null&&u.HarvestTarget.Plasma)?20000:10000);
                 if(d<best){best=d;worker=u;}
             }
             if(worker==null){Match.Message="Нет рабочих.";hud?.Refresh();return false;}
@@ -1551,7 +1551,7 @@ namespace Order.Presentation
             foreach(var u in selection.Orderable)
             {
                 if(u.Kind!=UnitKind.Worker)continue;
-                float d=(u.X-cx)*(u.X-cx)+(u.Z-cz)*(u.Z-cz);
+                float d=((float)u.X-cx)*((float)u.X-cx)+((float)u.Z-cz)*((float)u.Z-cz);
                 if(d<best){best=d;worker=u;}
             }
             if(worker==null||!Match.Resume(worker,site))return false;
@@ -1585,7 +1585,7 @@ namespace Order.Presentation
             if(any)
             {
                 var view=scenery.Model("Target marker",selectionMesh,markerMaterial,worldRoot.transform,false);
-                view.transform.position=new Vector3(target.X+target.Width*.5f,Match.Map.Height(target.X,target.Z)+.05f,target.Z+target.Width*.5f);
+                view.transform.position=new Vector3((float)target.X+target.Width*.5f,(float)Match.Map.Height(target.X,target.Z)+.05f,(float)target.Z+target.Width*.5f);
                 markers.Add(new Marker{View=view,Start=Time.time,Color=FailMark,Size=target.Width*.78f});
             }
             hud?.Refresh();
@@ -1629,7 +1629,7 @@ namespace Order.Presentation
         {
             if(pins.Count>=9){pins.RemoveAt(0);Destroy(pinViews[0]);pinViews.RemoveAt(0);}
             pins.Add(point);
-            var height=Match.HeightAt(Mathf.Clamp(point.x,0,63.9f),Mathf.Clamp(point.y,0,63.9f));
+            var height=(float)Match.HeightAt(Mathf.Clamp(point.x,0,63.9f),Mathf.Clamp(point.y,0,63.9f));
             var beacon=scenery.Model("Pin",beaconMesh,beaconMaterial,worldRoot.transform,false);
             beacon.transform.position=new Vector3(point.x,height,point.y);
             pinViews.Add(beacon);
@@ -1643,8 +1643,9 @@ namespace Order.Presentation
             pinViews.Clear();pins.Clear();hud?.Refresh();
         }
         // An attack the player cannot see on screen: a line in the event log with the grid square, and a ping on the minimap.
-        void OnUnderAttack(float x,float z,bool building)
+        void OnUnderAttack(Fix fx,Fix fz,bool building)
         {
+            float x=(float)fx,z=(float)fz;
             var frame=ViewportOnGround();var point=new Vector2(x,z);
             if(frame!=null&&Inside(frame,point))return;
             alerts.RemoveAll(a=>Time.unscaledTime-a.time>AlertSeconds);
@@ -1665,7 +1666,7 @@ namespace Order.Presentation
             if(MapCamera==null)return null;
             var result=new Vector2[4];Vector2[] corners={new Vector2(0,0),new Vector2(1,0),new Vector2(1,1),new Vector2(0,1)};
             // Project onto the terrain level under the camera focus, not y=0, so the frame matches what is on screen.
-            var plane=new Plane(Vector3.up,new Vector3(0,Match.HeightAt(Mathf.Clamp(focus.x,0,63.9f),Mathf.Clamp(focus.z,0,63.9f)),0));
+            var plane=new Plane(Vector3.up,new Vector3(0,(float)Match.HeightAt(Mathf.Clamp(focus.x,0,63.9f),Mathf.Clamp(focus.z,0,63.9f)),0));
             for(int i=0;i<4;i++){var ray=MapCamera.ViewportPointToRay(corners[i]);if(!plane.Raycast(ray,out float d))return null;var p=ray.GetPoint(d);result[i]=new Vector2(p.x,p.z);}
             return result;
         }

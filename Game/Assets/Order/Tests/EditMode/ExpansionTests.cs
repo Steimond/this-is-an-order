@@ -30,7 +30,7 @@ namespace Order.Tests.EditMode
             Assert.That(match.Move(miner,27.5f,9.5f),Is.True);Assert.That(miner.HarvestTarget,Is.Not.Null);
             Run(match,20);
             Assert.That(match.MetalHarvested-before,Is.GreaterThanOrEqualTo(15),"Short trips to the new node, not up the ramp to the first one");
-            Assert.That(miner.X,Is.GreaterThan(20),"It never climbed to the plateau");
+            Assert.That((float)miner.X,Is.GreaterThan(20),"It never climbed to the plateau");
             Assert.That(match.Train(hq,UnitKind.Worker),Is.True,"The new node trains workers");
         }
         [Test] public void MachineCoreStartsANetworkOfItsOwn()
@@ -53,7 +53,7 @@ namespace Order.Tests.EditMode
             var bases=match.Buildings.FindAll(b=>b.Owner==Enemy&&b.Kind==Main);
             Assert.That(bases.Count,Is.EqualTo(2));
             var second=bases.Find(b=>b.X!=51);Assert.That((second.X,second.Z),Is.EqualTo((37,47)),"The spot below its ramp");
-            if(second.Ready>=1)Assert.That(match.Units.Exists(u=>u.Owner==Enemy&&u.HarvestTarget!=null&&u.HarvestTarget.X<40),Is.True,"Workers go to the new deposits");
+            if((float)second.Ready>=1)Assert.That(match.Units.Exists(u=>u.Owner==Enemy&&u.HarvestTarget!=null&&(float)u.HarvestTarget.X<40),Is.True,"Workers go to the new deposits");
         }
     }
 }

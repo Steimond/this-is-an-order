@@ -16,9 +16,9 @@ namespace Order.Tests.EditMode
         // Orders the worker to the deposit and runs until it has wrapped it.
         static void Wrap(PrototypeMatch match,PrototypeUnit worker,ResourceDeposit deposit)
         {
-            Assert.That(match.Move(worker,deposit.X+.5f,deposit.Z+.5f),Is.True);Assert.That(worker.HarvestTarget,Is.SameAs(deposit));
+            Assert.That(match.Move(worker,(float)deposit.X+.5f,(float)deposit.Z+.5f),Is.True);Assert.That(worker.HarvestTarget,Is.SameAs(deposit));
             for(int i=0;i<200&&worker.Wrap<1;i++)match.Tick(.05f);
-            Assert.That(worker.Wrap,Is.EqualTo(1),"The worker wraps the deposit");
+            Assert.That((float)worker.Wrap,Is.EqualTo(1),"The worker wraps the deposit");
         }
 
         [Test] public void EachSidePlaysItsOwnRoster()
@@ -47,7 +47,7 @@ namespace Order.Tests.EditMode
         {
             var match=Machines();var first=Weaver(match);var second=match.Spawn(UnitKind.Worker,14.5f,13.5f);var deposit=match.Map.ResourceAt(9,5);
             Wrap(match,first,deposit);
-            Assert.That(match.Move(second,deposit.X+.5f,deposit.Z+.5f),Is.True);
+            Assert.That(match.Move(second,(float)deposit.X+.5f,(float)deposit.Z+.5f),Is.True);
             Run(match,8);
             Assert.That(first.HarvestTarget,Is.SameAs(deposit));Assert.That(second.HarvestTarget,Is.Not.Null.And.Not.SameAs(deposit));
             Assert.That(second.Mining,Is.True,"The second worker wraps a free deposit next to it");
@@ -75,13 +75,13 @@ namespace Order.Tests.EditMode
             var match=Machines();var worker=Weaver(match);var deposit=match.Map.ResourceAt(9,5);
             Wrap(match,worker,deposit);
             Assert.That(match.Move(worker,15.5f,15.5f),Is.True);match.Tick(.05f);
-            Assert.That(worker.Cocoon,Is.Zero);Assert.That(worker.Wrap,Is.Zero);
+            Assert.That(worker.Cocoon,Is.Zero);Assert.That((float)worker.Wrap,Is.Zero);
             worker.Health=0;match.Tick(.05f);
             var next=match.Spawn(UnitKind.Worker,13.5f,13.5f);
-            Assert.That(match.Move(next,deposit.X+.5f,deposit.Z+.5f),Is.True);
+            Assert.That(match.Move(next,(float)deposit.X+.5f,(float)deposit.Z+.5f),Is.True);
             for(int i=0;i<200&&next.Moving;i++)match.Tick(.05f);
             match.Tick(.05f);
-            Assert.That(next.Wrap,Is.EqualTo(1),"A deposit wrapped before is taken at once");Assert.That(next.Mining,Is.True);
+            Assert.That((float)next.Wrap,Is.EqualTo(1),"A deposit wrapped before is taken at once");Assert.That(next.Mining,Is.True);
             Assert.That(next.Cocoon,Is.LessThan(next.Stats.Cocoon),"The cocoon still has to grow back");
         }
         [Test] public void MachineWorkerBecomesTheBuildingThatThenRisesByItself()
@@ -93,8 +93,8 @@ namespace Order.Tests.EditMode
             Assert.That(match.Units,Has.No.Member(worker),"The worker dissolved into the building");Assert.That(worker.AbsorbedInto,Is.SameAs(node));
             Assert.That(match.Message,Does.Contain("распадается на наниты"));
             Assert.That(match.Metal,Is.EqualTo(metal-stats.Metal));Assert.That(match.SupplyUsed,Is.EqualTo(supply-worker.Stats.Supply));
-            Run(match,stats.BuildSeconds+.2f);
-            Assert.That(node.Ready,Is.EqualTo(1),"With no worker it still rises");Assert.That(match.SupplyLimit,Is.EqualTo(18));
+            Run(match,(float)stats.BuildSeconds+.2f);
+            Assert.That((float)node.Ready,Is.EqualTo(1),"With no worker it still rises");Assert.That(match.SupplyLimit,Is.EqualTo(18));
             var weaver=match.Spawn(UnitKind.Worker,13.5f,13.5f);
             Assert.That(match.Resume(weaver,Sites.Place(match,18,14,0)),Is.False,"Nothing to resume");
         }
@@ -104,7 +104,7 @@ namespace Order.Tests.EditMode
             Assert.That(match.Build(worker,15,14,1),Is.True,match.Message);
             for(int i=0;i<400&&worker.AbsorbedInto==null;i++)match.Tick(.05f);
             Assert.That(worker.AbsorbedInto,Is.Not.Null);
-            Assert.That(worker.X,Is.EqualTo(15+w*.5f).Within(.35f));Assert.That(worker.Z,Is.EqualTo(14+w*.5f).Within(.35f),"It walks into the middle of the site, not to its edge");
+            Assert.That((float)worker.X,Is.EqualTo(15+w*.5f).Within(.35f));Assert.That((float)worker.Z,Is.EqualTo(14+w*.5f).Within(.35f),"It walks into the middle of the site, not to its edge");
         }
         [Test] public void CancellingAMachineSiteGivesTheWorkerBack()
         {
@@ -116,7 +116,7 @@ namespace Order.Tests.EditMode
             Assert.That(match.Message,Does.Contain("ткач"));
             Run(match,.2f);
             var back=match.Units.Find(u=>u.Kind==UnitKind.Worker&&u!=worker);
-            Assert.That(match.CanTravel(back.X,back.Z,back.X,back.Z,back.Stats.Radius),Is.True,"On free ground where the site was");
+            Assert.That(match.CanTravel((float)back.X,(float)back.Z,(float)back.X,(float)back.Z,(float)back.Stats.Radius),Is.True,"On free ground where the site was");
         }
         [Test] public void AMachineWorkerQueuesNoBuildingsAndTheCostsMakeUpForIt()
         {
@@ -141,7 +141,7 @@ namespace Order.Tests.EditMode
             var held=new System.Collections.Generic.HashSet<ResourceDeposit>();
             foreach(var w in workers)if(w.Mining)Assert.That(held.Add(w.HarvestTarget),Is.True,"No two weavers on one deposit");
             Assert.That(match.Buildings.FindAll(b=>b.Owner==Enemy&&b.Kind==0).Count,Is.GreaterThanOrEqualTo(2),"Compute nodes before supply runs out");
-            Assert.That(match.Buildings.TrueForAll(b=>b.Owner!=Enemy||b.Ready>=1||b.SelfBuilt),Is.True);
+            Assert.That(match.Buildings.TrueForAll(b=>b.Owner!=Enemy||(float)b.Ready>=1||b.SelfBuilt),Is.True);
             Assert.That(match.Units.FindAll(u=>u.Owner==Enemy&&u.Stats.Damage>0).Count,Is.GreaterThan(army+3));
         }
     }

@@ -46,9 +46,9 @@ namespace Order.Editor
             var asset=Asset<UnitBalanceAsset>(relative);
             if(!exists)
             {
-                asset.DisplayName=defaults.Name;asset.MoveSpeed=defaults.Speed;asset.CollisionRadius=defaults.Radius;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.HarvestAmount=defaults.HarvestAmount;asset.HarvestInterval=defaults.HarvestInterval;asset.Supply=defaults.Supply;asset.Flying=defaults.Flying;asset.Damage=defaults.Damage;asset.AttackRange=defaults.AttackRange;asset.AttackCooldown=defaults.AttackCooldown;asset.HitsGround=defaults.HitsGround;asset.HitsAir=defaults.HitsAir;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.TrainSeconds=defaults.TrainSeconds;
-                asset.WrapSeconds=defaults.WrapSeconds;asset.Cocoon=defaults.Cocoon;asset.CocoonRegen=defaults.CocoonRegen;asset.Leap=defaults.Leap;asset.Mechanical=defaults.Mechanical;
-                asset.Armor=defaults.Armor;asset.Siege=defaults.Siege;asset.MinRange=defaults.MinRange;asset.Splash=defaults.Splash;asset.DeploySeconds=defaults.DeploySeconds;asset.Ramp=defaults.Ramp;asset.RampSeconds=defaults.RampSeconds;
+                asset.DisplayName=defaults.Name;asset.MoveSpeed=(float)defaults.Speed;asset.CollisionRadius=(float)defaults.Radius;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.HarvestAmount=defaults.HarvestAmount;asset.HarvestInterval=(float)defaults.HarvestInterval;asset.Supply=defaults.Supply;asset.Flying=defaults.Flying;asset.Damage=defaults.Damage;asset.AttackRange=(float)defaults.AttackRange;asset.AttackCooldown=(float)defaults.AttackCooldown;asset.HitsGround=defaults.HitsGround;asset.HitsAir=defaults.HitsAir;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.TrainSeconds=(float)defaults.TrainSeconds;
+                asset.WrapSeconds=(float)defaults.WrapSeconds;asset.Cocoon=defaults.Cocoon;asset.CocoonRegen=(float)defaults.CocoonRegen;asset.Leap=defaults.Leap;asset.Mechanical=defaults.Mechanical;
+                asset.Armor=defaults.Armor;asset.Siege=defaults.Siege;asset.MinRange=(float)defaults.MinRange;asset.Splash=(float)defaults.Splash;asset.DeploySeconds=(float)defaults.DeploySeconds;asset.Ramp=(float)defaults.Ramp;asset.RampSeconds=(float)defaults.RampSeconds;
                 EditorUtility.SetDirty(asset);
             }
             return asset;
@@ -58,7 +58,7 @@ namespace Order.Editor
             string relative=$"{faction}/Buildings/{name}";
             bool exists=AssetDatabase.LoadAssetAtPath<BuildingBalanceAsset>($"Assets/Order/Balance/{relative}.asset")!=null;
             var asset=Asset<BuildingBalanceAsset>(relative);
-            if(!exists){asset.DisplayName=defaults.Name;asset.Footprint=defaults.Width;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.Supply=defaults.Supply;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.ConstructionSeconds=defaults.BuildSeconds;asset.ModelHeight=defaults.Height;asset.Trains=(UnitKind[])defaults.Trains.Clone();asset.Coverage=defaults.Coverage;asset.Relays=defaults.Relays;asset.Researches=defaults.Researches;asset.Extracts=defaults.Extracts;EditorUtility.SetDirty(asset);}
+            if(!exists){asset.DisplayName=defaults.Name;asset.Footprint=defaults.Width;asset.Metal=defaults.Metal;asset.Plasma=defaults.Plasma;asset.Supply=defaults.Supply;asset.Health=defaults.Health;asset.Vision=defaults.Vision;asset.ConstructionSeconds=(float)defaults.BuildSeconds;asset.ModelHeight=(float)defaults.Height;asset.Trains=(UnitKind[])defaults.Trains.Clone();asset.Coverage=(float)defaults.Coverage;asset.Relays=defaults.Relays;asset.Researches=defaults.Researches;asset.Extracts=defaults.Extracts;EditorUtility.SetDirty(asset);}
             return asset;
         }
         static T Asset<T>(string relative) where T:ScriptableObject

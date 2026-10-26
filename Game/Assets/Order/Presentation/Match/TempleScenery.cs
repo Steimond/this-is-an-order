@@ -121,12 +121,12 @@ namespace Order.Presentation
             return 1 - Smooth(-2, 2, Mathf.Max(u - 20, v - 20));
         }
         // Surface of a cell at a point on it: map cells are the gameplay surface, outer cells share the continuous rim.
-        float Surface(int cx, int cz, float x, float z) => map.Inside(cx, cz) ? map.Height(cx, cz, Mathf.Clamp01(x - cx)) : Rim(x, z);
+        float Surface(int cx, int cz, float x, float z) => map.Inside(cx, cz) ? (float)map.Height(cx, cz, Mathf.Clamp01(x - cx)) : Rim(x, z);
         // Beyond the edge the terraces and the basin floor rise into jungle hills.
         float Rim(float x, float z)
         {
             float cx = Mathf.Clamp(x, 0, Size - .001f), cz = Mathf.Clamp(z, 0, Size - .001f), d = Outside(x, z);
-            float edge = map.Height((int)cx, (int)cz, cx - (int)cx);
+            float edge = (float)map.Height((int)cx, (int)cz, cx - (int)cx);
             float hills = Smooth(1, 11, d) * (1.2f + 5 * Fbm(x * .055f, z * .055f)) + Smooth(.5f, 3, d) * (Fbm(x * .23f + 9, z * .23f) - .5f) * .9f;
             return Mathf.Lerp(edge, 3 * Terrace(x, z), Smooth(0, 4, d)) + hills;
         }
@@ -421,7 +421,7 @@ namespace Order.Presentation
                 if (!map.Inside(cx, cz) || map.Ramp(cx, cz) || NearWall(x, z, .4f) || NearDeposit(x, z, 1.2f) || Path(x, z) > .3f) continue;
                 float plaza = Vector2.Distance(new Vector2(x, z), centre);
                 bool high = map.Height(cx, cz) > 2.5f;
-                var at = new Vector3(x, map.Height(cx, cz), z);
+                var at = new Vector3(x, (float)map.Height(cx, cz), z);
                 if (plaza > 7.4f && plaza < 9 && R(0, 1) < .25f) { GlowPlant(plants.At(at), at, R(.8f, 1.1f)); continue; }
                 if (plaza < 8.2f) continue;
                 float density = high ? .08f : Smooth(.35f, .62f, Fbm(x * .12f, z * .12f)) * .9f;
@@ -434,8 +434,8 @@ namespace Order.Presentation
         bool NearWall(float x, float z, float distance)
         {
             int cx = (int)x, cz = (int)z;
-            float h = map.Height(cx, cz, x - cx);
-            bool Drop(int nx, int nz) => map.Inside(nx, nz) && Mathf.Abs(map.Height(nx, nz, Mathf.Clamp01(x - nx)) - h) > .5f;
+            float h = (float)map.Height(cx, cz, x - cx);
+            bool Drop(int nx, int nz) => map.Inside(nx, nz) && Mathf.Abs((float)map.Height(nx, nz, Mathf.Clamp01(x - nx)) - h) > .5f;
             return (x - cx < distance && Drop(cx - 1, cz)) || (cx + 1 - x < distance && Drop(cx + 1, cz))
                 || (z - cz < distance && Drop(cx, cz - 1)) || (cz + 1 - z < distance && Drop(cx, cz + 1));
         }
@@ -694,7 +694,7 @@ namespace Order.Presentation
                     if (Vector2.Distance(new Vector2(x, z), centre) < 7) color = new Color(.5f, .47f, .4f);
                 }
                 int sx = i % FogTexels == 0 ? cx - 1 : cx + 1, sz = j % FogTexels == 0 ? cz - 1 : cz + 1;
-                bool Cliff(int nx, int nz) => map.Inside(nx, nz) && !map.Ramp(nx, nz) && !map.Ramp(cx, cz) && Mathf.Abs(map.Height(nx, nz) - map.Height(cx, cz)) > .5f;
+                bool Cliff(int nx, int nz) => map.Inside(nx, nz) && !map.Ramp(nx, nz) && !map.Ramp(cx, cz) && Mathf.Abs((float)map.Height(nx, nz) - (float)map.Height(cx, cz)) > .5f;
                 if (Cliff(sx, cz) || Cliff(cx, sz)) color *= .5f;
                 color.a = 1;
                 result[j * n + i] = color;

@@ -15,7 +15,7 @@ namespace Order.Simulation
     // - E deploys it on the spot and keeps it there, or packs it up and keeps it packed until the next order.
     public sealed partial class PrototypeMatch
     {
-        public const float PackAfter = 3, SplashShare = .5f;
+        public static readonly Fix PackAfter = 3, SplashShare = (Fix).5f;
         static bool Anchored(PrototypeUnit u) => u.Stats.Siege && u.SiegeMode != SiegeState.Packed;
 
         public bool ToggleDeploy(PrototypeUnit u)
@@ -44,7 +44,7 @@ namespace Order.Simulation
         }
 
         // Runs instead of the usual fight step for a howitzer.
-        void FightDeployed(PrototypeUnit u, float dt)
+        void FightDeployed(PrototypeUnit u, Fix dt)
         {
             var stats = u.Stats;
             if (u.SiegeMode == SiegeState.Deploying || u.SiegeMode == SiegeState.Packing)
@@ -85,20 +85,20 @@ namespace Order.Simulation
             if (u.SiegeMode == SiegeState.Deployed) { if ((u.siegeIdle += dt) >= PackAfter) Pack(u); return; }
             if (u.SiegeMode == SiegeState.Packed && u.route.Count == 0) { var message = Message; PlanPath(u, u.attackX, u.attackZ); Message = message; }
         }
-        bool InBand(PrototypeUnit u, float gap) => gap >= u.Stats.MinRange && gap <= u.Stats.AttackRange;
+        bool InBand(PrototypeUnit u, Fix gap) => gap >= u.Stats.MinRange && gap <= u.Stats.AttackRange;
         // What it can shell from where it stands: the ordered target, the current one, then the nearest of those that can
         // strike back, then the nearest.
         PrototypeUnit SiegeTarget(PrototypeUnit u)
         {
             if (u.Order == UnitOrder.Attack) return u.orderedBuilding == null && Valid(u, u.ordered) && InBand(u, Gap(u, u.ordered)) ? u.ordered : null;
             if (Valid(u, u.Target) && InBand(u, Gap(u, u.Target))) return u.Target;
-            PrototypeUnit best = null; float bestScore = float.MaxValue;
+            PrototypeUnit best = null; Fix bestScore = Fix.MaxValue;
             foreach (var v in Units)
             {
                 if (v.Owner == u.Owner || !Valid(u, v)) continue;
-                float gap = Gap(u, v);
+                Fix gap = Gap(u, v);
                 if (!InBand(u, gap)) continue;
-                float score = gap + (CanAttack(v, u) ? 0 : 100);
+                Fix score = gap + (CanAttack(v, u) ? 0 : 100);
                 if (score < bestScore) { bestScore = score; best = v; }
             }
             return best;
@@ -107,11 +107,11 @@ namespace Order.Simulation
         {
             if (u.Order == UnitOrder.Attack) return Valid(u, u.orderedBuilding) && InBand(u, Gap(u, u.orderedBuilding)) ? u.orderedBuilding : null;
             if (Valid(u, u.TargetBuilding) && InBand(u, Gap(u, u.TargetBuilding))) return u.TargetBuilding;
-            PrototypeBuilding best = null; float bestGap = float.MaxValue;
+            PrototypeBuilding best = null; Fix bestGap = Fix.MaxValue;
             foreach (var b in Buildings)
             {
                 if (b.Owner == u.Owner || !Valid(u, b)) continue;
-                float gap = Gap(u, b);
+                Fix gap = Gap(u, b);
                 if (InBand(u, gap) && gap < bestGap) { bestGap = gap; best = b; }
             }
             return best;
@@ -119,11 +119,11 @@ namespace Order.Simulation
         // The shell bursts on the target: every other enemy ground unit within Splash takes half the blow, less its armour.
         void Splash(PrototypeUnit attacker, PrototypeUnit target)
         {
-            float reach = attacker.Stats.Splash;
+            Fix reach = attacker.Stats.Splash;
             foreach (var v in Units)
             {
                 if (v == target || !v.Alive || v.Owner == attacker.Owner || v.Stats.Flying) continue;
-                float dx = v.X - target.X, dz = v.Z - target.Z;
+                Fix dx = v.X - target.X, dz = v.Z - target.Z;
                 if (Math.Sqrt(dx * dx + dz * dz) - v.Stats.Radius > reach) continue;
                 Wound(v, Math.Max(1, (int)(Damage(attacker) * SplashShare) - Armor(v)));
                 if (v.Alive) v.aggressor ??= attacker;

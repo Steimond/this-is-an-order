@@ -26,7 +26,7 @@ namespace Order.Tests.EditMode
             Assert.That(extractor.Stats.Extracts,Is.True);
             Assert.That(match.Move(miner,5.5f,10.5f),Is.True);Assert.That(miner.HarvestTarget,Is.Null);Assert.That(match.Message,Is.EqualTo("Экстрактор ещё строится."));
             Assert.That(match.CanBuild(5,10,kind,out reason),Is.False);Assert.That(reason,Is.EqualTo("На разломе уже стоит экстрактор"));
-            Run(match,extractor.Stats.BuildSeconds+1);Assert.That(extractor.Ready,Is.EqualTo(1));
+            Run(match,(float)extractor.Stats.BuildSeconds+1);Assert.That((float)extractor.Ready,Is.EqualTo(1));
             int plasma=match.Plasma;
             Assert.That(match.Move(miner,5.5f,10.5f),Is.True);Assert.That(miner.HarvestTarget,Is.SameAs(rift));
             Run(match,20);
@@ -66,7 +66,7 @@ namespace Order.Tests.EditMode
             var match=new PrototypeMatch();match.AddTestSquad();match.AddEnemyBase();match.StartBot();
             Run(match,150);
             var extractor=match.Buildings.Find(b=>b.Owner==Enemy&&b.Stats.Extracts);
-            Assert.That(extractor,Is.Not.Null,"The bot builds an extractor");Assert.That(extractor.Ready,Is.EqualTo(1));
+            Assert.That(extractor,Is.Not.Null,"The bot builds an extractor");Assert.That((float)extractor.Ready,Is.EqualTo(1));
             Assert.That((extractor.X,extractor.Z),Is.EqualTo((58,53)),"On the rift of its base");
             var onPlasma=match.Units.FindAll(u=>u.Owner==Enemy&&u.HarvestTarget!=null&&u.HarvestTarget.Plasma);
             Assert.That(onPlasma.Count,Is.EqualTo(2));

@@ -48,7 +48,7 @@ namespace Order.Tests.EditMode
             enemy.Health=10000;bool firedOnTheWay=false;float arrivedX=-1;
             match.Attacked+=(a,t)=>{if(a==rifleman&&rifleman.Moving)firedOnTheWay=true;};
             Assert.That(match.Move(rifleman,40f,30f),Is.True);Assert.That(rifleman.Order,Is.EqualTo(UnitOrder.Move));
-            Run(match,6,()=>{if(arrivedX<0&&rifleman.Order==UnitOrder.Idle)arrivedX=rifleman.X;});
+            Run(match,6,()=>{if(arrivedX<0&&rifleman.Order==UnitOrder.Idle)arrivedX=(float)rifleman.X;});
             Assert.That(firedOnTheWay,Is.False);
             Assert.That(arrivedX,Is.EqualTo(40).Within(.05f),"The move should end on its point and leave the unit idle");
         }
@@ -62,7 +62,7 @@ namespace Order.Tests.EditMode
             Assert.That(group[0].Order,Is.EqualTo(UnitOrder.AttackMove));
             Run(match,16);
             Assert.That(fought,Is.True);Assert.That(enemy.Alive,Is.False);
-            foreach(var u in group){Assert.That(u.Moving,Is.False);Assert.That(u.X,Is.GreaterThan(41.5f),$"#{u.Id} did not go on to the point");Assert.That(u.Order,Is.EqualTo(UnitOrder.Idle));}
+            foreach(var u in group){Assert.That(u.Moving,Is.False);Assert.That((float)u.X,Is.GreaterThan(41.5f),$"#{u.Id} did not go on to the point");Assert.That(u.Order,Is.EqualTo(UnitOrder.Idle));}
         }
         [Test] public void AttackOrderPursuesTheChosenTarget()
         {
@@ -85,8 +85,8 @@ namespace Order.Tests.EditMode
             var match=Match();var guard=match.Spawn(UnitKind.Melee,30,30);var enemy=match.Spawn(UnitKind.Ranged,30,34,Enemy);enemy.Health=10000;
             match.Hold(guard);
             var passer=match.Spawn(UnitKind.Melee,26,30);match.Move(passer,34f,30f);float passedX=-1;
-            Run(match,4,()=>{if(passedX<0&&passer.Order==UnitOrder.Idle)passedX=passer.X;});
-            Assert.That(guard.X,Is.EqualTo(30));Assert.That(guard.Z,Is.EqualTo(30));Assert.That(guard.Order,Is.EqualTo(UnitOrder.Hold));
+            Run(match,4,()=>{if(passedX<0&&passer.Order==UnitOrder.Idle)passedX=(float)passer.X;});
+            Assert.That((float)guard.X,Is.EqualTo(30));Assert.That((float)guard.Z,Is.EqualTo(30));Assert.That(guard.Order,Is.EqualTo(UnitOrder.Hold));
             Assert.That(guard.Health,Is.LessThan(guard.Stats.Health),"The enemy rifleman should be shooting the guard");
             // The ally walks round the guard to its point; then, idle beside a fight, it joins in.
             Assert.That(passedX,Is.EqualTo(34).Within(.05f));
@@ -97,7 +97,7 @@ namespace Order.Tests.EditMode
             var worker=match.Units[0];worker.X=26;worker.Z=30;
             match.Move(worker,34,30);
             Run(match,3);
-            Assert.That(enemy.X,Is.EqualTo(30).Within(.01f));Assert.That(enemy.Z,Is.EqualTo(30).Within(.01f));
+            Assert.That((float)enemy.X,Is.EqualTo(30).Within(.01f));Assert.That((float)enemy.Z,Is.EqualTo(30).Within(.01f));
         }
         [Test] public void HighGroundIsInvisibleFromBelow()
         {
@@ -116,11 +116,11 @@ namespace Order.Tests.EditMode
             var match=Match();match.AddTestSquad();match.AddEnemySquad();
             var enemies=match.Units.FindAll(u=>u.Owner==Enemy);
             Assert.That(enemies.Count,Is.EqualTo(6));
-            var start=new List<(float,float)>();foreach(var e in enemies)start.Add((e.X,e.Z));
+            var start=new List<(float,float)>();foreach(var e in enemies)start.Add(((float)e.X,(float)e.Z));
             int supply=0;foreach(var u in match.Units)if(u.Owner==PrototypeMatch.Player)supply+=u.Stats.Supply;
             Assert.That(match.SupplyUsed,Is.EqualTo(supply));
             Run(match,3);
-            for(int i=0;i<enemies.Count;i++){Assert.That(enemies[i].X,Is.EqualTo(start[i].Item1).Within(.3f));Assert.That(enemies[i].Z,Is.EqualTo(start[i].Item2).Within(.3f));}
+            for(int i=0;i<enemies.Count;i++){Assert.That((float)enemies[i].X,Is.EqualTo(start[i].Item1).Within(.3f));Assert.That((float)enemies[i].Z,Is.EqualTo(start[i].Item2).Within(.3f));}
             foreach(var e in enemies)Assert.That(match.SeenBy(PrototypeMatch.Player,e),Is.False,"The enemy squad starts in the fog");
         }
     }

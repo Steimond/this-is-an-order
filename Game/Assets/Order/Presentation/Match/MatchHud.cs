@@ -491,7 +491,7 @@ namespace Order.Presentation
                     shields.style.display = DisplayStyle.Flex; shields.Q<Label>(className: "hud-bar__caption").text = "КОКОН";
                     shields.Set(unit.Cocoon, stats.Cocoon);
                 }
-                var place = MapGrid.Name(unit.X, unit.Z, TempleMap.Size);
+                var place = MapGrid.Name((float)unit.X, (float)unit.Z, TempleMap.Size);
                 var targets = stats.HitsGround && stats.HitsAir ? "наземные и воздушные" : stats.HitsAir ? "только воздушные" : "только наземные";
                 var role = stats.Damage <= 0 ? nanites ? $"Обвивает залежь: {stats.HarvestAmount} каждые {stats.HarvestInterval:0.#} с, кокон {stats.Cocoon}" : $"Груз {stats.HarvestAmount} за рейс, {stats.HarvestInterval:0.#} с у залежи"
                     : $"Урон {match.Damage(unit)}  ·  {(stats.AttackRange < 1 ? "Ближний бой" : stats.MinRange > 0 ? $"Дальность {stats.MinRange:0.#}–{stats.AttackRange:0.#}" : $"Дальность {stats.AttackRange:0.#}")}{(stats.Splash > 0 ? $"  ·  По площади {stats.Splash:0.#}" : "")}{(stats.Ramp > 1 ? $"  ·  Луч: до ×{stats.Ramp:0.#} за {stats.RampSeconds:0.#} с на одной цели" + (match.Focus(unit) > 0 ? $", сейчас ×{1 + (stats.Ramp - 1) * match.Focus(unit):0.0}" : "") : "")}  ·  Перезарядка {stats.AttackCooldown:0.##} с  ·  Цели: {targets}";
@@ -512,7 +512,7 @@ namespace Order.Presentation
                 // A machine building outside the network stops: no rising, training or supply.
                 var rising = building.Powered && (building.SelfBuilt || (builder != null && PrototypeMatch.Gap(builder, building) <= PrototypeMatch.BuildReach));
                 var own = building.Owner == PrototypeMatch.Player;
-                selectionStatus.text = (own ? "" : "ПРОТИВНИК · ") + (!building.Powered ? "НЕТ СИГНАЛА СЕТИ" : !building.Linked ? $"СИГНАЛ ПОТЕРЯН · ГАСНЕТ ЧЕРЕЗ {Mathf.CeilToInt(PrototypeMatch.NetworkGrace - building.DarkFor)} С" : !ready ? rising ? "СТРОИТЕЛЬСТВО" : builder != null ? "РАБОЧИЙ ИДЁТ К СТРОЙКЕ" : "СТРОЙКА ОСТАНОВЛЕНА"
+                selectionStatus.text = (own ? "" : "ПРОТИВНИК · ") + (!building.Powered ? "НЕТ СИГНАЛА СЕТИ" : !building.Linked ? $"СИГНАЛ ПОТЕРЯН · ГАСНЕТ ЧЕРЕЗ {Mathf.CeilToInt((float)PrototypeMatch.NetworkGrace - (float)building.DarkFor)} С" : !ready ? rising ? "СТРОИТЕЛЬСТВО" : builder != null ? "РАБОЧИЙ ИДЁТ К СТРОЙКЕ" : "СТРОЙКА ОСТАНОВЛЕНА"
                     : building.Researching.HasValue ? "ИССЛЕДОВАНИЕ · " + PrototypeMatch.UpgradeName(building.Researching.Value).ToUpperInvariant() + " " + (match.Level(building.Owner, building.Researching.Value) + 1)
                     : training != null ? building.SupplyBlocked ? "ЖДЁТ СНАБЖЕНИЯ" : "ОБУЧЕНИЕ · " + training.Name.ToUpperInvariant()
                     : building.Mending ? "ВОССТАНАВЛИВАЕТСЯ В СЕТИ"
@@ -523,19 +523,19 @@ namespace Order.Presentation
                 if (!ready)
                 {
                     progress.style.display = DisplayStyle.Flex; progressCaption.text = "СТРОИТЕЛЬСТВО";
-                    progress.Set(building.Ready, 1, $"{building.Ready * 100:0}%  ·  " + (rising ? $"{(1 - building.Ready) * stats.BuildSeconds:0.0} с"
+                    progress.Set((float)building.Ready, 1, $"{(float)building.Ready * 100:0}%  ·  " + (rising ? $"{(1 - (float)building.Ready) * (float)stats.BuildSeconds:0.0} с"
                         : !building.Powered ? "вне покрытия сети" : own ? "нужен рабочий: ПКМ рабочим по зданию" : "стоит"));
                 }
                 else if (building.Researching.HasValue)
                 {
-                    float seconds = PrototypeMatch.UpgradeCost(match.Level(building.Owner, building.Researching.Value) + 1).seconds;
+                    float seconds = (float)PrototypeMatch.UpgradeCost(match.Level(building.Owner, building.Researching.Value) + 1).seconds;
                     progress.style.display = DisplayStyle.Flex; progressCaption.text = "ИССЛЕДОВАНИЕ";
-                    progress.Set(building.ResearchTime, seconds, $"{building.ResearchTime / seconds * 100:0}%  ·  {seconds - building.ResearchTime:0.0} с");
+                    progress.Set((float)building.ResearchTime, seconds, $"{(float)building.ResearchTime / seconds * 100:0}%  ·  {seconds - (float)building.ResearchTime:0.0} с");
                 }
                 else if (training != null)
                 {
                     progress.style.display = DisplayStyle.Flex; progressCaption.text = "ОБУЧЕНИЕ";
-                    progress.Set(building.Training, training.TrainSeconds, building.SupplyBlocked ? "нужно снабжение"
+                    progress.Set((float)building.Training, (float)training.TrainSeconds, building.SupplyBlocked ? "нужно снабжение"
                         : $"{building.Training / training.TrainSeconds * 100:0}%  ·  {training.TrainSeconds - building.Training:0.0} с");
                 }
                 if (building.Owner == PrototypeMatch.Player && stats.Trains.Length > 0) { queue = building; RefreshQueue(building); }
@@ -843,7 +843,7 @@ namespace Order.Presentation
                     var key = building == 0 ? Key.S : building == 1 ? Key.F : main ? Key.C : lab ? Key.U : stats.Extracts ? Key.E : Key.R;
                     var network = (roster.Network ? " Только в покрытии сети." : "") + (roster.ConsumesWorker ? $" {roster.Worker.Name} распадается на наниты и становится зданием." : "");
                     actions[slot] = new HudAction { Title = stats.Name, Hotkey = key.ToString(), Key = key,
-                        Icon = BuildingIcon(building, stats), Metal = stats.Metal, Plasma = stats.Plasma, Seconds = stats.BuildSeconds,
+                        Icon = BuildingIcon(building, stats), Metal = stats.Metal, Plasma = stats.Plasma, Seconds = (float)stats.BuildSeconds,
                         Active = host.Mode == MatchMode.Build && host.BuildKind == building,
                         Description = relay ? $"Продлевает покрытие сети на {stats.Coverage:0} клеток, ставится в покрытии. Мощности не даёт. До {roster.Buildings[FactionBalance.Main].Relays} на ядро, осталось {match.RelaysLeft(PrototypeMatch.Player)}."
                             : stats.Extracts ? "Ставится на разлом плазмы: без него рабочие плазму не добывают. Разлом под экстрактором добывает только его сторона."
@@ -869,7 +869,7 @@ namespace Order.Presentation
                         if (unitStats == null) continue;
                         var key = TrainKey(kind);
                         actions[i < 4 ? i : i + 1] = new HudAction { Title = unitStats.Name, Hotkey = key.ToString(), Key = key, Icon = UnitIcon(kind, match.FactionOf(building.Owner)),
-                            Metal = unitStats.Metal, Plasma = unitStats.Plasma, Seconds = unitStats.TrainSeconds,
+                            Metal = unitStats.Metal, Plasma = unitStats.Plasma, Seconds = (float)unitStats.TrainSeconds,
                             Description = $"Снабжение {unitStats.Supply}. Очередь до {PrototypeMatch.QueueSize}; клик по юниту в очереди — отмена с возвратом стоимости.",
                             Locked = building.Ready < 1 ? "Здание ещё строится." : !building.Powered ? "Нет сигнала сети: здание вне покрытия." : null, Run = () => host.Train(kind) };
                     }
@@ -885,7 +885,7 @@ namespace Order.Presentation
                             var (metal, plasma, seconds) = PrototypeMatch.UpgradeCost(Mathf.Min(next, PrototypeMatch.MaxUpgrade));
                             var blocked = match.ResearchBlocked(building, upgrade);
                             actions[slot] = new HudAction { Title = $"{PrototypeMatch.UpgradeName(upgrade)} {Mathf.Min(next, PrototypeMatch.MaxUpgrade)}", Hotkey = slot == 0 ? "W" : "A", Key = slot == 0 ? Key.W : Key.A,
-                                Icon = slot == 0 ? HudIconKind.Target : HudIconKind.Armor, Metal = next > PrototypeMatch.MaxUpgrade ? 0 : metal, Plasma = next > PrototypeMatch.MaxUpgrade ? 0 : plasma, Seconds = next > PrototypeMatch.MaxUpgrade ? 0 : seconds,
+                                Icon = slot == 0 ? HudIconKind.Target : HudIconKind.Armor, Metal = next > PrototypeMatch.MaxUpgrade ? 0 : metal, Plasma = next > PrototypeMatch.MaxUpgrade ? 0 : plasma, Seconds = next > PrototypeMatch.MaxUpgrade ? 0 : (float)seconds,
                                 Active = building.Researching == upgrade,
                                 Description = slot == 0 ? "Каждый удар всех юнитов стороны сильнее на десятую часть базового урона (не меньше 1). Три уровня."
                                     : "Каждый удар по юнитам стороны слабее на 1 (но не меньше 1). Три уровня.",
@@ -1224,13 +1224,13 @@ namespace Order.Presentation
                 if (workers.Count == 0) { ok = false; reply = "Нет рабочих."; return true; }
                 if (!match.Roster(PrototypeMatch.Player).Repairs) { ok = false; reply = "Машины чинятся сами в покрытии сети."; return true; }
                 var from = workers[0];
-                float Away(float px, float pz) => (px - from.X) * (px - from.X) + (pz - from.Z) * (pz - from.Z);
+                float Away(float px, float pz) => (px - (float)from.X) * (px - (float)from.X) + (pz - (float)from.Z) * (pz - (float)from.Z);
                 var building = match.Buildings.Where(b => b.Owner == PrototypeMatch.Player && b.Ready >= 1 && b.Health < b.Stats.Health)
                     .OrderBy(b => Away(b.X + b.Width * .5f, b.Z + b.Width * .5f)).FirstOrDefault();
                 var machine = match.Units.Where(u => u.Owner == PrototypeMatch.Player && u.Stats.Mechanical && u.Health < u.Stats.Health && !workers.Contains(u))
-                    .OrderBy(u => Away(u.X, u.Z)).FirstOrDefault();
+                    .OrderBy(u => Away((float)u.X, (float)u.Z)).FirstOrDefault();
                 if (building == null && machine == null) { ok = false; reply = "Чинить нечего: всё своё цело."; return true; }
-                bool toBuilding = building != null && (machine == null || Away(building.X + building.Width * .5f, building.Z + building.Width * .5f) <= Away(machine.X, machine.Z));
+                bool toBuilding = building != null && (machine == null || Away(building.X + building.Width * .5f, building.Z + building.Width * .5f) <= Away((float)machine.X, (float)machine.Z));
                 ok = host.RepairSelection(toBuilding ? building : null, toBuilding ? null : machine);
                 reply = match.Message;
                 return true;

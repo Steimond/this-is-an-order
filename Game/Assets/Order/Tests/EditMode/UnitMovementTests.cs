@@ -8,15 +8,15 @@ namespace Order.Tests.EditMode
     public sealed class UnitMovementTests
     {
         static void Run(PrototypeMatch match,float seconds,System.Action check=null){for(float t=0;t<seconds;t+=.05f){match.Tick(.05f);check?.Invoke();}}
-        static float Distance(PrototypeUnit a,PrototypeUnit b)=>(float)System.Math.Sqrt((a.X-b.X)*(a.X-b.X)+(a.Z-b.Z)*(a.Z-b.Z));
+        static float Distance(PrototypeUnit a,PrototypeUnit b)=>(float)System.Math.Sqrt(((float)a.X-(float)b.X)*((float)a.X-(float)b.X)+((float)a.Z-(float)b.Z)*((float)a.Z-(float)b.Z));
         static void AssertApart(IList<PrototypeUnit> units)
         {
             for(int i=0;i<units.Count;i++)for(int j=i+1;j<units.Count;j++)
                 if(units[i].Stats.Flying==units[j].Stats.Flying)
-                    Assert.That(Distance(units[i],units[j]),Is.GreaterThanOrEqualTo(units[i].Stats.Radius+units[j].Stats.Radius-.03f),$"{units[i].Id} overlaps {units[j].Id}");
+                    Assert.That(Distance(units[i],units[j]),Is.GreaterThanOrEqualTo((float)units[i].Stats.Radius+(float)units[j].Stats.Radius-.03f),$"{units[i].Id} overlaps {units[j].Id}");
         }
         static void AssertOnFreeGround(PrototypeMatch match,PrototypeUnit unit)=>
-            Assert.That(match.CanTravel(unit.X,unit.Z,unit.X,unit.Z,unit.Stats.Radius),Is.True,$"{unit.Stats.Name} #{unit.Id} at {unit.X:0.00},{unit.Z:0.00} is inside an obstacle");
+            Assert.That(match.CanTravel((float)unit.X,(float)unit.Z,(float)unit.X,(float)unit.Z,(float)unit.Stats.Radius),Is.True,$"{unit.Stats.Name} #{unit.Id} at {(float)unit.X:0.00},{(float)unit.Z:0.00} is inside an obstacle");
 
         [Test] public void ScatteredGroupGathersAroundThePointWithoutOverlap()
         {
@@ -28,20 +28,20 @@ namespace Order.Tests.EditMode
             foreach(var u in group)
             {
                 Assert.That(u.Moving,Is.False);AssertOnFreeGround(match,u);
-                Assert.That((u.X-32)*(u.X-32)+(u.Z-24)*(u.Z-24),Is.LessThan(2.2f*2.2f),$"#{u.Id} stopped too far from the point");
+                Assert.That(((float)u.X-32)*((float)u.X-32)+((float)u.Z-24)*((float)u.Z-24),Is.LessThan(2.2f*2.2f),$"#{u.Id} stopped too far from the point");
             }
         }
         [Test] public void CompactGroupSentAwayKeepsItsFormation()
         {
             var match=new PrototypeMatch();var group=new List<PrototypeUnit>();
             for(int i=0;i<3;i++)for(int j=0;j<2;j++)group.Add(match.Spawn(UnitKind.Ranged,30+i*1.1f,26+j*1.1f));
-            var offsets=new List<(float,float)>();foreach(var u in group)offsets.Add((u.X-31.1f,u.Z-26.55f));
+            var offsets=new List<(float,float)>();foreach(var u in group)offsets.Add(((float)u.X-31.1f,(float)u.Z-26.55f));
             Assert.That(match.MoveGroup(group,40,36),Is.True);
             Run(match,8);
             AssertApart(group);
             for(int i=0;i<group.Count;i++)
             {
-                Assert.That(group[i].X,Is.EqualTo(40+offsets[i].Item1).Within(.05f));Assert.That(group[i].Z,Is.EqualTo(36+offsets[i].Item2).Within(.05f));
+                Assert.That((float)group[i].X,Is.EqualTo(40+offsets[i].Item1).Within(.05f));Assert.That((float)group[i].Z,Is.EqualTo(36+offsets[i].Item2).Within(.05f));
             }
         }
         [Test] public void MovingUnitShovesAnIdleAllyAsideAndArrivesExactly()
@@ -50,8 +50,8 @@ namespace Order.Tests.EditMode
             var idle=match.Spawn(UnitKind.Melee,26,30);var mover=match.Spawn(UnitKind.Ranged,21,30);
             Assert.That(match.Move(mover,31f,30f),Is.True);
             Run(match,4,()=>{AssertOnFreeGround(match,idle);AssertOnFreeGround(match,mover);});
-            Assert.That(mover.X,Is.EqualTo(31).Within(.01f));Assert.That(mover.Z,Is.EqualTo(30).Within(.01f));
-            Assert.That(System.Math.Abs(idle.Z-30),Is.GreaterThan(.3f),"The idle unit should have stepped aside");
+            Assert.That((float)mover.X,Is.EqualTo(31).Within(.01f));Assert.That((float)mover.Z,Is.EqualTo(30).Within(.01f));
+            Assert.That(System.Math.Abs((float)idle.Z-30),Is.GreaterThan(.3f),"The idle unit should have stepped aside");
             Assert.That(idle.Moving,Is.False);
         }
         [Test] public void UnreachablePointLeadsAsCloseAsPossible()
@@ -60,7 +60,7 @@ namespace Order.Tests.EditMode
             Assert.That(match.Move(worker,11.5f,11.5f),Is.True);Assert.That(match.Message,Does.Contain("ближе"));
             Run(match,5);
             Assert.That(worker.Moving,Is.False);AssertOnFreeGround(match,worker);
-            Assert.That((worker.X-11.5f)*(worker.X-11.5f)+(worker.Z-11.5f)*(worker.Z-11.5f),Is.LessThan(2.1f*2.1f));
+            Assert.That(((float)worker.X-11.5f)*((float)worker.X-11.5f)+((float)worker.Z-11.5f)*((float)worker.Z-11.5f),Is.LessThan(2.1f*2.1f));
         }
         [Test] public void SquadCrossesTheRampWithoutEnteringWallsOrEachOther()
         {
@@ -69,7 +69,7 @@ namespace Order.Tests.EditMode
             Assert.That(match.MoveGroup(squad,30.5f,17.5f),Is.True);
             Run(match,20,()=>{foreach(var u in squad)if(!u.Stats.Flying)AssertOnFreeGround(match,u);});
             AssertApart(match.Units);
-            foreach(var u in squad){Assert.That(u.Moving,Is.False,$"#{u.Id} still moving");Assert.That(match.HeightAt(u.X,u.Z),Is.EqualTo(0),$"#{u.Id} did not come down");}
+            foreach(var u in squad){Assert.That(u.Moving,Is.False,$"#{u.Id} still moving");Assert.That((float)match.HeightAt((float)u.X,(float)u.Z),Is.EqualTo(0),$"#{u.Id} did not come down");}
         }
         [Test] public void CrowdFlowsThroughTheRampWithoutSpinning()
         {
@@ -84,7 +84,7 @@ namespace Order.Tests.EditMode
                 for(float t=0;t<15;t+=.05f)
                 {
                     var before=new List<(float x,float z,float hx,float hz)>();
-                    foreach(var u in crowd){float hx=0,hz=0;foreach(var p in u.Route){hx=p.X-u.X;hz=p.Z-u.Z;break;}before.Add((u.X,u.Z,hx,hz));}
+                    foreach(var u in crowd){float hx=0,hz=0;foreach(var p in u.Route){hx=(float)p.X-(float)u.X;hz=(float)p.Z-(float)u.Z;break;}before.Add(((float)u.X,(float)u.Z,hx,hz));}
                     match.Tick(.05f);
                     for(int i=0;i<crowd.Count;i++)
                     {
@@ -98,7 +98,7 @@ namespace Order.Tests.EditMode
                 for(int i=0;i<crowd.Count;i++)
                 {
                     Assert.That(crowd[i].Moving,Is.False,$"#{crowd[i].Id} still moving");
-                    Assert.That(System.Math.Abs(crowd[i].X-goals[i].X)+System.Math.Abs(crowd[i].Z-goals[i].Z),Is.LessThan(1),$"#{crowd[i].Id} stopped away from its place");
+                    Assert.That(System.Math.Abs((float)crowd[i].X-(float)goals[i].X)+System.Math.Abs((float)crowd[i].Z-(float)goals[i].Z),Is.LessThan(1),$"#{crowd[i].Id} stopped away from its place");
                 }
                 Assert.That(backwards,Is.LessThan(steps*.05f),"Too much jostling backwards");
             }
@@ -112,13 +112,13 @@ namespace Order.Tests.EditMode
             int maxOnRamp=0,moving=0,slowed=0;float done=-1;
             for(float t=0;t<15&&done<0;t+=.05f)
             {
-                var before=new List<(float,float)>();foreach(var u in crowd)before.Add((u.X,u.Z));
+                var before=new List<(float,float)>();foreach(var u in crowd)before.Add(((float)u.X,(float)u.Z));
                 match.Tick(.05f);int onRamp=0;
                 for(int i=0;i<crowd.Count;i++)
                 {
                     var u=crowd[i];if(match.Map.Ramp((int)u.X,(int)u.Z))onRamp++;
                     if(!u.Moving)continue;moving++;
-                    float dx=u.X-before[i].Item1,dz=u.Z-before[i].Item2;if(dx*dx+dz*dz<(u.Stats.Speed*.05f*.35f)*(u.Stats.Speed*.05f*.35f))slowed++;
+                    float dx=(float)u.X-before[i].Item1,dz=(float)u.Z-before[i].Item2;if(dx*dx+dz*dz<((float)u.Stats.Speed*.05f*.35f)*((float)u.Stats.Speed*.05f*.35f))slowed++;
                 }
                 maxOnRamp=System.Math.Max(maxOnRamp,onRamp);
                 if(!crowd.Exists(u=>u.Moving))done=t;
@@ -132,10 +132,10 @@ namespace Order.Tests.EditMode
         {
             var match=new PrototypeMatch();var unit=match.Spawn(UnitKind.Ranged,25.5f,13.6f);
             // Next to the bottom of the ramp the drop is under one step, yet the side is a wall: the way leads round the end.
-            Assert.That(match.CanTravel(25.5f,13.6f,25.5f,12.5f,unit.Stats.Radius),Is.False);
+            Assert.That(match.CanTravel(25.5f,13.6f,25.5f,12.5f,(float)unit.Stats.Radius),Is.False);
             Assert.That(match.Move(unit,25.5f,12.5f),Is.True);Assert.That(unit.WaypointCount,Is.GreaterThan(1));
             Run(match,3,()=>AssertOnFreeGround(match,unit));
-            Assert.That(unit.X,Is.EqualTo(25.5f).Within(.01f));Assert.That(unit.Z,Is.EqualTo(12.5f).Within(.01f));
+            Assert.That((float)unit.X,Is.EqualTo(25.5f).Within(.01f));Assert.That((float)unit.Z,Is.EqualTo(12.5f).Within(.01f));
         }
         [Test] public void IdleUnitsPiledOnOneSpotSpreadAndAirOnlyAvoidsAir()
         {
@@ -147,7 +147,7 @@ namespace Order.Tests.EditMode
             foreach(var u in pile)AssertOnFreeGround(match,u);
             var lone=match.Spawn(UnitKind.Melee,40.5f,40.5f);match.Spawn(UnitKind.Air,40.5f,40.5f);
             Run(match,1);
-            Assert.That(lone.X,Is.EqualTo(40.5f));Assert.That(lone.Z,Is.EqualTo(40.5f));
+            Assert.That((float)lone.X,Is.EqualTo(40.5f));Assert.That((float)lone.Z,Is.EqualTo(40.5f));
         }
     }
 }

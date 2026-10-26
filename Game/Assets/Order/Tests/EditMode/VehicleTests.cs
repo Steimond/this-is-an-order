@@ -23,7 +23,7 @@ namespace Order.Tests.EditMode
             var factory=Sites.Place(match,15,14,1,finish:true);int metal=match.Metal,plasma=match.Plasma;
             Assert.That(match.Train(factory,UnitKind.Tank),Is.True,match.Message);
             Assert.That(match.Metal,Is.EqualTo(metal-roster.Unit(UnitKind.Tank).Metal));Assert.That(match.Plasma,Is.EqualTo(plasma-roster.Unit(UnitKind.Tank).Plasma));
-            match.ToggleFastBuild();Run(match,roster.Unit(UnitKind.Tank).TrainSeconds/PrototypeMatch.FastFactor+.5f);
+            match.ToggleFastBuild();Run(match,(float)roster.Unit(UnitKind.Tank).TrainSeconds/(float)PrototypeMatch.FastFactor+.5f);
             var tank=match.Units.Find(u=>u.Kind==UnitKind.Tank);
             Assert.That(tank,Is.Not.Null);Assert.That(tank.Stats.Mechanical,Is.True,"Workers repair vehicles");
         }
@@ -44,7 +44,7 @@ namespace Order.Tests.EditMode
             match.Hold(target);match.Hold(near);match.Hold(far);
             Run(match,.2f);
             Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Deploying),"It deploys by itself when a target comes within reach");
-            Run(match,stats.DeploySeconds-.5f);
+            Run(match,(float)stats.DeploySeconds-.5f);
             Assert.That(target.Health+near.Health+far.Health,Is.EqualTo(3*target.Stats.Health),"No shot before it is deployed");
             Run(match,1);
             Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Deployed));
@@ -62,26 +62,26 @@ namespace Order.Tests.EditMode
             Run(match,4);
             Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Packed),"Nothing in its band: it stays packed");
             Assert.That(close.Health,Is.EqualTo(close.Stats.Health),"Inside the dead zone it is safe");
-            Assert.That(match.ToggleDeploy(howitzer),Is.True);Run(match,howitzer.Stats.DeploySeconds+.1f);
+            Assert.That(match.ToggleDeploy(howitzer),Is.True);Run(match,(float)howitzer.Stats.DeploySeconds+.1f);
             Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Deployed));
-            float x=howitzer.X,z=howitzer.Z;
+            float x=(float)howitzer.X,z=(float)howitzer.Z;
             var ally=match.Spawn(UnitKind.Ranged,18,30);Assert.That(match.Move(ally,23,30),Is.True);Run(match,2);
-            Assert.That(howitzer.X,Is.EqualTo(x).Within(1e-4f));Assert.That(howitzer.Z,Is.EqualTo(z).Within(1e-4f),"A deployed howitzer is not pushed aside");
+            Assert.That((float)howitzer.X,Is.EqualTo(x).Within(1e-4f));Assert.That((float)howitzer.Z,Is.EqualTo(z).Within(1e-4f),"A deployed howitzer is not pushed aside");
         }
         [Test] public void AMoveOrderPacksItFirstAndHandPackingHoldsFire()
         {
             var match=Field();var howitzer=match.Spawn(UnitKind.Artillery,20,30);var stats=howitzer.Stats;
-            Assert.That(match.ToggleDeploy(howitzer),Is.True);Run(match,stats.DeploySeconds+.1f);
+            Assert.That(match.ToggleDeploy(howitzer),Is.True);Run(match,(float)stats.DeploySeconds+.1f);
             Assert.That(match.Move(howitzer,20,40),Is.True);
-            Run(match,stats.DeploySeconds-.5f);
-            Assert.That(howitzer.Z,Is.EqualTo(30).Within(1e-4f),"It does not move while it packs up");Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Packing));
+            Run(match,(float)stats.DeploySeconds-.5f);
+            Assert.That((float)howitzer.Z,Is.EqualTo(30).Within(1e-4f),"It does not move while it packs up");Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Packing));
             Run(match,3);
-            Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Packed));Assert.That(howitzer.Z,Is.GreaterThan(31),"Then it drives off");
+            Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Packed));Assert.That((float)howitzer.Z,Is.GreaterThan(31),"Then it drives off");
             Run(match,5);
             var enemy=match.Spawn(UnitKind.Ranged,howitzer.X+8,howitzer.Z,Enemy);match.Hold(enemy);
             Assert.That(match.ToggleDeploy(howitzer),Is.True);Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Deploying),"E deploys it on the spot");
             Assert.That(match.ToggleDeploy(howitzer),Is.True);Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Packing),"E again packs it up");
-            Run(match,stats.DeploySeconds+1);
+            Run(match,(float)stats.DeploySeconds+1);
             Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Packed),"Packed by hand it stays packed with a target in reach");
             Assert.That(enemy.Health,Is.EqualTo(enemy.Stats.Health));
         }
@@ -92,9 +92,9 @@ namespace Order.Tests.EditMode
             Assert.That(match.AttackMove(howitzer,40,40),Is.True);
             for(int i=0;i<600&&enemy.Alive;i++)match.Tick(.05f);
             Assert.That(enemy.Alive,Is.False,"It shells the enemy on the way");
-            Run(match,PrototypeMatch.PackAfter+howitzer.Stats.DeploySeconds+12);
+            Run(match,(float)PrototypeMatch.PackAfter+(float)howitzer.Stats.DeploySeconds+12);
             Assert.That(howitzer.SiegeMode,Is.EqualTo(SiegeState.Packed));
-            Assert.That(howitzer.X,Is.GreaterThan(37));Assert.That(howitzer.Z,Is.GreaterThan(37),"It goes on to its point");
+            Assert.That((float)howitzer.X,Is.GreaterThan(37));Assert.That((float)howitzer.Z,Is.GreaterThan(37),"It goes on to its point");
         }
         [Test] public void InterceptorHitsOnlyAir()
         {

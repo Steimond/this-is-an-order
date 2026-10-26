@@ -16,8 +16,8 @@ namespace Order.Simulation
         readonly List<PrototypeBuilding> nodes = new List<PrototypeBuilding>();
         readonly Queue<PrototypeBuilding> reach = new Queue<PrototypeBuilding>();
 
-        public const float NetworkGrace = 5;
-        void UpdateNetwork(float dt)
+        public static readonly Fix NetworkGrace = 5;
+        void UpdateNetwork(Fix dt)
         {
             for (int side = 0; side < 2; side++)
             {
@@ -48,7 +48,7 @@ namespace Order.Simulation
                 }
                 foreach (var b in Buildings)
                     if (b.Owner == side && b.Kind != FactionBalance.Main && (b.Kind != FactionBalance.Relay || b.Ready < 1))
-                        b.Linked = Covered(side, b.X + b.Width * .5f, b.Z + b.Width * .5f);
+                        b.Linked = Covered(side, b.X + b.Width * (Fix).5f, b.Z + b.Width * (Fix).5f);
                 // Cut off, a building keeps working a few seconds before it goes dark.
                 foreach (var b in Buildings)
                 {
@@ -60,12 +60,12 @@ namespace Order.Simulation
         }
         // Whether a point lies in the coverage of a node of the side that the network reaches right now. A node cut off
         // covers nothing even while it still works on its grace.
-        public bool Covered(int side, float x, float z)
+        public bool Covered(int side, Fix x, Fix z)
         {
             foreach (var b in Buildings)
             {
                 if (b.Owner != side || b.Stats.Coverage <= 0 || b.Ready < 1 || !b.Linked) continue;
-                float dx = b.X + b.Width * .5f - x, dz = b.Z + b.Width * .5f - z;
+                Fix dx = b.X + b.Width * (Fix).5f - x, dz = b.Z + b.Width * (Fix).5f - z;
                 if (dx * dx + dz * dz <= b.Stats.Coverage * b.Stats.Coverage) return true;
             }
             return false;
@@ -78,10 +78,10 @@ namespace Order.Simulation
             foreach (var u in Units) if (u.Owner == side && u.SiteKind == FactionBalance.Relay) used++;
             return allowed - used;
         }
-        static float Distance(PrototypeBuilding a, PrototypeBuilding b)
+        static Fix Distance(PrototypeBuilding a, PrototypeBuilding b)
         {
-            float dx = a.X + a.Width * .5f - b.X - b.Width * .5f, dz = a.Z + a.Width * .5f - b.Z - b.Width * .5f;
-            return (float)Math.Sqrt(dx * dx + dz * dz);
+            Fix dx = a.X + a.Width * (Fix).5f - b.X - b.Width * (Fix).5f, dz = a.Z + a.Width * (Fix).5f - b.Z - b.Width * (Fix).5f;
+            return Math.Sqrt(dx * dx + dz * dz);
         }
     }
 }

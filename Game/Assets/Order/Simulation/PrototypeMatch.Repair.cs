@@ -14,8 +14,8 @@ namespace Order.Simulation
     // after DisassemblySeconds it is gone and the side gets back half its price, less the share of health it had lost.
     public sealed partial class PrototypeMatch
     {
-        public const float RepairShare = .25f, MinRepairSeconds = 20, RepairReach = .6f;
-        public const float MendCalm = 5, MendUnits = .02f, MendBuildings = .005f, DisassemblySeconds = 2, DisassemblyRefund = .5f;
+        public static readonly Fix RepairShare = (Fix).25f, MinRepairSeconds = 20, RepairReach = (Fix).6f;
+        public static readonly Fix MendCalm = 5, MendUnits = (Fix).02f, MendBuildings = (Fix).005f, DisassemblySeconds = 2, DisassemblyRefund = (Fix).5f;
 
         // Why the worker cannot repair this target now, or null.
         public string RepairBlocked(PrototypeUnit worker, PrototypeBuilding building) =>
@@ -30,7 +30,7 @@ namespace Order.Simulation
             if (reason != null) { if (worker == null || worker.Owner == Player) Message = reason; return false; }
             StartRepair(worker);
             worker.Repairing = building;
-            if (!SiteSpot(worker, building.X, building.Z, building.Width, out float sx, out float sz)) { worker.Repairing = null; if (worker.Owner == Player) Message = "К зданию не подойти."; return false; }
+            if (!SiteSpot(worker, building.X, building.Z, building.Width, out Fix sx, out Fix sz)) { worker.Repairing = null; if (worker.Owner == Player) Message = "К зданию не подойти."; return false; }
             Walk(worker, sx, sz);
             if (worker.Owner == Player) Message = $"{worker.Stats.Name}: ремонт — {building.Stats.Name}.";
             return true;
@@ -59,32 +59,32 @@ namespace Order.Simulation
 
         // Autocast, as SCVs have it: an idle worker with automatic repair on mends the nearest damaged building or machinery
         // of its side within AutoRepairReach, without a word in the event line.
-        public const float AutoRepairReach = 6;
-        float autoRepairTimer;
+        public static readonly Fix AutoRepairReach = 6;
+        Fix autoRepairTimer;
         public bool SetAutoRepair(PrototypeUnit worker, bool on)
         {
             if (worker == null || worker.Kind != UnitKind.Worker || !Roster(worker.Owner).Repairs) return false;
             worker.AutoRepair = on;
             return true;
         }
-        void TickAutoRepair(float dt)
+        void TickAutoRepair(Fix dt)
         {
-            if ((autoRepairTimer += dt) < .5f) return;
+            if ((autoRepairTimer += dt) < (Fix).5f) return;
             autoRepairTimer = 0;
             foreach (var u in Units)
             {
                 if (!u.AutoRepair || !u.Alive || u.Order != UnitOrder.Idle || u.Moving || u.HarvestTarget != null || Busy(u) || u.queued.Count > 0) continue;
-                PrototypeBuilding building = null; PrototypeUnit machine = null; float best = AutoRepairReach;
+                PrototypeBuilding building = null; PrototypeUnit machine = null; Fix best = AutoRepairReach;
                 foreach (var b in Buildings)
                 {
                     if (b.Owner != u.Owner || b.Ready < 1 || b.Health <= 0 || b.Health >= b.Stats.Health) continue;
-                    float gap = Gap(u, b);
+                    Fix gap = Gap(u, b);
                     if (gap <= best) { best = gap; building = b; }
                 }
                 foreach (var v in Units)
                 {
                     if (v == u || v.Owner != u.Owner || !v.Alive || !v.Stats.Mechanical || v.Health >= v.Stats.Health) continue;
-                    float gap = Gap(u, v);
+                    Fix gap = Gap(u, v);
                     if (gap <= best) { best = gap; machine = v; building = null; }
                 }
                 if (building == null && machine == null) continue;
@@ -104,17 +104,17 @@ namespace Order.Simulation
             GiveOrder(worker, UnitOrder.Move);
             worker.repairHealth = worker.repairMetal = worker.repairPlasma = worker.repairTimer = 0;
         }
-        void Walk(PrototypeUnit worker, float x, float z) { var message = Message; PlanPath(worker, x, z); Message = message; }
+        void Walk(PrototypeUnit worker, Fix x, Fix z) { var message = Message; PlanPath(worker, x, z); Message = message; }
         // Up to the unit's side nearest the worker; an air unit is mended from the ground beneath it.
         void WalkTo(PrototypeUnit worker, PrototypeUnit target)
         {
-            float dx = worker.X - target.X, dz = worker.Z - target.Z, d = (float)Math.Sqrt(dx * dx + dz * dz), reach = target.Stats.Radius + worker.Stats.Radius + .1f;
-            if (d < 1e-3f) { dx = 1; dz = 0; d = 1; }
+            Fix dx = worker.X - target.X, dz = worker.Z - target.Z, d = Math.Sqrt(dx * dx + dz * dz), reach = target.Stats.Radius + worker.Stats.Radius + (Fix).1f;
+            if (d < (Fix)1e-3f) { dx = 1; dz = 0; d = 1; }
             Walk(worker, target.X + dx / d * reach, target.Z + dz / d * reach);
             worker.repairTimer = 0;
         }
 
-        void TickRepair(float dt)
+        void TickRepair(Fix dt)
         {
             foreach (var u in Units)
             {
@@ -130,23 +130,23 @@ namespace Order.Simulation
                 if (!near)
                 {
                     // On its way; a unit that moved off is followed, a worker pushed away from a building walks back.
-                    if (u.Moving && (target == null || (u.repairTimer += dt) < .5f)) continue;
+                    if (u.Moving && (target == null || (u.repairTimer += dt) < (Fix).5f)) continue;
                     u.repairTimer = 0;
                     if (target != null) WalkTo(u, target);
-                    else if (SiteSpot(u, b.X, b.Z, b.Width, out float sx, out float sz)) Walk(u, sx, sz);
+                    else if (SiteSpot(u, b.X, b.Z, b.Width, out Fix sx, out Fix sz)) Walk(u, sx, sz);
                     else EndRepair(u, "К зданию не подойти.");
                     continue;
                 }
                 // At the target the worker has arrived: its move is over, so orders queued after the repair can start.
                 if (u.Moving) Arrive(u);
                 u.Welding = true;
-                float seconds = Math.Max(MinRepairSeconds, b != null ? b.Stats.BuildSeconds : target.Stats.TrainSeconds);
+                Fix seconds = Math.Max(MinRepairSeconds, b != null ? b.Stats.BuildSeconds : target.Stats.TrainSeconds);
                 int metal = b != null ? b.Stats.Metal : target.Stats.Metal, plasma = b != null ? b.Stats.Plasma : target.Stats.Plasma;
                 u.repairHealth += max * dt * (FastBuild && u.Owner == Player ? FastFactor : 1) / seconds;
                 int points = Math.Min((int)u.repairHealth, max - health);
                 if (points <= 0) continue;
                 // The price of the health restored, owed in fractions and paid in whole units.
-                float owedMetal = u.repairMetal + points * metal * RepairShare / max, owedPlasma = u.repairPlasma + points * plasma * RepairShare / max;
+                Fix owedMetal = u.repairMetal + points * metal * RepairShare / max, owedPlasma = u.repairPlasma + points * plasma * RepairShare / max;
                 int payMetal = (int)owedMetal, payPlasma = (int)owedPlasma;
                 if (metalStock[u.Owner] < payMetal || plasmaStock[u.Owner] < payPlasma)
                 {
@@ -165,7 +165,7 @@ namespace Order.Simulation
         }
 
         // Machines inside their network get their health back once they have not been hit for a while.
-        void TickMending(float dt)
+        void TickMending(Fix dt)
         {
             foreach (var u in Units)
             {
@@ -191,7 +191,7 @@ namespace Order.Simulation
         // What taking the unit apart now would give back: half its price, less the share of health it has lost.
         public (int metal, int plasma) DisassemblyReturn(PrototypeUnit unit)
         {
-            float share = DisassemblyRefund * Math.Max(0, unit.Health) / unit.Stats.Health;
+            Fix share = DisassemblyRefund * Math.Max(0, unit.Health) / unit.Stats.Health;
             return ((int)(unit.Stats.Metal * share), (int)(unit.Stats.Plasma * share));
         }
         public string DisassemblyBlocked(PrototypeUnit unit)
@@ -212,7 +212,7 @@ namespace Order.Simulation
             if (unit.Owner == Player) Message = $"{unit.Stats.Name}: разборка, вернётся металл {metal}" + (plasma > 0 ? $", плазма {plasma}." : ".");
             return true;
         }
-        void TickDisassembly(float dt)
+        void TickDisassembly(Fix dt)
         {
             foreach (var u in Units)
             {

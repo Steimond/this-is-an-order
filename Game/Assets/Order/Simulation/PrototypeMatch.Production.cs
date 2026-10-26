@@ -13,7 +13,7 @@ namespace Order.Simulation
     {
         public const int QueueSize = 5;
 
-        PrototypeBuilding AddBuilding(int kind, int x, int z, int owner, float ready)
+        PrototypeBuilding AddBuilding(int kind, int x, int z, int owner, Fix ready)
         {
             var stats = Roster(owner).Buildings[kind];
             var building = new PrototypeBuilding { X = x, Z = z, Width = stats.Width, Kind = kind, Owner = owner, Stats = stats, Ready = ready, Health = ready >= 1 ? stats.Health : Math.Max(1, stats.Health / 10) };
@@ -45,13 +45,13 @@ namespace Order.Simulation
             if (b.Owner == Player) Message = $"Отменено: {stats.Name}.";
             return true;
         }
-        public void SetRally(PrototypeBuilding b, float x, float z)
+        public void SetRally(PrototypeBuilding b, Fix x, Fix z)
         {
             b.HasRally = InMap(x, z); b.RallyX = x; b.RallyZ = z;
             if (b.Owner == Player && b.HasRally) Message = "Точка сбора задана.";
         }
 
-        void TickProduction(float dt)
+        void TickProduction(Fix dt)
         {
             foreach (var b in Buildings)
             {
@@ -67,7 +67,7 @@ namespace Order.Simulation
                 }
                 b.Training += dt * (FastBuild && b.Owner == Player ? FastFactor : 1);
                 if (b.Training < stats.TrainSeconds) continue;
-                if (!ExitSpot(b, stats, out float x, out float z)) { b.Training = stats.TrainSeconds; continue; }
+                if (!ExitSpot(b, stats, out Fix x, out Fix z)) { b.Training = stats.TrainSeconds; continue; }
                 var kind = b.queue[0];
                 b.queue.RemoveAt(0); b.started = false; b.Training = 0;
                 var unit = Spawn(kind, x, z, b.Owner);
@@ -76,7 +76,7 @@ namespace Order.Simulation
                 {
                     int cx = (int)b.RallyX, cz = (int)b.RallyZ;
                     var deposit = b.Owner != Player || Explored[cx, cz] ? Map.ResourceAt(cx, cz) : null;
-                    if (deposit != null) Move(unit, deposit.X + .5f, deposit.Z + .5f); else Move(unit, b.RallyX, b.RallyZ);
+                    if (deposit != null) Move(unit, deposit.X + (Fix).5f, deposit.Z + (Fix).5f); else Move(unit, b.RallyX, b.RallyZ);
                 }
                 // Only the player hears about its own new units.
                 Message = b.Owner == Player ? $"Готов: {stats.Name}." : before;
@@ -84,22 +84,22 @@ namespace Order.Simulation
         }
         // Free spot next to the footprint, on the building's level, nearest the rally point (by default the south-east
         // corner); air units may appear over anything.
-        bool ExitSpot(PrototypeBuilding b, UnitStats stats, out float x, out float z)
+        bool ExitSpot(PrototypeBuilding b, UnitStats stats, out Fix x, out Fix z)
         {
-            float tx = b.HasRally ? b.RallyX : b.X + b.Width + 1, tz = b.HasRally ? b.RallyZ : b.Z - 1, best = float.MaxValue;
-            float level = Map.Height(b.X, b.Z);
+            Fix tx = b.HasRally ? b.RallyX : b.X + b.Width + 1, tz = b.HasRally ? b.RallyZ : b.Z - 1, best = Fix.MaxValue;
+            Fix level = Map.Height(b.X, b.Z);
             x = z = 0;
             for (int cz = b.Z - 1; cz <= b.Z + b.Width; cz++)
             for (int cx = b.X - 1; cx <= b.X + b.Width; cx++)
             {
                 if (cx >= b.X && cx < b.X + b.Width && cz >= b.Z && cz < b.Z + b.Width) continue;
-                float px = cx + .5f, pz = cz + .5f;
+                Fix px = cx + (Fix).5f, pz = cz + (Fix).5f;
                 if (!Map.Inside(cx, cz)) continue;
-                if (!stats.Flying && (Occupied(cx, cz) || Map.Ramp(cx, cz) || Math.Abs(Map.Height(cx, cz) - level) > .01f || !CanTravel(px, pz, px, pz, stats.Radius))) continue;
-                float d = (px - tx) * (px - tx) + (pz - tz) * (pz - tz);
+                if (!stats.Flying && (Occupied(cx, cz) || Map.Ramp(cx, cz) || Math.Abs(Map.Height(cx, cz) - level) > (Fix).01f || !CanTravel(px, pz, px, pz, stats.Radius))) continue;
+                Fix d = (px - tx) * (px - tx) + (pz - tz) * (pz - tz);
                 if (d < best) { best = d; x = px; z = pz; }
             }
-            return best < float.MaxValue;
+            return best < Fix.MaxValue;
         }
     }
 }

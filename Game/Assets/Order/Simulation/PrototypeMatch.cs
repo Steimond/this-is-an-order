@@ -5,7 +5,7 @@ using Order.Contracts;
 
 namespace Order.Simulation
 {
-    public readonly struct Waypoint { public readonly float X,Z; public Waypoint(float x,float z){X=x;Z=z;} }
+    public readonly struct Waypoint { public readonly Fix X,Z; public Waypoint(Fix x,Fix z){X=x;Z=z;} }
     // Rules of the test match: economy and vision. Construction lives in PrototypeMatch.Construction.cs, unit movement in PrototypeMatch.Movement.cs,
     // attacks in PrototypeMatch.Combat.cs. Side 0 is the player, side 1 the enemy.
     public sealed partial class PrototypeMatch
@@ -26,10 +26,10 @@ namespace Order.Simulation
         public int MetalOf(int side)=>metalStock[side];
         public int PlasmaOf(int side)=>plasmaStock[side];
         // Seconds of play since the match began.
-        public float Clock{get;private set;}
+        public Fix Clock{get;private set;}
         public string Message = "Рабочий готов. ПКМ — движение / добыча.";
         int nextUnitId = 1;
-        float visionTimer;
+        Fix visionTimer;
         public PrototypeMatch(MatchBalance balance=null,FactionId player=FactionId.Expedition,FactionId enemy=FactionId.Expedition)
         {
             Balance=balance??new MatchBalance();
@@ -37,13 +37,13 @@ namespace Order.Simulation
             for(int side=0;side<2;side++){metalStock[side]=Balance.StartingMetal;plasmaStock[side]=Balance.StartingPlasma;}
             foreach(var r in Map.Resources)r.Remaining=r.Plasma?Balance.PlasmaDeposit:Balance.MetalDeposit;
             AddBuilding(2,10,10,Player,1);
-            Spawn(UnitKind.Worker,13.5f,13.5f);UpdateVision();
+            Spawn(UnitKind.Worker,(Fix)13.5f,(Fix)13.5f);UpdateVision();
         }
         // Each side plays one faction: its roster, how its workers gather and how it builds.
         readonly FactionId[] factions=new FactionId[2];
         public FactionId FactionOf(int side)=>factions[side];
         public FactionBalance Roster(int side)=>Balance.Of(factions[side]);
-        public PrototypeUnit Spawn(UnitKind kind,float x,float z,int owner=Player)
+        public PrototypeUnit Spawn(UnitKind kind,Fix x,Fix z,int owner=Player)
         {
             var unit=new PrototypeUnit(nextUnitId++,kind,Roster(owner).Unit(kind),owner){X=x,Z=z,startX=x,startZ=z};
             Units.Add(unit);return unit;
@@ -51,16 +51,16 @@ namespace Order.Simulation
         // Test-ground setup: a mixed squad west of the command node for selection and movement checks; with the worker it fills the starting supply.
         public void AddTestSquad()
         {
-            Spawn(UnitKind.Melee,8,15.5f);Spawn(UnitKind.Melee,9.2f,15.5f);
-            for(int i=0;i<3;i++)Spawn(UnitKind.Ranged,7.4f+i*1.1f,17);
-            Spawn(UnitKind.Air,8.5f,18.6f);UpdateVision();
+            Spawn(UnitKind.Melee,8,(Fix)15.5f);Spawn(UnitKind.Melee,(Fix)9.2f,(Fix)15.5f);
+            for(int i=0;i<3;i++)Spawn(UnitKind.Ranged,(Fix)7.4f+i*(Fix)1.1f,17);
+            Spawn(UnitKind.Air,(Fix)8.5f,(Fix)18.6f);UpdateVision();
             Message="Отряд на позиции.";
         }
         // Test-ground enemy: a squad in the basin north-east of the centre. It stands still and only answers attacks.
         public void AddEnemySquad()
         {
             Spawn(UnitKind.Melee,33,40,Enemy);Spawn(UnitKind.Melee,35,40,Enemy);
-            for(int i=0;i<3;i++)Spawn(UnitKind.Ranged,32.8f+i*1.2f,41.6f,Enemy);
+            for(int i=0;i<3;i++)Spawn(UnitKind.Ranged,(Fix)32.8f+i*(Fix)1.2f,(Fix)41.6f,Enemy);
             Spawn(UnitKind.Air,34,43,Enemy);UpdateVision();
         }
         // Units in training count from the moment their training starts, as in StarCraft.
@@ -74,14 +74,16 @@ namespace Order.Simulation
         }
         public int SupplyLimit=>Limit(Player);
         int Limit(int owner){int limit=0;foreach(var b in Buildings)if(b.Owner==owner&&b.Ready>=1&&b.Powered)limit+=b.Stats.Supply;return limit;}
-        public float HeightAt(float x,float z)=>Map.Height((int)x,(int)z,x-(int)x);
+        public Fix HeightAt(Fix x,Fix z)=>Map.Height((int)x,(int)z,x-(int)x);
         // The match advances only in fixed steps of TickSeconds, so the same orders on the same steps give the same match on
         // every machine; the view interpolates between steps. Frame counts the steps made.
-        public const float TickSeconds=Step;
+        public static Fix TickSeconds=>Step;
+        // "Never" for timers that count the time since something happened: far in the past, yet clear of overflow.
+        internal static readonly Fix LongAgo=1000000;
         public int Frame{get;private set;}
         public void Advance(){Tick(Step);Frame++;}
         // Any stretch of time at once, for tests and tools; it does not count frames.
-        public void Tick(float dt)
+        public void Tick(Fix dt)
         {
             UpdateNetwork(dt);
             TickBuildings(dt);
@@ -90,8 +92,8 @@ namespace Order.Simulation
             TickResearch(dt);
             TickBot(dt);
             // Movement runs in fixed steps, so a long frame and many short ones end in the same place.
-            for(float left=dt;left>1e-6f;left-=Step)StepUnits(Math.Min(Step,left));
-            visionTimer+=dt;if(visionTimer>=.15f){visionTimer=0;UpdateVision();}
+            for(Fix left=dt;left>(Fix)1e-6f;left-=Step)StepUnits(Math.Min(Step,left));
+            visionTimer+=dt;if(visionTimer>=(Fix).15f){visionTimer=0;UpdateVision();}
         }
         public void UpdateVision()
         {
@@ -120,14 +122,14 @@ namespace Order.Simulation
         // Ground observers cannot see up a cliff; air units see everything within their radius.
         void Reveal(int sx,int sz,int radius,bool fromAir,bool[,] ground,bool[,] sky,bool explore)
         {
-            float observer=fromAir?float.MaxValue:Map.Height(sx,sz)+.6f;
+            Fix observer=fromAir?Fix.MaxValue:Map.Height(sx,sz)+(Fix).6f;
             for(int z=Math.Max(0,sz-radius);z<=Math.Min(63,sz+radius);z++)
             for(int x=Math.Max(0,sx-radius);x<=Math.Min(63,sx+radius);x++)
             {
                 int dx=x-sx,dz=z-sz;if(dx*dx+dz*dz>radius*radius)continue;
                 sky[x,z]=true;
                 int steps=Math.Max(Math.Abs(dx),Math.Abs(dz));bool clear=true;
-                for(int i=1;i<=steps;i++){int xx=(int)Math.Round(sx+dx*(float)i/steps),zz=(int)Math.Round(sz+dz*(float)i/steps);if(Map.Height(xx,zz)>observer){clear=false;break;}}
+                for(int i=1;i<=steps;i++){int xx=(int)Math.Round(sx+dx*(Fix)i/steps),zz=(int)Math.Round(sz+dz*(Fix)i/steps);if(Map.Height(xx,zz)>observer){clear=false;break;}}
                 if(clear){ground[x,z]=true;if(explore)Explored[x,z]=true;}
             }
         }
@@ -141,7 +143,7 @@ namespace Order.Simulation
         public readonly UnitKind Kind;
         public readonly UnitStats Stats;
         public readonly int Owner;
-        public float X, Z;
+        public Fix X, Z;
         public int Health;
         public bool Alive=>Health>0;
         public UnitOrder Order { get; internal set; }
@@ -158,7 +160,7 @@ namespace Order.Simulation
         public int SiteKind { get; internal set; } = -1;
         public int SiteX { get; internal set; }
         public int SiteZ { get; internal set; }
-        internal float siteTimer;
+        internal Fix siteTimer;
         // Repair (humans): the building or machinery this worker mends, whether it is at work on it right now, and the
         // health and price owed in fractions between steps. See PrototypeMatch.Repair.cs.
         public PrototypeBuilding Repairing { get; internal set; }
@@ -166,20 +168,20 @@ namespace Order.Simulation
         public bool Welding { get; internal set; }
         // Automatic repair (autocast): an idle worker mends damaged things of its side nearby by itself.
         public bool AutoRepair { get; internal set; }
-        internal float repairHealth, repairMetal, repairPlasma, repairTimer;
+        internal Fix repairHealth, repairMetal, repairPlasma, repairTimer;
         // Machines: whether it mends inside the network right now, and how far it is taken apart (0 while it is not).
         public bool Mending { get; internal set; }
-        public float Disassembly { get; internal set; }
+        public Fix Disassembly { get; internal set; }
         public bool Disassembling { get; internal set; }
-        internal float mended;
+        internal Fix mended;
         // Nanite mining: how far the worker has wrapped its deposit (0–1) and the cocoon it wears while wrapped; seconds
         // since it was last hit, for the cocoon to grow back and for machines to mend.
-        public float Wrap{get;internal set;}
+        public Fix Wrap{get;internal set;}
         public int Cocoon{get;internal set;}
-        internal float sinceHit=float.MaxValue,cocoonGrowth;
+        internal Fix sinceHit=PrototypeMatch.LongAgo,cocoonGrowth;
         // A leaper in the middle of a jump: from where to where, how far it has flown, where it passes its target.
         internal bool leaping,leapHit;
-        internal float leapFromX,leapFromZ,leapToX,leapToZ,leapLength,leapDone,leapPass;
+        internal Fix leapFromX,leapFromZ,leapToX,leapToZ,leapLength,leapDone,leapPass;
         internal PrototypeUnit leapTarget;
         public bool Leaping=>leaping;
         // A howitzer: packed, deploying, deployed or packing up, how far along the change is, how long a deployed one on
@@ -187,14 +189,14 @@ namespace Order.Simulation
         // order). See PrototypeMatch.Siege.cs.
         // An emitter's beam: what it holds, since when, and when it last struck (PrototypeMatch.Upgrades.cs, Strike).
         internal object focus;
-        internal float focusStart,lastFocusHit=float.MinValue;
+        internal Fix focusStart,lastFocusHit=-PrototypeMatch.LongAgo;
         public SiegeState SiegeMode{get;internal set;}
-        internal float siegeTimer,siegeIdle;
+        internal Fix siegeTimer,siegeIdle;
         internal bool packedByHand;
         // 0 packed, 1 deployed, in between while it deploys or packs up.
-        public float DeployShare=>SiegeMode==SiegeState.Deployed?1:SiegeMode==SiegeState.Packed?0
+        public Fix DeployShare=>SiegeMode==SiegeState.Deployed?1:SiegeMode==SiegeState.Packed?0
             :Stats.DeploySeconds<=0?1:SiegeMode==SiegeState.Deploying?siegeTimer/Stats.DeploySeconds:1-siegeTimer/Stats.DeploySeconds;
-        public float LeapShare=>leaping?leapDone/leapLength:0;
+        public Fix LeapShare=>leaping?leapDone/leapLength:0;
         // Mining trips: the load a worker carries to a command node, whether it is plasma, and whether it is mining right now.
         public int Carrying { get; internal set; }
         public bool CarriesPlasma { get; internal set; }
@@ -206,29 +208,29 @@ namespace Order.Simulation
         internal PrototypeBuilding orderedBuilding;
         internal readonly List<QueuedOrder> queued = new List<QueuedOrder>();
         public IReadOnlyList<QueuedOrder> Queued => queued;
-        internal float attackX, attackZ, cooldown, chaseTimer;
+        internal Fix attackX, attackZ, cooldown, chaseTimer;
         internal bool engaged;
         internal readonly Queue<Waypoint> route = new Queue<Waypoint>();
-        internal float harvestTimer;
+        internal Fix harvestTimer;
         // Movement state: the order's destination, where the last order ended (for group arrival) and progress tracking.
-        internal float goalX, goalZ, arrivedX, arrivedZ, levelY, bestDistance, stuckTime, startX, startZ, lastDx, lastDz;
+        internal Fix goalX, goalZ, arrivedX, arrivedZ, levelY, bestDistance, stuckTime, startX, startZ, lastDx, lastDz;
         internal bool hasGoal, arrived, touchedArrived, returning, holdsSpot;
         internal int replans;
         // Where the unit came to rest after its last order, and how long since a passing unit last shoved it from there.
-        internal float restX, restZ, calmTime;
+        internal Fix restX, restZ, calmTime;
         internal int returns;
         public bool Moving=>route.Count>0;
         public int WaypointCount=>route.Count;
         // Where the unit stood before the last movement step, for the view to interpolate.
-        public float PreviousX=>startX;
-        public float PreviousZ=>startZ;
+        public Fix PreviousX=>startX;
+        public Fix PreviousZ=>startZ;
         public IEnumerable<Waypoint> Route=>route;
         internal PrototypeUnit(int id,UnitKind kind,UnitStats stats,int owner){Id=id;Kind=kind;Stats=stats;Owner=owner;Health=stats.Health;}
     }
     public sealed class PrototypeBuilding
     {
         public int X,Z,Width,Kind,Owner,Health;
-        public float Ready;
+        public Fix Ready;
         // The owner faction's numbers for this kind; a machine building rises by itself once its site is placed.
         public BuildingStats Stats{get;internal set;}
         public bool SelfBuilt{get;internal set;}
@@ -240,14 +242,14 @@ namespace Order.Simulation
         // Whether the network reaches it right now, and for how long it has been cut off: it stays powered on a grace of
         // NetworkGrace seconds.
         public bool Linked{get;internal set;}=true;
-        public float DarkFor{get;internal set;}
+        public Fix DarkFor{get;internal set;}
         // Seconds since it was last hit, and the health a machine building mends in fractions between steps.
-        internal float sinceHit=float.MaxValue,mended;
+        internal Fix sinceHit=PrototypeMatch.LongAgo,mended;
         public bool Mending{get;internal set;}
         // The upgrade a research building is researching, and for how long it has been at it.
         internal Upgrade? research;
         public Upgrade? Researching=>research;
-        public float ResearchTime{get;internal set;}
+        public Fix ResearchTime{get;internal set;}
         // The worker raising it, while it is at work on it; nobody when the construction waits.
         internal PrototypeUnit builder;
         public PrototypeUnit Builder=>builder!=null&&builder.Alive&&builder.Constructing==this?builder:null;
@@ -256,10 +258,10 @@ namespace Order.Simulation
         internal readonly List<UnitKind> queue=new List<UnitKind>();
         internal bool started;
         public IReadOnlyList<UnitKind> Queue=>queue;
-        public float Training{get;internal set;}
+        public Fix Training{get;internal set;}
         public bool SupplyBlocked{get;internal set;}
         public bool HasRally{get;internal set;}
-        public float RallyX{get;internal set;}
-        public float RallyZ{get;internal set;}
+        public Fix RallyX{get;internal set;}
+        public Fix RallyZ{get;internal set;}
     }
 }

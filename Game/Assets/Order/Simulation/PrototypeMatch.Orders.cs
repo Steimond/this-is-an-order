@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Order.Content;
 
 namespace Order.Simulation
 {
@@ -8,16 +9,16 @@ namespace Order.Simulation
     public readonly struct QueuedOrder
     {
         public readonly UnitOrder Order;
-        public readonly float X, Z;
+        public readonly Fix X, Z;
         public readonly PrototypeUnit Unit;
         public readonly PrototypeBuilding Building;
         public readonly int BuildKind;
         public readonly bool Mend;
-        public QueuedOrder(UnitOrder order, float x, float z) { Order = order; X = x; Z = z; Unit = null; Building = null; BuildKind = -1; Mend = false; }
+        public QueuedOrder(UnitOrder order, Fix x, Fix z) { Order = order; X = x; Z = z; Unit = null; Building = null; BuildKind = -1; Mend = false; }
         public static QueuedOrder Build(int kind, int x, int z) => new QueuedOrder(kind, x, z);
         QueuedOrder(int kind, int x, int z) { Order = UnitOrder.Move; X = x; Z = z; Unit = null; Building = null; BuildKind = kind; Mend = false; }
         public QueuedOrder(PrototypeUnit unit, bool mend = false) { Order = mend ? UnitOrder.Move : UnitOrder.Attack; X = unit.X; Z = unit.Z; Unit = unit; Building = null; BuildKind = -1; Mend = mend; }
-        public QueuedOrder(PrototypeBuilding building, bool mend = false) { Order = mend ? UnitOrder.Move : UnitOrder.Attack; X = building.X + building.Width * .5f; Z = building.Z + building.Width * .5f; Unit = null; Building = building; BuildKind = -1; Mend = mend; }
+        public QueuedOrder(PrototypeBuilding building, bool mend = false) { Order = mend ? UnitOrder.Move : UnitOrder.Attack; X = building.X + building.Width * (Fix).5f; Z = building.Z + building.Width * (Fix).5f; Unit = null; Building = building; BuildKind = -1; Mend = mend; }
     }
 
     // Order queue: a queued order starts once the unit's current order is done (a move or attack-move arrived, the attack
@@ -45,8 +46,8 @@ namespace Order.Simulation
             if (any) Message = "Атака здания добавлена в очередь.";
             return any;
         }
-        public bool QueueMoveGroup(IReadOnlyList<PrototypeUnit> units, float x, float z) => GroupOrder(units, x, z, false, true);
-        public bool QueueAttackMoveGroup(IReadOnlyList<PrototypeUnit> units, float x, float z) => GroupOrder(units, x, z, true, true);
+        public bool QueueMoveGroup(IReadOnlyList<PrototypeUnit> units, Fix x, Fix z) => GroupOrder(units, x, z, false, true);
+        public bool QueueAttackMoveGroup(IReadOnlyList<PrototypeUnit> units, Fix x, Fix z) => GroupOrder(units, x, z, true, true);
 
         bool Execute(PrototypeUnit u, QueuedOrder order)
         {

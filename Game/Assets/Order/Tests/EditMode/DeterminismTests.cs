@@ -61,7 +61,7 @@ namespace Order.Tests.EditMode
         {
             var match = Game(FactionId.Expedition, FactionId.Expedition);
             var unit = match.Spawn(UnitKind.Ranged, 12.25f, 17.5f);
-            Assert.That((unit.PreviousX, unit.PreviousZ), Is.EqualTo((12.25f, 17.5f)), "A new unit is not drawn flying in from the map corner");
+            Assert.That(((float)unit.PreviousX, (float)unit.PreviousZ), Is.EqualTo((12.25f, 17.5f)), "A new unit is not drawn flying in from the map corner");
         }
     }
 }

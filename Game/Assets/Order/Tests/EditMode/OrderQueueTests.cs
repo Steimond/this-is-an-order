@@ -17,10 +17,10 @@ namespace Order.Tests.EditMode
             Assert.That(unit.Queued.Count,Is.EqualTo(2));
             bool passedFirst=false,passedSecond=false;
             Run(match,8,()=>{
-                if(System.Math.Abs(unit.X-30)<.05f&&System.Math.Abs(unit.Z-30)<.05f)passedFirst=true;
-                if(passedFirst&&System.Math.Abs(unit.X-30)<.05f&&System.Math.Abs(unit.Z-36)<.05f)passedSecond=true;});
+                if(System.Math.Abs((float)unit.X-30)<.05f&&System.Math.Abs((float)unit.Z-30)<.05f)passedFirst=true;
+                if(passedFirst&&System.Math.Abs((float)unit.X-30)<.05f&&System.Math.Abs((float)unit.Z-36)<.05f)passedSecond=true;});
             Assert.That(passedFirst,Is.True);Assert.That(passedSecond,Is.True);
-            Assert.That(unit.X,Is.EqualTo(36).Within(.05f));Assert.That(unit.Z,Is.EqualTo(36).Within(.05f));Assert.That(unit.Queued,Is.Empty);
+            Assert.That((float)unit.X,Is.EqualTo(36).Within(.05f));Assert.That((float)unit.Z,Is.EqualTo(36).Within(.05f));Assert.That(unit.Queued,Is.Empty);
         }
         [Test] public void IdleUnitStartsAQueuedOrderAtOnceAndAPlainOrderClearsTheQueue()
         {
