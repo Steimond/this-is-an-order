@@ -36,11 +36,34 @@ namespace Order.Presentation
         void Update() => updateStart = Stopwatch.GetTimestamp();
         string report = "", csv;
 
+        // In a Player build the command line sets the lab: -units N, -sides N, -quit-after seconds; -benchmark runs the
+        // simulation benchmark instead (SimulationBench) and quits. Reports go to the player's data folder.
+        float quitAfter;
         void Awake()
         {
             view = GetComponent<TemplePrototypeView>();
+            if (!UnityEngine.Application.isEditor)
+            {
+                Units = Argument("-units", Units); Sides = Mathf.Clamp(Argument("-sides", Sides), 2, StressBattle.MaxSides); quitAfter = Argument("-quit-after", 0);
+                if (System.Array.IndexOf(System.Environment.GetCommandLineArgs(), "-benchmark") >= 0) { Benchmark(); return; }
+            }
             view.Create = balance => StressBattle.Create(balance, Units, Sides);
             view.Setup = match => match.Profile = profile;
+        }
+        static int Argument(string name, int fallback)
+        {
+            var args = System.Environment.GetCommandLineArgs();
+            int at = System.Array.IndexOf(args, name);
+            return at >= 0 && at + 1 < args.Length && int.TryParse(args[at + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) ? value : fallback;
+        }
+        void Benchmark()
+        {
+            int steps = Argument("-steps", SimulationBench.Steps);
+            var results = SimulationBench.Run(SimulationBench.Sizes, steps);
+            var path = Path.Combine(UnityEngine.Application.persistentDataPath, $"simulation-stress-{System.DateTime.Now:yyyyMMdd-HHmmss}.json");
+            File.WriteAllText(path, SimulationBench.Json(results, steps));
+            UnityEngine.Debug.Log(SimulationBench.Text(results) + "Report: " + path);
+            UnityEngine.Application.Quit();
         }
 
         void LateUpdate()
@@ -48,6 +71,7 @@ namespace Order.Presentation
             var match = view.Match;
             if (match == null) return;
             if (!aimed) { aimed = true; view.LookAt(new Vector2(32, 32), 30); windowStart = Time.unscaledTime; }
+            if (quitAfter > 0 && Time.unscaledTime >= quitAfter) UnityEngine.Application.Quit();
             float frame = Time.unscaledDeltaTime * 1000;
             if (updateStart != 0) scriptSum += (Stopwatch.GetTimestamp() - updateStart) * 1000.0 / Stopwatch.Frequency;
             stepSum += (profile.Total - lastTotal) * 1000.0 / Stopwatch.Frequency;

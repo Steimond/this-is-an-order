@@ -55,7 +55,10 @@ namespace Order.Simulation
         static bool Beyond(PrototypeUnit a, PrototypeUnit b, Fix reach)
         {
             Fix dx = a.X - b.X, dz = a.Z - b.Z, far = reach + a.Stats.Radius + b.Stats.Radius + BeyondMargin;
-            return far > 0 && dx * dx + dz * dz > far * far;
+            if (far <= 0) return false;
+            // Farther than `far` along one axis is farther in all; the margin keeps this on the safe side of Gap too.
+            if (Math.Abs(dx) > far || Math.Abs(dz) > far) return true;
+            return dx * dx + dz * dz > far * far;
         }
         static Fix AcquireRange(PrototypeUnit u) => Math.Max(u.Stats.AttackRange + AcquireExtra, 4);
         static Fix Reaction(PrototypeUnit u) => u.Id * (Fix).618034f % 1 * (Fix).25f;

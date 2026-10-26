@@ -535,7 +535,10 @@ namespace Order.Simulation
         }
         void Push(PrototypeUnit a, PrototypeUnit b)
         {
-            Fix dx = b.X - a.X, dz = b.Z - a.Z, reach = a.Stats.Radius + b.Stats.Radius, d2 = dx * dx + dz * dz;
+            Fix dx = b.X - a.X, dz = b.Z - a.Z, reach = a.Stats.Radius + b.Stats.Radius;
+            // Apart along one axis already means apart: the same answer as the squared distance, without multiplying.
+            if (Math.Abs(dx) >= reach || Math.Abs(dz) >= reach) return;
+            Fix d2 = dx * dx + dz * dz;
             if (d2 >= reach * reach) return;
             Fix d = Math.Sqrt(d2), nx, nz;
             if (d > (Fix)1e-4f) { nx = dx / d; nz = dz / d; }

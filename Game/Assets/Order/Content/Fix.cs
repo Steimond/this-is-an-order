@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace Order.Content
 {
@@ -23,7 +24,7 @@ namespace Order.Content
         // π rounded to the nearest step.
         public static readonly Fix Pi = new Fix(13493037705L), HalfPi = new Fix(13493037705L / 2), TwoPi = new Fix(13493037705L * 2);
 
-        public static implicit operator Fix(int value) => new Fix((long)value << FractionBits);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static implicit operator Fix(int value) => new Fix((long)value << FractionBits);
         public static implicit operator Fix(float value) => FromDouble(value);
         public static explicit operator Fix(double value) => FromDouble(value);
         static Fix FromDouble(double value)
@@ -40,12 +41,12 @@ namespace Order.Content
         // Toward zero, as a cast from float does.
         public static explicit operator int(Fix value) => value.Raw >= 0 ? (int)(value.Raw >> FractionBits) : -(int)(-value.Raw >> FractionBits);
 
-        public static Fix operator +(Fix a, Fix b) => new Fix(a.Raw + b.Raw);
-        public static Fix operator -(Fix a, Fix b) => new Fix(a.Raw - b.Raw);
-        public static Fix operator -(Fix a) => new Fix(-a.Raw);
-        public static Fix operator %(Fix a, Fix b) => new Fix(a.Raw % b.Raw);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static Fix operator +(Fix a, Fix b) => new Fix(a.Raw + b.Raw);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static Fix operator -(Fix a, Fix b) => new Fix(a.Raw - b.Raw);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static Fix operator -(Fix a) => new Fix(-a.Raw);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static Fix operator %(Fix a, Fix b) => new Fix(a.Raw % b.Raw);
         // The 128-bit product of the raw values, shifted back by 32 bits, from 32-bit halves.
-        public static Fix operator *(Fix a, Fix b)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static Fix operator *(Fix a, Fix b)
         {
             long x = a.Raw, y = b.Raw, xHigh = x >> 32, yHigh = y >> 32;
             ulong xLow = (ulong)(x & FractionMask), yLow = (ulong)(y & FractionMask);
@@ -57,7 +58,7 @@ namespace Order.Content
         {
             if (b.Raw == 0) throw new DivideByZeroException();
             bool negative = (a.Raw < 0) != (b.Raw < 0);
-            ulong n = Magnitude(a.Raw), d = Magnitude(b.Raw), whole = n / d, rest = n % d;
+            ulong n = Magnitude(a.Raw), d = Magnitude(b.Raw), whole = n / d, rest = n - whole * d;
             // The 32 fraction bits of rest / d by long division, as many bits at a time as rest has room for.
             ulong fraction = 0; int bits = FractionBits;
             while (bits > 0 && rest != 0)
@@ -68,7 +69,7 @@ namespace Order.Content
                     // rest ≥ 2⁶³ and d > rest: doubled it passes d once.
                     rest -= d - rest; fraction = (fraction << 1) | 1; bits--; continue;
                 }
-                rest <<= shift; fraction = (fraction << shift) | (rest / d); rest %= d; bits -= shift;
+                rest <<= shift; ulong digit = rest / d; fraction = (fraction << shift) | digit; rest -= digit * d; bits -= shift;
             }
             fraction <<= bits;
             long raw = (long)((whole << FractionBits) + fraction);
@@ -88,12 +89,12 @@ namespace Order.Content
             return n;
         }
 
-        public static bool operator ==(Fix a, Fix b) => a.Raw == b.Raw;
-        public static bool operator !=(Fix a, Fix b) => a.Raw != b.Raw;
-        public static bool operator <(Fix a, Fix b) => a.Raw < b.Raw;
-        public static bool operator >(Fix a, Fix b) => a.Raw > b.Raw;
-        public static bool operator <=(Fix a, Fix b) => a.Raw <= b.Raw;
-        public static bool operator >=(Fix a, Fix b) => a.Raw >= b.Raw;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator ==(Fix a, Fix b) => a.Raw == b.Raw;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator !=(Fix a, Fix b) => a.Raw != b.Raw;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator <(Fix a, Fix b) => a.Raw < b.Raw;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator >(Fix a, Fix b) => a.Raw > b.Raw;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator <=(Fix a, Fix b) => a.Raw <= b.Raw;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static bool operator >=(Fix a, Fix b) => a.Raw >= b.Raw;
         public bool Equals(Fix other) => Raw == other.Raw;
         public override bool Equals(object obj) => obj is Fix other && Raw == other.Raw;
         public override int GetHashCode() => Raw.GetHashCode();
@@ -102,9 +103,9 @@ namespace Order.Content
         public string ToString(string format) => ((double)this).ToString(format);
         public string ToString(string format, IFormatProvider provider) => ((double)this).ToString(format, provider);
 
-        public static Fix Abs(Fix v) => v.Raw < 0 ? new Fix(-v.Raw) : v;
-        public static Fix Min(Fix a, Fix b) => a.Raw <= b.Raw ? a : b;
-        public static Fix Max(Fix a, Fix b) => a.Raw >= b.Raw ? a : b;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static Fix Abs(Fix v) => v.Raw < 0 ? new Fix(-v.Raw) : v;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static Fix Min(Fix a, Fix b) => a.Raw <= b.Raw ? a : b;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] public static Fix Max(Fix a, Fix b) => a.Raw >= b.Raw ? a : b;
         public static Fix Clamp(Fix v, Fix low, Fix high) => v.Raw < low.Raw ? low : v.Raw > high.Raw ? high : v;
         public static Fix Floor(Fix v) => new Fix(v.Raw & ~FractionMask);
         public static Fix Ceiling(Fix v) => new Fix((v.Raw + FractionMask) & ~FractionMask);
@@ -115,21 +116,26 @@ namespace Order.Content
             if (fraction > OneRaw / 2 || (fraction == OneRaw / 2 && ((floor >> FractionBits) & 1) != 0)) floor += OneRaw;
             return new Fix(floor);
         }
-        // Rounded down, digit by digit: two bits of raw · 2³² per bit of the root, so nothing needs 128 bits.
+        // Rounded down: the largest r with r² ≤ raw · 2³². The hardware root of a double only guesses r; whole-number checks
+        // of the 128-bit square then step it to the exact answer, so every processor ends on the same bits even if its
+        // guess differs (the guess is within a step or two).
         public static Fix Sqrt(Fix v)
         {
             if (v.Raw <= 0) return Zero;
-            ulong n = (ulong)v.Raw, remainder = 0, root = 0;
-            int top = 94;
-            while (top >= 32 && ((n >> (top - 32)) & 3) == 0) top -= 2;
-            for (int p = top; p >= 0; p -= 2)
-            {
-                remainder = (remainder << 2) | (p >= 32 ? (n >> (p - 32)) & 3 : 0);
-                ulong trial = (root << 2) | 1;
-                if (remainder >= trial) { remainder -= trial; root = (root << 1) | 1; }
-                else root <<= 1;
-            }
+            ulong n = (ulong)v.Raw, high = n >> 32, low = n << 32;
+            ulong root = (ulong)(Math.Sqrt(n) * 65536.0);
+            while (root > 0 && Above(root, high, low)) root--;
+            while (!Above(root + 1, high, low)) root++;
             return new Fix((long)root);
+        }
+        // Whether r² exceeds the 128-bit number high · 2⁶⁴ + low (r below 2⁵⁰, so r² fits in 128 bits).
+        static bool Above(ulong r, ulong high, ulong low)
+        {
+            ulong a = r >> 32, b = r & 0xFFFFFFFF, cross = 2 * a * b;
+            ulong squareLow = b * b, squareHigh = a * a + (cross >> 32);
+            ulong shifted = cross << 32;
+            squareLow += shifted; if (squareLow < shifted) squareHigh++;
+            return squareHigh > high || (squareHigh == high && squareLow > low);
         }
         // Sine by its Taylor series on [0, π/2], where its error stays below 10⁻⁷, after folding the angle there.
         public static Fix Sin(Fix angle)
