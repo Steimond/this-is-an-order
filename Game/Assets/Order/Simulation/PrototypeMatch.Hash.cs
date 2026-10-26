@@ -11,7 +11,7 @@ namespace Order.Simulation
         {
             var h=new StateHasher();
             h.Add(Frame);h.Add(Clock);h.Add(nextUnitId);
-            for(int side=0;side<2;side++){h.Add(metalStock[side]);h.Add(plasmaStock[side]);}
+            h.Add(Sides);for(int side=0;side<Sides;side++){h.Add(metalStock[side]);h.Add(plasmaStock[side]);h.Add(supplyCap[side]);h.Add(defeated[side]);}h.Add(Winner);
             foreach(int level in levels)h.Add(level);
             foreach(var r in Map.Resources){h.Add(r.Remaining);h.Add(r.WrappedBy);}
             h.Add(Buildings.Count);

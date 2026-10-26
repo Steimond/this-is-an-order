@@ -19,7 +19,7 @@ namespace Order.Simulation
         public static readonly Fix NetworkGrace = 5;
         void UpdateNetwork(Fix dt)
         {
-            for (int side = 0; side < 2; side++)
+            for (int side = 0; side < Sides; side++)
             {
                 if (!Roster(side).Network || WholeNetwork) { foreach (var b in Buildings) if (b.Owner == side) { b.Linked = b.Powered = true; b.DarkFor = 0; } continue; }
                 // Cores are the roots; the relays they allow, in the order they were placed, are the other nodes.

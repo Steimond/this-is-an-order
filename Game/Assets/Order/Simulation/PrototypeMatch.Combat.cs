@@ -23,8 +23,11 @@ namespace Order.Simulation
         public event Action<Fix, Fix, bool> UnderAttack;
         static readonly Fix AlertInterval = 10;
         Fix lastBaseAlert = -AlertInterval, lastArmyAlert = -AlertInterval;
-        // -1 while the match goes on, then the side that won.
+        // -1 while the match goes on, then the side that won. A side that has lost all its buildings is defeated (its units
+        // left fight on); the last side not defeated wins.
         public int Winner { get; private set; } = -1;
+        readonly bool[] defeated;
+        public bool Defeated(int side) => defeated[side];
         // Acquire range is the attack range plus this much; a current target is kept this much farther still.
         static readonly Fix AcquireExtra = (Fix)2.5f, ChaseInterval = (Fix).4f, HelpRadius = 6, AggressorReach = 6;
 
@@ -50,7 +53,7 @@ namespace Order.Simulation
         public bool SeenBy(int side, PrototypeBuilding b)
         {
             if (b.Owner == side) return true;
-            var grid = side == Player ? Visible : enemyVisible;
+            var grid = ground[side];
             for (int z = b.Z; z < b.Z + b.Width; z++) for (int x = b.X; x < b.X + b.Width; x++) if (Map.Inside(x, z) && grid[x, z]) return true;
             return false;
         }
@@ -410,13 +413,20 @@ namespace Order.Simulation
             {
                 foreach (var b in ruined)
                 {
-                    if (Buildings.Exists(other => other.Owner == b.Owner)) continue;
-                    Winner = b.Owner == Player ? Enemy : Player;
-                    Message = Winner == Player ? "Победа: все здания противника уничтожены." : "Поражение: все ваши здания уничтожены.";
-                    break;
+                    if (defeated[b.Owner] || Buildings.Exists(other => other.Owner == b.Owner)) continue;
+                    defeated[b.Owner] = true;
+                    if (b.Owner == Player) Message = "Поражение: все ваши здания уничтожены.";
+                }
+                // The last side standing wins.
+                int standing = -1, count = 0;
+                for (int side = 0; side < Sides; side++) if (!defeated[side]) { standing = side; count++; }
+                if (count == 1)
+                {
+                    Winner = standing;
+                    if (Winner == Player) Message = "Победа: все здания противника уничтожены.";
                 }
             }
-            if (!ruined.Exists(b => b.Owner == Player) || Winner >= 0) return;
+            if (!ruined.Exists(b => b.Owner == Player) || defeated[Player]) return;
             Message = "Здание уничтожено.";
         }
 

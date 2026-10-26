@@ -9,5 +9,6 @@ namespace Order.Balance
         [Min(0), FormerlySerializedAs("StartingGas")] public int StartingPlasma=100;
         [Min(1), FormerlySerializedAs("MineralDeposit")] public int MetalDeposit=1500;
         [Min(1), FormerlySerializedAs("GasDeposit")] public int PlasmaDeposit=2500;
+        [Tooltip("Наибольшее снабжение стороны, сколько бы она ни строила: предел сценария.")] [Min(1)] public int SupplyCap=200;
     }
 }

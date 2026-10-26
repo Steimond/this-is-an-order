@@ -4,7 +4,7 @@ using Order.Content;
 
 namespace Order.Simulation
 {
-    // Enemy bot of the test ground, an easy StarCraft-like opponent. Once a second it:
+    // The bot, an easy StarCraft-like opponent; any side may have one (on the player's it plays for the player). Once a second it:
     // - keeps its workers mining and trains more: humans up to a dozen (ten more per extra base), two on each of its
     //   extractors once it has eight; machines one on each deposit round its bases, one on plasma once it has five;
     // - humans put an extractor on the rift by each base from eight workers, and mend damaged buildings once the
@@ -14,61 +14,83 @@ namespace Order.Simulation
     //   and a research building, where it upgrades weapons and armour in turn;
     //   a worker builds them, by its faction's rules, and a human building left without its worker gets another one;
     // - keeps its factories training a mixed army, gathered at the top of its ramp;
-    // - meets player units that come near its buildings with the army at home;
-    // - from the fifth minute sends the army at the player's buildings each time it has grown to the next wave's size;
-    //   a wave keeps going from building to building until it dies.
+    // - meets enemy units that come near its buildings with the army at home;
+    // - from the fifth minute sends the army at the nearest enemy buildings each time it has grown to the next wave's
+    //   size; a wave keeps going from building to building until it dies.
     public sealed partial class PrototypeMatch
     {
-        public bool BotEnabled { get; private set; }
-        public int Waves { get; private set; }
+        // One bot's mind: its side, its clock and waves, and the army it has sent.
+        sealed class BotMind
+        {
+            public readonly int Side;
+            public Fix Timer, StageX, StageZ;
+            public int Waves, WaveSupply = FirstWaveSupply;
+            public bool WaveNow, Cramped;
+            public readonly List<PrototypeUnit> Raiders = new List<PrototypeUnit>();
+            public BotMind(int side) { Side = side; }
+        }
+        // The bots in side order; `bot` is the one thinking right now, for the Bot… methods below.
+        readonly List<BotMind> bots = new List<BotMind>();
+        BotMind bot;
+        BotMind BotOf(int side) => bots.Find(b => b.Side == side);
+        public bool HasBot(int side) => BotOf(side) != null;
+        // The test ground's opponent.
+        public bool BotEnabled => HasBot(Enemy);
+        public int Waves => WavesOf(Enemy);
+        public int WavesOf(int side) => BotOf(side)?.Waves ?? 0;
         static readonly Fix BotThink = 1, FirstWave = 300, DefenseRadius = 12, ExpandAt = 360;
         const int BotWorkers = 12, FirstWaveSupply = 10, WaveGrowth = 4, MaxWaveSupply = 40;
-        Fix botTimer;
-        int waveSupply = FirstWaveSupply;
-        bool waveNow;
-        readonly HashSet<PrototypeUnit> raiders = new HashSet<PrototypeUnit>();
-        // Where the bot's army waits: on its plateau at the top of its ramp.
-        static readonly Fix StageX = (Fix)46.5f, StageZ = (Fix)52.5f;
 
-        public void StartBot()
+        public void StartBot(int side = Enemy)
         {
-            BotEnabled = true;
+            if (side < 0 || side >= Sides || HasBot(side)) return;
+            var mind = new BotMind(side); bots.Add(mind); bots.Sort((a, b) => a.Side.CompareTo(b.Side));
+            var previous = bot; bot = mind;
             var hq = BotHeadquarters();
+            // Its army waits on its plateau at the top of its ramp; the map's corners mirror each other.
+            Fix cx = hq != null ? hq.X + hq.Width * (Fix).5f : 48, cz = hq != null ? hq.Z + hq.Width * (Fix).5f : 48;
+            mind.StageX = cx < 32 ? 64 - (Fix)46.5f : (Fix)46.5f; mind.StageZ = cz < 32 ? 64 - (Fix)52.5f : (Fix)52.5f;
             // Starting workers are part of the bot's base, not a cheat.
-            if (hq != null && !Units.Exists(u => u.Owner == Enemy && u.Kind == UnitKind.Worker)) SpawnAround(UnitKind.Worker, 4, hq.X + hq.Width * (Fix).5f, hq.Z - (Fix)1.5f, Enemy);
+            if (hq != null && !Units.Exists(u => u.Owner == side && u.Kind == UnitKind.Worker))
+                SpawnAround(UnitKind.Worker, 4, hq.X + hq.Width * (Fix).5f, hq.Z < 32 ? hq.Z + hq.Width + (Fix)1.5f : hq.Z - (Fix)1.5f, side);
+            bot = previous;
         }
-        public bool ToggleBot() { if (BotEnabled) BotEnabled = false; else StartBot(); return Cheat(BotEnabled, "бот противника"); }
+        public bool ToggleBot() { if (BotEnabled) bots.RemoveAll(b => b.Side == Enemy); else StartBot(); return Cheat(BotEnabled, "бот противника"); }
         // Cheat: the next think sends the army at the player whatever its size and the time.
-        public void SendWaveNow() { Cheated = true; waveNow = true; if (!BotEnabled) StartBot(); Message = "Чит: противник атакует."; }
+        public void SendWaveNow() { Cheated = true; if (!BotEnabled) StartBot(); BotOf(Enemy).WaveNow = true; Message = "Чит: противник атакует."; }
 
         void TickBot(Fix dt)
         {
-            if (!BotEnabled || Winner >= 0 || (botTimer += dt) < BotThink) return;
-            botTimer = 0;
-            // The bot's orders must not take over the player's event line.
+            if (Winner >= 0) return;
+            // The bots' orders must not take over the player's event line.
             var message = Message;
-            BotEconomy();
-            BotBuild();
-            BotProduce();
-            BotArmy();
-            Message = message;
+            foreach (var mind in bots)
+            {
+                if (defeated[mind.Side] || (mind.Timer += dt) < BotThink) continue;
+                mind.Timer = 0; bot = mind;
+                BotEconomy();
+                BotBuild();
+                BotProduce();
+                BotArmy();
+            }
+            bot = null; Message = message;
         }
-        PrototypeBuilding BotHeadquarters() => Buildings.Find(b => b.Owner == Enemy && Trains(b, UnitKind.Worker));
+        PrototypeBuilding BotHeadquarters() => Buildings.Find(b => b.Owner == bot.Side && Trains(b, UnitKind.Worker));
         static readonly (UnitKind, Fix)[] HumanMix = { (UnitKind.Ranged, (Fix)3f), (UnitKind.Melee, (Fix)2f), (UnitKind.Tank, (Fix)1.5f), (UnitKind.Artillery, (Fix)1f), (UnitKind.Air, (Fix)1f), (UnitKind.Fighter, (Fix)1f) },
             MachineMix = { (UnitKind.Melee, (Fix)3f), (UnitKind.Leaper, (Fix)2f), (UnitKind.Ranged, (Fix)2f), (UnitKind.Air, (Fix)1f) };
 
         void BotEconomy()
         {
-            var bases = Buildings.FindAll(b => b.Owner == Enemy && b.Kind == FactionBalance.Main && b.Ready >= 1);
+            var bases = Buildings.FindAll(b => b.Owner == bot.Side && b.Kind == FactionBalance.Main && b.Ready >= 1);
             if (bases.Count == 0) return;
-            var workers = Units.FindAll(u => u.Owner == Enemy && u.Kind == UnitKind.Worker);
+            var workers = Units.FindAll(u => u.Owner == bot.Side && u.Kind == UnitKind.Worker);
             // Hauling workers share deposits: a dozen at the first base and ten more at each other, two on plasma from
             // eight. Nanite workers hold one deposit each: as many as there are deposits round the bases, one on plasma
             // from five.
-            bool nanites = Roster(Enemy).NaniteMining;
+            bool nanites = Roster(bot.Side).NaniteMining;
             int wanted = nanites ? DepositsNear(bases) : BotWorkers + 10 * (bases.Count - 1);
             // Humans put two on each finished extractor by their bases.
-            int extractors = Buildings.FindAll(b => b.Owner == Enemy && b.Stats.Extracts && b.Ready >= 1).Count;
+            int extractors = Buildings.FindAll(b => b.Owner == bot.Side && b.Stats.Extracts && b.Ready >= 1).Count;
             int onPlasma = workers.FindAll(w => w.HarvestTarget != null && w.HarvestTarget.Plasma).Count, wantPlasma = nanites ? (workers.Count >= 5 ? bases.Count : 0) : workers.Count >= 8 ? 2 * Math.Min(extractors, bases.Count) : 0;
             foreach (var w in workers)
             {
@@ -120,11 +142,11 @@ namespace Order.Simulation
         // worker only takes a deposit nobody holds.
         ResourceDeposit BotDeposit(List<PrototypeBuilding> bases, bool plasma, List<PrototypeUnit> workers)
         {
-            bool nanites = Roster(Enemy).NaniteMining;
+            bool nanites = Roster(bot.Side).NaniteMining;
             ResourceDeposit best = null; Fix bestScore = Fix.MaxValue;
             foreach (var r in Map.Resources)
             {
-                if (r.Plasma != plasma || r.Remaining <= 0 || MiningBlocked(Enemy, r) != null) continue;
+                if (r.Plasma != plasma || r.Remaining <= 0 || MiningBlocked(bot.Side, r) != null) continue;
                 Fix d = Reach(bases, r);
                 if (d > 10) continue;
                 int on = 0; foreach (var w in workers) if (w.HarvestTarget == r) on++;
@@ -142,54 +164,56 @@ namespace Order.Simulation
             // A building left without its worker gets another one.
             foreach (var b in Buildings)
             {
-                if (b.Owner != Enemy || b.Ready >= 1 || b.SelfBuilt || b.Builder != null) continue;
+                if (b.Owner != bot.Side || b.Ready >= 1 || b.SelfBuilt || b.Builder != null) continue;
                 var worker = BotBuilder(b.X + b.Width * (Fix).5f, b.Z + b.Width * (Fix).5f);
                 if (worker != null) Resume(worker, b);
                 return;
             }
             // Humans mend a damaged building once no enemy is near it, one worker to each.
-            if (Roster(Enemy).Repairs)
+            if (Roster(bot.Side).Repairs)
                 foreach (var b in Buildings)
                 {
-                    if (b.Owner != Enemy || b.Ready < 1 || b.Health >= b.Stats.Health || Units.Exists(u => u.Repairing == b)) continue;
-                    if (Units.Exists(u => u.Owner != Enemy && u.Alive && Gap(u, b) < DefenseRadius)) continue;
+                    if (b.Owner != bot.Side || b.Ready < 1 || b.Health >= b.Stats.Health || Units.Exists(u => u.Repairing == b)) continue;
+                    if (Units.Exists(u => u.Owner != bot.Side && u.Alive && Gap(u, b) < DefenseRadius)) continue;
                     var worker = BotBuilder(b.X + b.Width * (Fix).5f, b.Z + b.Width * (Fix).5f);
                     if (worker != null) Repair(worker, b);
                     break;
                 }
             // One building at a time, apart from a new base, which takes long: supply goes on meanwhile.
-            bool raising = Buildings.Exists(b => b.Owner == Enemy && b.Ready < 1 && b.Kind != FactionBalance.Main)
-                || Units.Exists(u => u.Owner == Enemy && u.SiteKind >= 0 && u.SiteKind != FactionBalance.Main);
+            bool raising = Buildings.Exists(b => b.Owner == bot.Side && b.Ready < 1 && b.Kind != FactionBalance.Main)
+                || Units.Exists(u => u.Owner == bot.Side && u.SiteKind >= 0 && u.SiteKind != FactionBalance.Main);
             if (raising) return;
-            if (Supply(Enemy) + 6 >= Limit(Enemy) && Limit(Enemy) < 200) { if (BotPlace(hq, 0)) return; }
+            if (Supply(bot.Side) + 6 >= Limit(bot.Side) && Limit(bot.Side) < supplyCap[bot.Side]) { if (BotPlace(hq, 0)) return; }
+            // A side that starts with only its main building raises its first factory before anything else.
+            int factories = Buildings.FindAll(b => b.Owner == bot.Side && Trains(b, UnitKind.Ranged)).Count;
+            if (factories == 0) { BotPlace(hq, 1); return; }
             if (BotExtractor()) return;
             if (BotRelay(hq)) return;
             if (BotExpand(hq)) return;
-            int factories = Buildings.FindAll(b => b.Owner == Enemy && Trains(b, UnitKind.Ranged)).Count;
-            if (factories < 2 && Waves >= 1 && metalStock[Enemy] >= 400) { if (BotPlace(hq, 1)) return; }
+            if (factories < 2 && bot.Waves >= 1 && metalStock[bot.Side] >= 400) { if (BotPlace(hq, 1)) return; }
             // After its first wave it builds a research building and upgrades weapons and armour in turn.
-            int research = Roster(Enemy).Research;
-            if (research >= 0 && Waves >= 1 && !Buildings.Exists(b => b.Owner == Enemy && b.Kind == research) && metalStock[Enemy] >= 300) BotPlace(hq, research);
+            int research = Roster(bot.Side).Research;
+            if (research >= 0 && bot.Waves >= 1 && !Buildings.Exists(b => b.Owner == bot.Side && b.Kind == research) && metalStock[bot.Side] >= 300) BotPlace(hq, research);
             foreach (var b in Buildings)
-                if (b.Owner == Enemy && b.Kind == research && !b.research.HasValue)
+                if (b.Owner == bot.Side && b.Kind == research && !b.research.HasValue)
                 {
-                    var next = Level(Enemy, Upgrade.Weapons) <= Level(Enemy, Upgrade.Armor) ? Upgrade.Weapons : Upgrade.Armor;
+                    var next = Level(bot.Side, Upgrade.Weapons) <= Level(bot.Side, Upgrade.Armor) ? Upgrade.Weapons : Upgrade.Armor;
                     if (ResearchBlocked(b, next) != null) next = next == Upgrade.Weapons ? Upgrade.Armor : Upgrade.Weapons;
                     if (ResearchBlocked(b, next) == null) Research(b, next);
                 }
         }
         // From the sixth minute the bot takes a second base: the free base spot nearest its first one. Until it has the
         // metal, it saves for it and trains no army.
-        bool ExpansionDue() => Clock >= ExpandAt && Buildings.FindAll(b => b.Owner == Enemy && b.Kind == FactionBalance.Main).Count == 1
-            && !Units.Exists(u => u.Owner == Enemy && u.SiteKind == FactionBalance.Main);
+        bool ExpansionDue() => Clock >= ExpandAt && Buildings.FindAll(b => b.Owner == bot.Side && b.Kind == FactionBalance.Main).Count == 1
+            && !Units.Exists(u => u.Owner == bot.Side && u.SiteKind == FactionBalance.Main);
         bool BotExpand(PrototypeBuilding hq)
         {
-            if (!ExpansionDue() || metalStock[Enemy] < Roster(Enemy).Buildings[FactionBalance.Main].Metal) return false;
+            if (!ExpansionDue() || metalStock[bot.Side] < Roster(bot.Side).Buildings[FactionBalance.Main].Metal) return false;
             Fix cx = hq.X + hq.Width * (Fix).5f, cz = hq.Z + hq.Width * (Fix).5f, best = Fix.MaxValue; int bx = 0, bz = 0;
             foreach (var (x, z) in Map.Bases)
             {
                 Fix d = (x + (Fix)1.5f - cx) * (x + (Fix)1.5f - cx) + (z + (Fix)1.5f - cz) * (z + (Fix)1.5f - cz);
-                if (d < 1 || d >= best || !CanBuild(x, z, FactionBalance.Main, out _, Enemy)) continue;
+                if (d < 1 || d >= best || !CanBuild(x, z, FactionBalance.Main, out _, bot.Side)) continue;
                 best = d; bx = x; bz = z;
             }
             if (best == Fix.MaxValue) return false;
@@ -199,41 +223,40 @@ namespace Order.Simulation
         // A free spot near the command node that leaves a cell of room all round and keeps off the metal line.
         bool BotPlace(PrototypeBuilding hq, int kind)
         {
-            var stats = Roster(Enemy).Buildings[kind];
-            if (metalStock[Enemy] < stats.Metal || plasmaStock[Enemy] < stats.Plasma) return false;
+            var stats = Roster(bot.Side).Buildings[kind];
+            if (metalStock[bot.Side] < stats.Metal || plasmaStock[bot.Side] < stats.Plasma) return false;
             int w = stats.Width; Fix cx = hq.X + hq.Width * (Fix).5f, cz = hq.Z + hq.Width * (Fix).5f, level = Map.Height(hq.X, hq.Z);
             int bestX = 0, bestZ = 0; Fix best = Fix.MaxValue;
             for (int z = hq.Z - 10; z <= hq.Z + 10; z++)
             for (int x = hq.X - 10; x <= hq.X + 10; x++)
             {
                 Fix d = (x + w * (Fix).5f - cx) * (x + w * (Fix).5f - cx) + (z + w * (Fix).5f - cz) * (z + w * (Fix).5f - cz);
-                if (d >= best || d < 9 || !Room(x, z, w, level) || !CanBuild(x, z, kind, out _, Enemy)) continue;
+                if (d >= best || d < 9 || !Room(x, z, w, level) || !CanBuild(x, z, kind, out _, bot.Side)) continue;
                 best = d; bestX = x; bestZ = z;
             }
             // No room inside the coverage: a machine bot extends it with a relay next.
-            if (best == Fix.MaxValue) { cramped = Roster(Enemy).Network; return false; }
+            if (best == Fix.MaxValue) { bot.Cramped = Roster(bot.Side).Network; return false; }
             var builder = BotBuilder(bestX + w * (Fix).5f, bestZ + w * (Fix).5f);
             return builder != null && Build(builder, bestX, bestZ, kind);
         }
         // Machines tie their bases into one network: a relay between two cores that do not reach each other, so each base
         // has a second path to a core (SETTING.md). With no room left for a building inside the coverage, a relay at its edge
         // toward the middle of the map makes more.
-        bool cramped;
         bool BotRelay(PrototypeBuilding hq)
         {
-            if (!Roster(Enemy).Network || RelaysLeft(Enemy) <= 0 || metalStock[Enemy] < Roster(Enemy).Buildings[FactionBalance.Relay].Metal) return false;
-            var cores = Buildings.FindAll(b => b.Owner == Enemy && b.Kind == FactionBalance.Main && b.Ready >= 1 && b.Linked);
+            if (!Roster(bot.Side).Network || RelaysLeft(bot.Side) <= 0 || metalStock[bot.Side] < Roster(bot.Side).Buildings[FactionBalance.Relay].Metal) return false;
+            var cores = Buildings.FindAll(b => b.Owner == bot.Side && b.Kind == FactionBalance.Main && b.Ready >= 1 && b.Linked);
             for (int i = 0; i < cores.Count; i++)
             for (int j = i + 1; j < cores.Count; j++)
             {
                 PrototypeBuilding a = cores[i], c = cores[j];
                 if (Distance(a, c) <= a.Stats.Coverage || Distance(a, c) > a.Stats.Coverage + c.Stats.Coverage) continue;
-                if (Buildings.Exists(r => r.Owner == Enemy && r.Kind == FactionBalance.Relay && Distance(r, a) <= a.Stats.Coverage && Distance(r, c) <= c.Stats.Coverage)) continue;
+                if (Buildings.Exists(r => r.Owner == bot.Side && r.Kind == FactionBalance.Relay && Distance(r, a) <= a.Stats.Coverage && Distance(r, c) <= c.Stats.Coverage)) continue;
                 Fix mx = (a.X + c.X) * (Fix).5f + (Fix)1.5f, mz = (a.Z + c.Z) * (Fix).5f + (Fix)1.5f;
                 if (BotRelayAt(mx, mz, r => Near(r, a) && Near(r, c))) return true;
             }
-            if (!cramped) return false;
-            cramped = false;
+            if (!bot.Cramped) return false;
+            bot.Cramped = false;
             Fix cx = hq.X + hq.Width * (Fix).5f, cz = hq.Z + hq.Width * (Fix).5f, dx = 32 - cx, dz = 32 - cz, d = Math.Sqrt(dx * dx + dz * dz), reach = hq.Stats.Coverage - (Fix)1.5f;
             return d > 0 && BotRelayAt(cx + dx / d * reach, cz + dz / d * reach, r => Near(r, hq));
             bool Near(PrototypeBuilding relay, PrototypeBuilding core) => Distance(relay, core) <= core.Stats.Coverage;
@@ -241,13 +264,13 @@ namespace Order.Simulation
         // A relay on a free spot near the point that passes the check: a stand-in building tells where it would stand.
         bool BotRelayAt(Fix x, Fix z, Func<PrototypeBuilding, bool> fits)
         {
-            var stats = Roster(Enemy).Buildings[FactionBalance.Relay];
+            var stats = Roster(bot.Side).Buildings[FactionBalance.Relay];
             int bestX = 0, bestZ = 0; Fix best = Fix.MaxValue;
             for (int zz = (int)z - 3; zz <= (int)z + 3; zz++)
             for (int xx = (int)x - 3; xx <= (int)x + 3; xx++)
             {
                 Fix d = (xx + (Fix).5f - x) * (xx + (Fix).5f - x) + (zz + (Fix).5f - z) * (zz + (Fix).5f - z);
-                if (d >= best || !Map.Inside(xx, zz) || !CanBuild(xx, zz, FactionBalance.Relay, out _, Enemy)) continue;
+                if (d >= best || !Map.Inside(xx, zz) || !CanBuild(xx, zz, FactionBalance.Relay, out _, bot.Side)) continue;
                 if (!fits(new PrototypeBuilding { X = xx, Z = zz, Width = 1, Stats = stats })) continue;
                 best = d; bestX = xx; bestZ = zz;
             }
@@ -258,12 +281,12 @@ namespace Order.Simulation
         // A side that mines plasma through extractors puts one on the rift by each finished base once it has eight workers.
         bool BotExtractor()
         {
-            int kind = Roster(Enemy).Extractor;
-            if (kind < 0 || Units.FindAll(u => u.Owner == Enemy && u.Kind == UnitKind.Worker).Count < 8) return false;
-            var bases = Buildings.FindAll(b => b.Owner == Enemy && b.Kind == FactionBalance.Main && b.Ready >= 1);
+            int kind = Roster(bot.Side).Extractor;
+            if (kind < 0 || Units.FindAll(u => u.Owner == bot.Side && u.Kind == UnitKind.Worker).Count < 8) return false;
+            var bases = Buildings.FindAll(b => b.Owner == bot.Side && b.Kind == FactionBalance.Main && b.Ready >= 1);
             foreach (var r in Map.Resources)
             {
-                if (!r.Plasma || r.Remaining <= 0 || Reach(bases, r) > 10 || ExtractorOn(r) != null || !CanBuild(r.X, r.Z, kind, out _, Enemy)) continue;
+                if (!r.Plasma || r.Remaining <= 0 || Reach(bases, r) > 10 || ExtractorOn(r) != null || !CanBuild(r.X, r.Z, kind, out _, bot.Side)) continue;
                 var builder = BotBuilder(r.X + (Fix).5f, r.Z + (Fix).5f);
                 return builder != null && Build(builder, r.X, r.Z, kind);
             }
@@ -275,7 +298,7 @@ namespace Order.Simulation
             PrototypeUnit best = null; Fix bestScore = Fix.MaxValue;
             foreach (var u in Units)
             {
-                if (u.Owner != Enemy || u.Kind != UnitKind.Worker || Busy(u)) continue;
+                if (u.Owner != bot.Side || u.Kind != UnitKind.Worker || Busy(u)) continue;
                 Fix score = (u.X - x) * (u.X - x) + (u.Z - z) * (u.Z - z);
                 if (u.Carrying > 0 || (u.HarvestTarget != null && u.HarvestTarget.Plasma)) score += 10000;
                 if (score < bestScore) { bestScore = score; best = u; }
@@ -294,23 +317,23 @@ namespace Order.Simulation
 
         void BotProduce()
         {
-            if (ExpansionDue() && metalStock[Enemy] < Roster(Enemy).Buildings[FactionBalance.Main].Metal) return;
-            var army = Units.FindAll(u => u.Owner == Enemy && u.Stats.Damage > 0);
+            if (ExpansionDue() && metalStock[bot.Side] < Roster(bot.Side).Buildings[FactionBalance.Main].Metal) return;
+            var army = Units.FindAll(u => u.Owner == bot.Side && u.Stats.Damage > 0);
             foreach (var b in Buildings)
             {
-                if (b.Owner != Enemy || b.Ready < 1 || !Trains(b, UnitKind.Ranged)) continue;
-                if (!b.HasRally) SetRally(b, StageX, StageZ);
+                if (b.Owner != bot.Side || b.Ready < 1 || !Trains(b, UnitKind.Ranged)) continue;
+                if (!b.HasRally) SetRally(b, bot.StageX, bot.StageZ);
                 if (b.queue.Count >= 1) continue;
                 // Humans: riflemen, assault units, tanks, howitzers and gunships about three to two to one and a half to one to
                 // one, interceptors only against a player who has air units; machines: spiders, leapers, emitters and gliders
                 // about three to two to two to one; as far as resources allow.
-                bool air = Units.Exists(u => u.Owner != Enemy && u.Stats.Flying);
+                bool air = Units.Exists(u => u.Owner != bot.Side && u.Stats.Flying);
                 UnitKind? pick = null; Fix least = Fix.MaxValue;
-                foreach (var (kind, weight) in Roster(Enemy).Has(UnitKind.Leaper) ? MachineMix : HumanMix)
+                foreach (var (kind, weight) in Roster(bot.Side).Has(UnitKind.Leaper) ? MachineMix : HumanMix)
                 {
-                    var stats = Roster(Enemy).Unit(kind);
+                    var stats = Roster(bot.Side).Unit(kind);
                     if (stats == null || (!stats.HitsGround && !air)) continue;
-                    if (!Trains(b, kind) || metalStock[Enemy] < stats.Metal || plasmaStock[Enemy] < stats.Plasma) continue;
+                    if (!Trains(b, kind) || metalStock[bot.Side] < stats.Metal || plasmaStock[bot.Side] < stats.Plasma) continue;
                     int have = army.FindAll(u => u.Kind == kind).Count; foreach (var q in b.queue) if (q == kind) have++;
                     if (have / weight < least) { least = have / weight; pick = kind; }
                 }
@@ -320,16 +343,16 @@ namespace Order.Simulation
 
         void BotArmy()
         {
-            raiders.RemoveWhere(u => !u.Alive);
-            var home = Units.FindAll(u => u.Owner == Enemy && u.Stats.Damage > 0 && !raiders.Contains(u));
-            // Defence: the army at home goes for the player's units near the bot's buildings.
+            bot.Raiders.RemoveAll(u => !u.Alive);
+            var home = Units.FindAll(u => u.Owner == bot.Side && u.Stats.Damage > 0 && !bot.Raiders.Contains(u));
+            // Defence: the army at home goes for enemy units near the bot's buildings.
             PrototypeUnit threat = null; Fix threatDistance = Fix.MaxValue;
             foreach (var u in Units)
             {
-                if (u.Owner != Player || !SeenBy(Enemy, u)) continue;
+                if (u.Owner == bot.Side || !SeenBy(bot.Side, u)) continue;
                 foreach (var b in Buildings)
                 {
-                    if (b.Owner != Enemy) continue;
+                    if (b.Owner != bot.Side) continue;
                     Fix dx = u.X - (b.X + b.Width * (Fix).5f), dz = u.Z - (b.Z + b.Width * (Fix).5f), d = dx * dx + dz * dz;
                     if (d < DefenseRadius * DefenseRadius && d < threatDistance) { threatDistance = d; threat = u; }
                 }
@@ -339,36 +362,36 @@ namespace Order.Simulation
             else if (threat == null)
             {
                 // Back to the gathering point after a fight away from it.
-                var strays = idle.FindAll(u => (u.X - StageX) * (u.X - StageX) + (u.Z - StageZ) * (u.Z - StageZ) > 64);
-                if (strays.Count > 0) AttackMoveGroup(strays, StageX, StageZ);
+                var strays = idle.FindAll(u => (u.X - bot.StageX) * (u.X - bot.StageX) + (u.Z - bot.StageZ) * (u.Z - bot.StageZ) > 64);
+                if (strays.Count > 0) AttackMoveGroup(strays, bot.StageX, bot.StageZ);
             }
             // Attack waves.
             int supply = 0; foreach (var u in home) supply += u.Stats.Supply;
-            if (home.Count > 0 && threat == null && (waveNow || (Clock >= FirstWave && supply >= waveSupply)))
+            if (home.Count > 0 && threat == null && (bot.WaveNow || (Clock >= FirstWave && supply >= bot.WaveSupply)))
             {
-                var target = PlayerTarget(StageX, StageZ);
+                var target = EnemyTarget(bot.StageX, bot.StageZ);
                 if (target != null)
                 {
                     AttackMoveGroup(home, target.X + target.Width * (Fix).5f, target.Z + target.Width * (Fix).5f);
-                    foreach (var u in home) raiders.Add(u);
-                    Waves++; waveSupply = Math.Min(MaxWaveSupply, waveSupply + WaveGrowth); waveNow = false;
+                    foreach (var u in home) if (!bot.Raiders.Contains(u)) bot.Raiders.Add(u);
+                    bot.Waves++; bot.WaveSupply = Math.Min(MaxWaveSupply, bot.WaveSupply + WaveGrowth); bot.WaveNow = false;
                 }
             }
-            // A wave that has done its point goes on to the next of the player's buildings.
-            foreach (var u in raiders)
+            // A wave that has done its point goes on to the next enemy building.
+            foreach (var u in bot.Raiders)
             {
                 if (u.Order != UnitOrder.Idle || u.Target != null || u.TargetBuilding != null || u.Moving) continue;
-                var next = PlayerTarget(u.X, u.Z);
+                var next = EnemyTarget(u.X, u.Z);
                 if (next != null) AttackMove(u, next.X + next.Width * (Fix).5f, next.Z + next.Width * (Fix).5f);
             }
         }
-        // The player's building nearest a point.
-        PrototypeBuilding PlayerTarget(Fix x, Fix z)
+        // The enemy building nearest a point.
+        PrototypeBuilding EnemyTarget(Fix x, Fix z)
         {
             PrototypeBuilding best = null; Fix bestScore = Fix.MaxValue;
             foreach (var b in Buildings)
             {
-                if (b.Owner != Player) continue;
+                if (b.Owner == bot.Side) continue;
                 Fix dx = b.X + b.Width * (Fix).5f - x, dz = b.Z + b.Width * (Fix).5f - z, score = dx * dx + dz * dz;
                 if (score < bestScore) { bestScore = score; best = b; }
             }

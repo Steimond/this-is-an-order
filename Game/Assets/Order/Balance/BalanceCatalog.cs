@@ -31,7 +31,7 @@ namespace Order.Balance
             if(!expedition.Complete||expedition.Extractor==null||expedition.Tank==null||expedition.Artillery==null||expedition.Fighter==null||Resonance==null||!Resonance.Complete||Resonance.Relay==null||Resonance.Leaper==null||Economy==null)
                 throw new InvalidOperationException("Balance catalog has missing references: run Order/Create Missing Balance Assets.");
             return new MatchBalance{Expedition=Roster(expedition,false),Resonance=Roster(Resonance,true),
-                StartingMetal=Mathf.Max(0,Economy.StartingMetal),StartingPlasma=Mathf.Max(0,Economy.StartingPlasma),MetalDeposit=Mathf.Max(1,Economy.MetalDeposit),PlasmaDeposit=Mathf.Max(1,Economy.PlasmaDeposit)};
+                StartingMetal=Mathf.Max(0,Economy.StartingMetal),StartingPlasma=Mathf.Max(0,Economy.StartingPlasma),MetalDeposit=Mathf.Max(1,Economy.MetalDeposit),PlasmaDeposit=Mathf.Max(1,Economy.PlasmaDeposit),SupplyCap=Mathf.Max(1,Economy.SupplyCap)};
         }
         static FactionBalance Roster(FactionAssets a,bool machines)=>new FactionBalance{NaniteMining=machines,SelfBuilding=machines,Network=machines,Mends=machines,Repairs=!machines,ConsumesWorker=machines,
             Buildable=machines?new[]{0,1,FactionBalance.Relay,FactionBalance.Main,4}:new[]{0,1,FactionBalance.Main,3,4},Research=machines?4:3,Extractor=machines?-1:4,

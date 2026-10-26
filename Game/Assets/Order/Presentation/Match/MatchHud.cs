@@ -407,9 +407,11 @@ namespace Order.Presentation
             // The map name is the title above; this line says who plays whom: "ФРАКЦИЯ 2 ПРОТИВ 1".
             modeLabel.text = PrototypeCatalog.FactionLabel(match.FactionOf(PrototypeMatch.Player)).ToUpperInvariant() + " ПРОТИВ " + (match.FactionOf(PrototypeMatch.Enemy) == FactionId.Expedition ? "1" : "2") + CheatLabel(match);
             modeLabel.EnableInClassList("is-cheating", match.Cheated);
-            banner.style.display = match.Winner < 0 ? DisplayStyle.None : DisplayStyle.Flex;
+            // A defeated player sees it at once, while the other sides may fight on.
+            bool lost = match.Defeated(PrototypeMatch.Player);
+            banner.style.display = match.Winner < 0 && !lost ? DisplayStyle.None : DisplayStyle.Flex;
             banner.text = match.Winner == PrototypeMatch.Player ? "ПОБЕДА" : "ПОРАЖЕНИЕ";
-            banner.EnableInClassList("is-defeat", match.Winner == PrototypeMatch.Enemy);
+            banner.EnableInClassList("is-defeat", match.Winner != PrototypeMatch.Player);
             if (match.Message != lastMessage) { lastMessage = match.Message; ShowEvent(match.Message); }
             var hint = host.ModeHint;
             if (hint != lastHint) { lastHint = hint; if (!string.IsNullOrEmpty(hint)) ShowEvent(hint, true); }

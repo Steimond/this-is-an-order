@@ -120,5 +120,7 @@ namespace Order.Content
                 new BuildingStats{Name="Узел прошивки",Width=2,Metal=75,Height=1.6f,BuildSeconds=20,Health=750,Researches=true}}};
         public FactionBalance Of(FactionId faction)=>faction==FactionId.Resonance?Resonance:Expedition;
         public int StartingMetal=500, StartingPlasma=100, MetalDeposit=1500, PlasmaDeposit=2500;
+        // The most supply a side may have, whatever it builds: the scenario's cap (a campaign mission may set another).
+        public int SupplyCap=200;
     }
 }

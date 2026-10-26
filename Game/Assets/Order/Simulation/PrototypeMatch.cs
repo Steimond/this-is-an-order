@@ -6,21 +6,25 @@ using Order.Contracts;
 namespace Order.Simulation
 {
     public readonly struct Waypoint { public readonly Fix X,Z; public Waypoint(Fix x,Fix z){X=x;Z=z;} }
-    // Rules of the test match: economy and vision. Construction lives in PrototypeMatch.Construction.cs, unit movement in PrototypeMatch.Movement.cs,
-    // attacks in PrototypeMatch.Combat.cs. Side 0 is the player, side 1 the enemy.
+    // Rules of the match: sides, economy and vision. Construction lives in PrototypeMatch.Construction.cs, unit movement in
+    // PrototypeMatch.Movement.cs, attacks in PrototypeMatch.Combat.cs. A match has two to MaxSides sides, every one an
+    // enemy of every other. Side 0 is the player the messages, alerts and cheats are for; on the test ground side 1 is
+    // its opponent.
     public sealed partial class PrototypeMatch
     {
-        public const int Player = 0, Enemy = 1;
+        public const int Player = 0, Enemy = 1, MaxSides = 8;
         public readonly TempleMap Map = new TempleMap();
-        // What the player sees and has seen. Air units are seen anywhere within an observer's radius, ground units only
-        // where the observer has a line of sight; the enemy side keeps its own grids for picking targets.
-        public readonly bool[,] Visible = new bool[64,64], Explored = new bool[64,64];
-        readonly bool[,] skyVisible = new bool[64,64], enemyVisible = new bool[64,64], enemySky = new bool[64,64];
+        // What each side sees and has seen. Air units are seen anywhere within an observer's radius, ground units only
+        // where the observer has a line of sight. Visible and Explored are the player's.
+        readonly bool[][,] ground, sky, explored;
+        public bool[,] Visible=>ground[Player];
+        public bool[,] Explored=>explored[Player];
+        public bool[,] ExploredBy(int side)=>explored[side];
         public readonly List<PrototypeBuilding> Buildings = new List<PrototypeBuilding>();
         public readonly List<PrototypeUnit> Units = new List<PrototypeUnit>();
         public readonly MatchBalance Balance;
         // Resources of each side; Metal and Plasma are the player's.
-        readonly int[] metalStock=new int[2],plasmaStock=new int[2];
+        readonly int[] metalStock,plasmaStock;
         public int Metal{get=>metalStock[Player];set=>metalStock[Player]=value;}
         public int Plasma{get=>plasmaStock[Player];set=>plasmaStock[Player]=value;}
         public int MetalOf(int side)=>metalStock[side];
@@ -30,17 +34,41 @@ namespace Order.Simulation
         public string Message = "Рабочий готов. ПКМ — движение / добыча.";
         int nextUnitId = 1;
         Fix visionTimer;
-        public PrototypeMatch(MatchBalance balance=null,FactionId player=FactionId.Expedition,FactionId enemy=FactionId.Expedition)
+        // The test ground: the player's command node and worker on the south-west plateau, an opponent with nothing yet
+        // (AddEnemyBase, AddEnemySquad and StartBot give it a base, a squad and a mind).
+        public PrototypeMatch(MatchBalance balance=null,FactionId player=FactionId.Expedition,FactionId enemy=FactionId.Expedition):this(balance,new[]{player,enemy})
         {
-            Balance=balance??new MatchBalance();
-            factions[Player]=player;factions[Enemy]=enemy;
-            for(int side=0;side<2;side++){metalStock[side]=Balance.StartingMetal;plasmaStock[side]=Balance.StartingPlasma;}
-            foreach(var r in Map.Resources)r.Remaining=r.Plasma?Balance.PlasmaDeposit:Balance.MetalDeposit;
             AddBuilding(2,10,10,Player,1);
             Spawn(UnitKind.Worker,(Fix)13.5f,(Fix)13.5f);UpdateVision();
         }
+        // An empty match of these sides, one faction each: AddStart seats them on the map.
+        public PrototypeMatch(MatchBalance balance,IReadOnlyList<FactionId> sides)
+        {
+            if(sides==null||sides.Count<2||sides.Count>MaxSides)throw new ArgumentException($"A match has 2 to {MaxSides} sides.",nameof(sides));
+            Balance=balance??new MatchBalance();
+            int count=sides.Count;
+            factions=new FactionId[count];for(int side=0;side<count;side++)factions[side]=sides[side];
+            metalStock=new int[count];plasmaStock=new int[count];supplyCap=new int[count];defeated=new bool[count];levels=new int[count,2];
+            ground=new bool[count][,];sky=new bool[count][,];explored=new bool[count][,];
+            for(int side=0;side<count;side++)
+            {
+                metalStock[side]=Balance.StartingMetal;plasmaStock[side]=Balance.StartingPlasma;supplyCap[side]=Balance.SupplyCap;
+                ground[side]=new bool[64,64];sky[side]=new bool[64,64];explored[side]=new bool[64,64];
+            }
+            foreach(var r in Map.Resources)r.Remaining=r.Plasma?Balance.PlasmaDeposit:Balance.MetalDeposit;
+        }
+        public int Sides=>factions.Length;
+        // A side's start: a finished main building on one of the map's start spots (TempleMap.Bases, the first four) and
+        // workers round it.
+        public PrototypeBuilding AddStart(int side,int seat,int workers=4)
+        {
+            var (x,z)=Map.Bases[seat];
+            var main=AddBuilding(FactionBalance.Main,x,z,side,1);
+            SpawnAround(UnitKind.Worker,workers,main.X+main.Width*(Fix).5f,main.Z<32?main.Z+main.Width+(Fix)1.5f:main.Z-(Fix)1.5f,side);
+            return main;
+        }
         // Each side plays one faction: its roster, how its workers gather and how it builds.
-        readonly FactionId[] factions=new FactionId[2];
+        readonly FactionId[] factions;
         public FactionId FactionOf(int side)=>factions[side];
         public FactionBalance Roster(int side)=>Balance.Of(factions[side]);
         public PrototypeUnit Spawn(UnitKind kind,Fix x,Fix z,int owner=Player)
@@ -73,7 +101,12 @@ namespace Order.Simulation
             return used;
         }
         public int SupplyLimit=>Limit(Player);
-        int Limit(int owner){int limit=0;foreach(var b in Buildings)if(b.Owner==owner&&b.Ready>=1&&b.Powered)limit+=b.Stats.Supply;return limit;}
+        // What the side's finished, working buildings provide, up to the cap the scenario sets (MatchBalance.SupplyCap; a
+        // campaign mission may raise or lower it for one side).
+        int Limit(int owner){int limit=0;foreach(var b in Buildings)if(b.Owner==owner&&b.Ready>=1&&b.Powered)limit+=b.Stats.Supply;return Math.Min(limit,supplyCap[owner]);}
+        readonly int[] supplyCap;
+        public int SupplyCapOf(int side)=>supplyCap[side];
+        public void SetSupplyCap(int side,int cap)=>supplyCap[side]=Math.Max(0,cap);
         public Fix HeightAt(Fix x,Fix z)=>Map.Height((int)x,(int)z,x-(int)x);
         // The match advances only in fixed steps of TickSeconds, so the same orders on the same steps give the same match on
         // every machine; the view interpolates between steps. Frame counts the steps made.
@@ -97,31 +130,24 @@ namespace Order.Simulation
         }
         public void UpdateVision()
         {
-            Array.Clear(Visible,0,Visible.Length);Array.Clear(skyVisible,0,skyVisible.Length);
-            Array.Clear(enemyVisible,0,enemyVisible.Length);Array.Clear(enemySky,0,enemySky.Length);
-            foreach(var u in Units)
-                if(u.Owner==Player)Reveal((int)u.X,(int)u.Z,u.Stats.Vision,u.Stats.Flying,Visible,skyVisible,true);
-                else Reveal((int)u.X,(int)u.Z,u.Stats.Vision,u.Stats.Flying,enemyVisible,enemySky,false);
-            foreach(var b in Buildings)
-            {
-                if(b.Ready<1)continue;
-                bool own=b.Owner==Player;
-                Reveal(b.X+b.Width/2,b.Z+b.Width/2,b.Stats.Vision,false,own?Visible:enemyVisible,own?skyVisible:enemySky,own);
-            }
+            for(int side=0;side<Sides;side++){Array.Clear(ground[side],0,ground[side].Length);Array.Clear(sky[side],0,sky[side].Length);}
+            foreach(var u in Units)Reveal((int)u.X,(int)u.Z,u.Stats.Vision,u.Stats.Flying,u.Owner);
+            foreach(var b in Buildings)if(b.Ready>=1)Reveal(b.X+b.Width/2,b.Z+b.Width/2,b.Stats.Vision,false,b.Owner);
             // Cheat: the player sees the whole map.
-            if(Revealed)for(int z=0;z<64;z++)for(int x=0;x<64;x++){Visible[x,z]=skyVisible[x,z]=Explored[x,z]=true;}
+            if(Revealed)for(int z=0;z<64;z++)for(int x=0;x<64;x++){ground[Player][x,z]=sky[Player][x,z]=explored[Player][x,z]=true;}
         }
         // Whether a side currently sees the unit; a side always sees its own units.
         public bool SeenBy(int side,PrototypeUnit u)
         {
             if(u.Owner==side)return true;
             int x=Math.Max(0,Math.Min(63,(int)u.X)),z=Math.Max(0,Math.Min(63,(int)u.Z));
-            var grid=side==Player?(u.Stats.Flying?skyVisible:Visible):(u.Stats.Flying?enemySky:enemyVisible);
+            var grid=u.Stats.Flying?sky[side]:ground[side];
             return grid[x,z];
         }
         // Ground observers cannot see up a cliff; air units see everything within their radius.
-        void Reveal(int sx,int sz,int radius,bool fromAir,bool[,] ground,bool[,] sky,bool explore)
+        void Reveal(int sx,int sz,int radius,bool fromAir,int side)
         {
+            bool[,] ground=this.ground[side],sky=this.sky[side],explored=this.explored[side];
             Fix observer=fromAir?Fix.MaxValue:Map.Height(sx,sz)+(Fix).6f;
             for(int z=Math.Max(0,sz-radius);z<=Math.Min(63,sz+radius);z++)
             for(int x=Math.Max(0,sx-radius);x<=Math.Min(63,sx+radius);x++)
@@ -130,7 +156,7 @@ namespace Order.Simulation
                 sky[x,z]=true;
                 int steps=Math.Max(Math.Abs(dx),Math.Abs(dz));bool clear=true;
                 for(int i=1;i<=steps;i++){int xx=(int)Math.Round(sx+dx*(Fix)i/steps),zz=(int)Math.Round(sz+dz*(Fix)i/steps);if(Map.Height(xx,zz)>observer){clear=false;break;}}
-                if(clear){ground[x,z]=true;if(explore)Explored[x,z]=true;}
+                if(clear){ground[x,z]=true;explored[x,z]=true;}
             }
         }
     }

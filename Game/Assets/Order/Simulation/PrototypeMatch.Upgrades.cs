@@ -12,7 +12,7 @@ namespace Order.Simulation
     public sealed partial class PrototypeMatch
     {
         public const int MaxUpgrade = 3;
-        readonly int[,] levels = new int[2, 2];
+        readonly int[,] levels;
         public int Level(int side, Upgrade upgrade) => levels[side, (int)upgrade];
         // What the next level costs: level 1 — 100 metal and 100 plasma, 60 s; each further level 75 and 15 s more.
         public static (int metal, int plasma, Fix seconds) UpgradeCost(int level) => (25 + 75 * level, 25 + 75 * level, 45 + 15 * level);
