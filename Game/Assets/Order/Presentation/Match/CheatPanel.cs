@@ -32,16 +32,16 @@ namespace Order.Presentation
             panel = Hud.Panel("ЧИТЫ ПОЛИГОНА", "EDITOR", out var body);
             panel.AddToClassList("match-cheats"); panel.AddToClassList("match-hit");
             var match = Row(body, "МАТЧ");
-            match.Add(Hud.Button("+10 000", () => Run(m => m.AddResources(10000, 10000))));
-            fast = Add(match, $"СТРОЙКА ×{PrototypeMatch.FastFactor:0}", m => m.ToggleFastBuild());
-            supply = Add(match, "БЕЗ ЛИМИТА", m => m.ToggleNoSupply());
+            match.Add(Hud.Button("+10 000", () => Run(m => m.Execute(MatchCommand.Cheat(CommandKind.CheatResources, PrototypeMatch.Player, 10000)))));
+            fast = Add(match, $"СТРОЙКА ×{PrototypeMatch.FastFactor:0}", m => m.Execute(MatchCommand.Cheat(CommandKind.CheatFastBuild, PrototypeMatch.Player)));
+            supply = Add(match, "БЕЗ ЛИМИТА", m => m.Execute(MatchCommand.Cheat(CommandKind.CheatNoSupply, PrototypeMatch.Player)));
             var world = Row(body, "МИР");
-            map = Add(world, "ВСЯ КАРТА", m => m.ToggleReveal());
-            immortal = Add(world, "БЕССМЕРТИЕ", m => m.ToggleInvulnerable());
-            world.Add(Hud.Button("ПОБЕДА", () => Run(m => m.WinNow())));
+            map = Add(world, "ВСЯ КАРТА", m => m.Execute(MatchCommand.Cheat(CommandKind.CheatReveal, PrototypeMatch.Player)));
+            immortal = Add(world, "БЕССМЕРТИЕ", m => m.Execute(MatchCommand.Cheat(CommandKind.CheatInvulnerable, PrototypeMatch.Player)));
+            world.Add(Hud.Button("ПОБЕДА", () => Run(m => m.Execute(MatchCommand.Cheat(CommandKind.CheatWin, PrototypeMatch.Player)))));
             var enemy = Row(body, "БОТ");
-            bot = Add(enemy, "ВКЛЮЧЁН", m => m.ToggleBot());
-            enemy.Add(Hud.Button("ВОЛНА СЕЙЧАС", () => Run(m => m.SendWaveNow())));
+            bot = Add(enemy, "ВКЛЮЧЁН", m => m.Execute(MatchCommand.Cheat(CommandKind.CheatBot, PrototypeMatch.Player)));
+            enemy.Add(Hud.Button("ВОЛНА СЕЙЧАС", () => Run(m => m.Execute(MatchCommand.Cheat(CommandKind.CheatWave, PrototypeMatch.Player)))));
             // A new match with other factions: player against bot.
             var races = Row(body, "РАСЫ");
             foreach (var (mine, theirs, title) in new[] { (FactionId.Expedition, FactionId.Resonance, "ЛЮДИ — МАШИНЫ"), (FactionId.Resonance, FactionId.Expedition, "МАШИНЫ — ЛЮДИ"),
@@ -94,7 +94,10 @@ namespace Order.Presentation
                 row.Add(Hud.Button(host.Match.Roster(owner).Unit(kind).Name.ToUpperInvariant(), () =>
                 {
                     var at = host.CameraFocus;
-                    var units = host.Match.SpawnSquad(unit, count, at.x, at.y, owner);
+                    int before = host.Match.Units.Count;
+                    host.Match.Execute(MatchCommand.Spawn(PrototypeMatch.Player, unit, count, at.x, at.y, owner));
+                    // New units join the end of the match's list.
+                    var units = host.Match.Units.GetRange(before, host.Match.Units.Count - before);
                     if (owner == PrototypeMatch.Player && units.Count > 0) host.Selection.Set(units);
                     refresh();
                 }));

@@ -10,14 +10,14 @@ namespace Order.Simulation
         public ulong StateHash()
         {
             var h=new StateHasher();
-            h.Add(Frame);h.Add(Clock);h.Add(nextUnitId);
+            h.Add(Frame);h.Add(Clock);h.Add(nextUnitId);h.Add(nextBuildingId);
             h.Add(Sides);for(int side=0;side<Sides;side++){h.Add(metalStock[side]);h.Add(plasmaStock[side]);h.Add(supplyCap[side]);h.Add(defeated[side]);}h.Add(Winner);
             foreach(int level in levels)h.Add(level);
             foreach(var r in Map.Resources){h.Add(r.Remaining);h.Add(r.WrappedBy);}
             h.Add(Buildings.Count);
             foreach(var b in Buildings)
             {
-                h.Add(b.X);h.Add(b.Z);h.Add(b.Kind);h.Add(b.Owner);h.Add(b.Health);h.Add(b.Ready);h.Add(b.Powered);h.Add(b.DarkFor);
+                h.Add(b.Id);h.Add(b.X);h.Add(b.Z);h.Add(b.Kind);h.Add(b.Owner);h.Add(b.Health);h.Add(b.Ready);h.Add(b.Powered);h.Add(b.DarkFor);
                 h.Add(b.Training);h.Add(b.started);h.Add(b.queue.Count);foreach(var kind in b.queue)h.Add((int)kind);
                 h.Add(b.research.HasValue?(int)b.research.Value:-1);h.Add(b.ResearchTime);
                 h.Add(b.builder?.Id??0);h.Add(b.RallyX);h.Add(b.RallyZ);

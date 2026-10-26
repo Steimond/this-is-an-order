@@ -891,7 +891,7 @@ namespace Order.Presentation
                                 Active = building.Researching == upgrade,
                                 Description = slot == 0 ? "Каждый удар всех юнитов стороны сильнее на десятую часть базового урона (не меньше 1). Три уровня."
                                     : "Каждый удар по юнитам стороны слабее на 1 (но не меньше 1). Три уровня.",
-                                Locked = blocked == "Недостаточно металла." || blocked == "Недостаточно плазмы." ? null : blocked, Run = () => match.Research(building, upgrade) };
+                                Locked = blocked == "Недостаточно металла." || blocked == "Недостаточно плазмы." ? null : blocked, Run = () => match.Execute(MatchCommand.Research(PrototypeMatch.Player, building, upgrade)) };
                         }
                 }
             }
@@ -903,7 +903,7 @@ namespace Order.Presentation
             {
                 var researching = host.SelectedBuilding;
                 actions[14] = new HudAction { Title = "Отменить исследование", Hotkey = "ESC", Icon = HudIconKind.Close,
-                    Description = "Остановить исследование: стоимость вернётся полностью.", Run = () => host.Match.CancelResearch(researching) };
+                    Description = "Остановить исследование: стоимость вернётся полностью.", Run = () => host.Match.Execute(MatchCommand.CancelResearch(PrototypeMatch.Player, researching)) };
             }
             else if (CancellableSite() != null)
                 actions[14] = new HudAction { Title = "Отменить стройку", Hotkey = "ESC", Icon = HudIconKind.Close,
@@ -1040,7 +1040,7 @@ namespace Order.Presentation
             // As in StarCraft, Esc cancels the selected building under construction, or the research it is busy with.
             if (CancellableSite() != null) { host.CancelConstruction(); Refresh(); return; }
             var lab = host.SelectedBuilding;
-            if (host.Selection.Count == 0 && lab != null && lab.Owner == PrototypeMatch.Player && lab.Researching.HasValue) { host.Match.CancelResearch(lab); Refresh(); }
+            if (host.Selection.Count == 0 && lab != null && lab.Owner == PrototypeMatch.Player && lab.Researching.HasValue) { host.Match.Execute(MatchCommand.CancelResearch(PrototypeMatch.Player, lab)); Refresh(); }
         }
         private PrototypeBuilding CancellableSite()
         {
@@ -1202,7 +1202,7 @@ namespace Order.Presentation
                     .OrderBy(r => match.MiningBlocked(harvester.Owner, r) == null ? 0 : 1)
                     .ThenBy(r => (r.X - harvester.X) * (r.X - harvester.X) + (r.Z - harvester.Z) * (r.Z - harvester.Z)).FirstOrDefault();
                 if (deposit == null) { ok = false; reply = wantPlasma ? "Нет разведанной плазмы." : "Нет разведанного металла."; return true; }
-                ok = match.Move(harvester, deposit.X + .5f, deposit.Z + .5f) && harvester.HarvestTarget == deposit;
+                ok = match.Execute(MatchCommand.Move(PrototypeMatch.Player, new[] { harvester }, deposit.X + .5f, deposit.Z + .5f)) && harvester.HarvestTarget == deposit;
                 if (!ok) { reply = match.Message; return true; }
                 reply = ok ? $"{harvester.Stats.Name}: добыча {(deposit.Plasma ? "плазмы" : "металла")} в {MapGrid.Name(deposit.X + .5f, deposit.Z + .5f, TempleMap.Size)}." : match.Message;
                 return true;
@@ -1214,7 +1214,7 @@ namespace Order.Presentation
                 if (workers.Count == 0 || !match.Roster(PrototypeMatch.Player).Repairs) { ok = false; reply = "Авторемонт есть только у рабочих людей."; return true; }
                 // "авторемонт вкл/выкл" sets it, the bare word toggles it.
                 bool on = Is(@"\b(?:вкл\w*|on|да)\b") ? true : Is(@"\b(?:выкл\w*|off|нет|отключ\w*)\b") ? false : !workers.All(u => u.AutoRepair);
-                foreach (var w in workers) match.SetAutoRepair(w, on);
+                match.Execute(MatchCommand.AutoRepair(PrototypeMatch.Player, workers, on));
                 reply = $"Авторемонт {(on ? "включён" : "выключен")}: {(workers.Count > 1 ? $"рабочие ×{workers.Count}" : workers[0].Stats.Name.ToLowerInvariant())}.";
                 return true;
             }
@@ -1244,7 +1244,7 @@ namespace Order.Presentation
                 var guns = host.Selection.Orderable.Where(u => u.Stats.Siege).ToList();
                 if (guns.Count == 0) { ok = false; reply = "Нет гаубиц."; return true; }
                 bool deploy = Is(@"^разв");
-                foreach (var g in guns) if ((g.SiegeMode == SiegeState.Packed || g.SiegeMode == SiegeState.Packing) == deploy) match.ToggleDeploy(g);
+                foreach (var g in guns) if ((g.SiegeMode == SiegeState.Packed || g.SiegeMode == SiegeState.Packing) == deploy) match.Execute(MatchCommand.ToggleDeploy(PrototypeMatch.Player, g));
                 reply = $"{(guns.Count > 1 ? $"Гаубицы ×{guns.Count}" : guns[0].Stats.Name)}: {(deploy ? "развёртывание" : "сворачиваются")}.";
                 return true;
             }
@@ -1267,7 +1267,7 @@ namespace Order.Presentation
                     ok = false; reply = any == null ? $"Сначала постройте: {match.Roster(PrototypeMatch.Player).Buildings[match.Roster(PrototypeMatch.Player).Research].Name.ToLowerInvariant()}." : match.ResearchBlocked(any, upgrade);
                     return true;
                 }
-                ok = match.Research(lab, upgrade);
+                ok = match.Execute(MatchCommand.Research(PrototypeMatch.Player, lab, upgrade));
                 reply = match.Message;
                 return true;
             }
@@ -1287,7 +1287,7 @@ namespace Order.Presentation
                 var name = match.Roster(PrototypeMatch.Player).Unit(kind).Name;
                 if (building == null) { ok = false; reply = kind == UnitKind.Worker ? "Нет готового командного узла." : $"{name}: нужен готовый цех."; return true; }
                 var queued = 0;
-                while (queued < count && match.Train(building, kind)) queued++;
+                while (queued < count && match.Execute(MatchCommand.Train(PrototypeMatch.Player, building, kind))) queued++;
                 ok = queued > 0;
                 reply = ok ? $"Обучение: {name}{(queued > 1 ? " ×" + queued : "")} — {building.Stats.Name.ToLowerInvariant()}." + (queued < count ? " Остальные: " + match.Message : "") : match.Message;
                 return true;

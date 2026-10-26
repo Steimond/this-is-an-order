@@ -345,6 +345,9 @@ namespace Order.Presentation
             }
             blend=Mathf.Clamp01(pending/(float)PrototypeMatch.TickSeconds);
         }
+        // The view orders only through commands of the player's side, applied between the match's steps.
+        const int Me=PrototypeMatch.Player;
+        public bool Order(MatchCommand command)=>Match.Execute(command);
         // Where a unit is drawn this frame: between where it stood before the last match step and where it stands now.
         Vector2 Place(PrototypeUnit unit)=>new Vector2(Mathf.Lerp((float)unit.PreviousX,(float)unit.X,blend),Mathf.Lerp((float)unit.PreviousZ,(float)unit.Z,blend));
         sealed class UnitView
@@ -1395,12 +1398,12 @@ namespace Order.Presentation
             var workers=Repairers(unit);
             if(workers.Count==0){Match.Message="Чинить могут только рабочие людей.";hud?.Refresh();return false;}
             int started=0;string reason=null;
-            foreach(var w in workers){if(building!=null?Match.Repair(w,building):Match.Repair(w,unit))started++;else reason??=Match.Message;}
+            foreach(var w in workers){if(building!=null?Order(MatchCommand.Repair(Me,w,building)):Order(MatchCommand.Repair(Me,w,unit)))started++;else reason??=Match.Message;}
             if(started==0){Match.Message=reason;hud?.Refresh();return false;}
             float cx=building!=null?(float)building.X+building.Width*.5f:(float)unit.X,cz=building!=null?(float)building.Z+building.Width*.5f:(float)unit.Z;
             var rest=new List<PrototypeUnit>(selection.Orderable);rest.RemoveAll(u=>workers.Contains(u)||u==unit);
             var message=$"{(started>1?$"Рабочие ×{started}":workers[0].Stats.Name)}: ремонт — {(building!=null?building.Stats.Name:unit.Stats.Name)}.";
-            if(rest.Count>0)Match.MoveGroup(rest,cx,cz);
+            if(rest.Count>0)Order(MatchCommand.Move(Me,rest,cx,cz));
             Match.Message=message;Mark(new Vector2(cx,cz),true);hud?.Refresh();
             return true;
         }
@@ -1408,7 +1411,7 @@ namespace Order.Presentation
         bool QueueRepairSelection(PrototypeBuilding building,PrototypeUnit unit)
         {
             var workers=Repairers(unit);int queued=0;string reason=null;
-            foreach(var w in workers){if(building!=null?Match.QueueRepair(w,building):Match.QueueRepair(w,unit))queued++;else reason??=Match.Message;}
+            foreach(var w in workers){if(building!=null?Order(MatchCommand.Repair(Me,w,building,true)):Order(MatchCommand.Repair(Me,w,unit,true)))queued++;else reason??=Match.Message;}
             if(queued==0){if(reason!=null)Match.Message=reason;hud?.Refresh();return false;}
             Match.Message=$"Ремонт добавлен в очередь: {(building!=null?building.Stats.Name:unit.Stats.Name)}.";
             Mark(building!=null?new Vector2((float)building.X+building.Width*.5f,(float)building.Z+building.Width*.5f):new Vector2((float)unit.X,(float)unit.Z),true);hud?.Refresh();
@@ -1419,7 +1422,7 @@ namespace Order.Presentation
         {
             var guns=new List<PrototypeUnit>(selection.Orderable).FindAll(u=>u.Stats.Siege);if(guns.Count==0)return;
             bool deploy=guns.Exists(u=>u.SiegeMode==SiegeState.Packed||u.SiegeMode==SiegeState.Packing);
-            foreach(var g in guns)if((g.SiegeMode==SiegeState.Packed||g.SiegeMode==SiegeState.Packing)==deploy)Match.ToggleDeploy(g);
+            foreach(var g in guns)if((g.SiegeMode==SiegeState.Packed||g.SiegeMode==SiegeState.Packing)==deploy)Order(MatchCommand.ToggleDeploy(Me,g));
             if(guns.Count>1)Match.Message=$"Гаубицы ×{guns.Count}: {(deploy?"развёртывание":"сворачиваются")}.";
             hud?.Refresh();
         }
@@ -1427,7 +1430,7 @@ namespace Order.Presentation
         {
             var workers=Repairers(null);if(workers.Count==0)return;
             bool on=!workers.TrueForAll(u=>u.AutoRepair);
-            foreach(var w in workers)Match.SetAutoRepair(w,on);
+            Order(MatchCommand.AutoRepair(Me,workers,on));
             Match.Message=$"Авторемонт {(on?"включён":"выключен")}.";hud?.Refresh();
         }
         // Right click on an own extractor means its rift: the ray past the model would hit the ground behind it.
@@ -1454,7 +1457,7 @@ namespace Order.Presentation
             foreach(var u in new List<PrototypeUnit>(selection.Orderable))
             {
                 var (m,p)=Match.DisassemblyReturn(u);
-                if(Match.Disassemble(u)){started++;metal+=m;plasma+=p;}else reason??=Match.Message;
+                if(Order(MatchCommand.Disassemble(Me,u))){started++;metal+=m;plasma+=p;}else reason??=Match.Message;
             }
             if(started>1)Match.Message=$"Разборка: {started} юнитов, вернётся металл {metal}"+(plasma>0?$", плазма {plasma}.":".");
             else if(started==0&&reason!=null)Match.Message=reason;
@@ -1485,7 +1488,7 @@ namespace Order.Presentation
         bool MoveSelection(Vector2 point,bool queue)
         {
             var units=selection.Orderable;if(units.Count==0)return false;
-            bool any=queue?Match.QueueMoveGroup(units,point.x,point.y):Match.MoveGroup(units,point.x,point.y);
+            bool any=queue?Order(MatchCommand.Move(Me,units,point.x,point.y,true)):Order(MatchCommand.Move(Me,units,point.x,point.y));
             int cx=(int)point.x,cz=(int)point.y;
             var deposit=Match.Map.Inside(cx,cz)&&Match.Explored[cx,cz]?Match.Map.ResourceAt(cx,cz):null;
             Mark(deposit!=null?new Vector2(deposit.X+.5f,deposit.Z+.5f):point,any);
@@ -1496,7 +1499,7 @@ namespace Order.Presentation
         bool AttackMoveSelection(Vector2 point,bool queue)
         {
             var units=selection.Orderable;if(units.Count==0)return false;
-            bool any=queue?Match.QueueAttackMoveGroup(units,point.x,point.y):Match.AttackMoveGroup(units,point.x,point.y);
+            bool any=queue?Order(MatchCommand.AttackMove(Me,units,point.x,point.y,true)):Order(MatchCommand.AttackMove(Me,units,point.x,point.y));
             Mark(point,any,true);
             return any;
         }
@@ -1504,7 +1507,7 @@ namespace Order.Presentation
         public bool AttackSelection(PrototypeUnit target,bool queue=false)
         {
             var units=selection.Orderable;if(units.Count==0)return false;
-            bool any=queue?Match.EnqueueGroup(units,target):Match.AttackGroup(units,target);
+            bool any=queue?Order(MatchCommand.Attack(Me,units,target,true)):Order(MatchCommand.Attack(Me,units,target));
             if(any)MarkTarget(target);
             hud?.Refresh();
             return any;
@@ -1537,8 +1540,8 @@ namespace Order.Presentation
                 if(d<best){best=d;worker=u;}
             }
             if(worker==null){Match.Message="Нет рабочих.";hud?.Refresh();return false;}
-            if(queue){bool queued=Match.QueueBuild(worker,x,z,kind);if(queued)Mark(new Vector2(cx,cz),true);hud?.Refresh();return queued;}
-            bool ok=Match.Build(worker,x,z,kind);
+            if(queue){bool queued=Order(MatchCommand.Build(Me,worker,x,z,kind,true));if(queued)Mark(new Vector2(cx,cz),true);hud?.Refresh();return queued;}
+            bool ok=Order(MatchCommand.Build(Me,worker,x,z,kind));
             if(ok){BuildOrders++;Mark(new Vector2(cx,cz),true);}
             hud?.Refresh();return ok;
         }
@@ -1554,21 +1557,21 @@ namespace Order.Presentation
                 float d=((float)u.X-cx)*((float)u.X-cx)+((float)u.Z-cz)*((float)u.Z-cz);
                 if(d<best){best=d;worker=u;}
             }
-            if(worker==null||!Match.Resume(worker,site))return false;
+            if(worker==null||!Order(MatchCommand.Resume(Me,worker,site)))return false;
             var rest=new List<PrototypeUnit>(selection.Orderable);rest.Remove(worker);
-            if(rest.Count>0){var message=Match.Message;Match.MoveGroup(rest,cx,cz);Match.Message=message;}
+            if(rest.Count>0){var message=Match.Message;Order(MatchCommand.Move(Me,rest,cx,cz));Match.Message=message;}
             Mark(new Vector2(cx,cz),true);hud?.Refresh();
             return true;
         }
         public bool CancelConstruction()
         {
-            bool ok=selectedBuilding!=null&&selectedBuilding.Owner==PrototypeMatch.Player&&Match.CancelConstruction(selectedBuilding);
+            bool ok=selectedBuilding!=null&&selectedBuilding.Owner==PrototypeMatch.Player&&Order(MatchCommand.CancelConstruction(Me,selectedBuilding));
             if(ok)selectedBuilding=null;
             hud?.Refresh();return ok;
         }
         // Production in the selected building; the queue and rally point live in the simulation.
-        public bool Train(UnitKind kind){bool ok=selectedBuilding!=null&&Match.Train(selectedBuilding,kind);hud?.Refresh();return ok;}
-        public void CancelTraining(int index){if(selectedBuilding!=null)Match.CancelTraining(selectedBuilding,index);hud?.Refresh();}
+        public bool Train(UnitKind kind){bool ok=selectedBuilding!=null&&Order(MatchCommand.Train(Me,selectedBuilding,kind));hud?.Refresh();return ok;}
+        public void CancelTraining(int index){if(selectedBuilding!=null)Order(MatchCommand.CancelTraining(Me,selectedBuilding,index));hud?.Refresh();}
         // A rally point on a deposit is drawn at its centre: workers will harvest it.
         public void SetRallyPoint(Vector2 point)
         {
@@ -1576,12 +1579,12 @@ namespace Order.Presentation
             int cx=(int)point.x,cz=(int)point.y;
             var deposit=Match.Map.Inside(cx,cz)&&Match.Explored[cx,cz]?Match.Map.ResourceAt(cx,cz):null;
             if(deposit!=null)point=new Vector2(deposit.X+.5f,deposit.Z+.5f);
-            Match.SetRally(selectedBuilding,point.x,point.y);Mark(point,true);hud?.Refresh();
+            Order(MatchCommand.SetRally(Me,selectedBuilding,point.x,point.y));Mark(point,true);hud?.Refresh();
         }
         public bool AttackSelection(PrototypeBuilding target,bool queue=false)
         {
             var units=selection.Orderable;if(units.Count==0)return false;
-            bool any=queue?Match.EnqueueGroup(units,target):Match.AttackGroup(units,target);
+            bool any=queue?Order(MatchCommand.Attack(Me,units,target,true)):Order(MatchCommand.Attack(Me,units,target));
             if(any)
             {
                 var view=scenery.Model("Target marker",selectionMesh,markerMaterial,worldRoot.transform,false);
@@ -1591,8 +1594,8 @@ namespace Order.Presentation
             hud?.Refresh();
             return any;
         }
-        public void HoldSelection(){foreach(var unit in selection.Orderable)Match.Hold(unit);SetMode(MatchMode.None);}
-        public void Stop(){foreach(var unit in selection.Orderable)Match.Stop(unit);SetMode(MatchMode.None);}
+        public void HoldSelection(){Order(MatchCommand.Hold(Me,selection.Orderable));SetMode(MatchMode.None);}
+        public void Stop(){Order(MatchCommand.Stop(Me,selection.Orderable));SetMode(MatchMode.None);}
         public void FocusBase()
         {
             var hq=Match.Buildings.Find(b=>b.Kind==2);

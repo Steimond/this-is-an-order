@@ -29,7 +29,7 @@ namespace Order.Simulation
     {
         public void Enqueue(PrototypeUnit unit, QueuedOrder order)
         {
-            if (unit.queued.Count == 0 && unit.Order == UnitOrder.Idle && !Busy(unit) && (!unit.Moving || unit.HarvestTarget != null)) { Execute(unit, order); return; }
+            if (unit.queued.Count == 0 && unit.Order == UnitOrder.Idle && !Busy(unit) && (!unit.Moving || unit.HarvestTarget != null)) { StartQueued(unit, order); return; }
             unit.queued.Add(order);
         }
         public bool EnqueueGroup(IReadOnlyList<PrototypeUnit> units, PrototypeUnit target)
@@ -49,7 +49,7 @@ namespace Order.Simulation
         public bool QueueMoveGroup(IReadOnlyList<PrototypeUnit> units, Fix x, Fix z) => GroupOrder(units, x, z, false, true);
         public bool QueueAttackMoveGroup(IReadOnlyList<PrototypeUnit> units, Fix x, Fix z) => GroupOrder(units, x, z, true, true);
 
-        bool Execute(PrototypeUnit u, QueuedOrder order)
+        bool StartQueued(PrototypeUnit u, QueuedOrder order)
         {
             if (order.BuildKind >= 0) return Build(u, (int)order.X, (int)order.Z, order.BuildKind);
             if (order.Mend) return order.Building != null ? Repair(u, order.Building) : Repair(u, order.Unit);
@@ -67,7 +67,7 @@ namespace Order.Simulation
                     var next = u.queued[0]; u.queued.RemoveAt(0);
                     var rest = new List<QueuedOrder>(u.queued);
                     var message = Message;
-                    bool started = Execute(u, next);
+                    bool started = StartQueued(u, next);
                     Message = message;
                     // A started order cleared the queue; put the rest back.
                     if (u.queued.Count == 0) u.queued.AddRange(rest);

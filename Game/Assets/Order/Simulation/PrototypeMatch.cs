@@ -118,15 +118,21 @@ namespace Order.Simulation
         // Any stretch of time at once, for tests and tools; it does not count frames.
         public void Tick(Fix dt)
         {
-            UpdateNetwork(dt);
-            TickBuildings(dt);
-            Clock+=dt;
-            TickProduction(dt);
-            TickResearch(dt);
-            TickBot(dt);
-            // Movement runs in fixed steps, so a long frame and many short ones end in the same place.
-            for(Fix left=dt;left>(Fix)1e-6f;left-=Step)StepUnits(Math.Min(Step,left));
-            visionTimer+=dt;if(visionTimer>=(Fix).15f){visionTimer=0;UpdateVision();}
+            // Commands wait for the step to end (Execute), also those the view would give from the match's events.
+            stepping=true;
+            try
+            {
+                UpdateNetwork(dt);
+                TickBuildings(dt);
+                Clock+=dt;
+                TickProduction(dt);
+                TickResearch(dt);
+                TickBot(dt);
+                // Movement runs in fixed steps, so a long frame and many short ones end in the same place.
+                for(Fix left=dt;left>(Fix)1e-6f;left-=Step)StepUnits(Math.Min(Step,left));
+                visionTimer+=dt;if(visionTimer>=(Fix).15f){visionTimer=0;UpdateVision();}
+            }
+            finally{stepping=false;}
         }
         public void UpdateVision()
         {
@@ -255,6 +261,8 @@ namespace Order.Simulation
     }
     public sealed class PrototypeBuilding
     {
+        // Id: the building's number in its match, as commands and the view name it (0: a stand-in, never placed).
+        public int Id{get;internal set;}
         public int X,Z,Width,Kind,Owner,Health;
         public Fix Ready;
         // The owner faction's numbers for this kind; a machine building rises by itself once its site is placed.

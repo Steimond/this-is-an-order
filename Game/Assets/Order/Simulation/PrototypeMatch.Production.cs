@@ -13,10 +13,11 @@ namespace Order.Simulation
     {
         public const int QueueSize = 5;
 
+        int nextBuildingId = 1;
         PrototypeBuilding AddBuilding(int kind, int x, int z, int owner, Fix ready)
         {
             var stats = Roster(owner).Buildings[kind];
-            var building = new PrototypeBuilding { X = x, Z = z, Width = stats.Width, Kind = kind, Owner = owner, Stats = stats, Ready = ready, Health = ready >= 1 ? stats.Health : Math.Max(1, stats.Health / 10) };
+            var building = new PrototypeBuilding { Id = nextBuildingId++, X = x, Z = z, Width = stats.Width, Kind = kind, Owner = owner, Stats = stats, Ready = ready, Health = ready >= 1 ? stats.Health : Math.Max(1, stats.Health / 10) };
             Buildings.Add(building);
             NavigationChanged(x, z, stats.Width);
             return building;
