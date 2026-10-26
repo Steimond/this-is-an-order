@@ -5,7 +5,9 @@
     "Order.Bootstrap",
     "Order.Presentation",
     "Order.Balance",
-    "Order.Content"
+    "Order.Content",
+    "Order.Contracts",
+    "Order.Simulation"
   ],
   "autoReferenced": false,
   "noEngineReferences": false,

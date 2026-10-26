@@ -96,6 +96,8 @@ namespace Order.Presentation
         // to play and a setup run once the match exists.
         [NonSerialized] public (FactionId player,FactionId enemy)? Sides;
         [NonSerialized] public Action<PrototypeMatch> Setup;
+        // A scene of its own may make the match itself, of any sides (StressLab); the balance snapshot is given.
+        [NonSerialized] public Func<MatchBalance,PrototypeMatch> Create;
         public void Initialize(VisualElement root, Action exit, MatchServices services=null)
         {
             if(Match!=null)return;
@@ -105,7 +107,7 @@ namespace Order.Presentation
             if(catalog==null)throw new InvalidOperationException("Create balance assets using Order/Create Missing Balance Assets.");
             // Factions: those chosen for the match in the menu (by default humans against the machines), or a restart's.
             var (player,enemy)=restartAs??Sides??(services?.App?.PlayerFaction??FactionId.Expedition,services?.App?.EnemyFaction??FactionId.Resonance);restartAs=null;
-            Match=new PrototypeMatch(catalog.Snapshot(),player,enemy);ui=root;onExit=exit;pending=0;blend=1;
+            Match=Create!=null?Create(catalog.Snapshot()):new PrototypeMatch(catalog.Snapshot(),player,enemy);ui=root;onExit=exit;pending=0;blend=1;
             worldRoot=new GameObject("Temple Basin • generated world");
             var cameraObject=new GameObject("RTS Camera",typeof(Camera),typeof(AudioListener));
             cameraObject.transform.SetParent(worldRoot.transform);

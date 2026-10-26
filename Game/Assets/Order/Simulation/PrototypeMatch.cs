@@ -122,21 +122,26 @@ namespace Order.Simulation
             stepping=true;
             try
             {
-                UpdateNetwork(dt);
-                TickBuildings(dt);
+                StartLap();
+                UpdateNetwork(dt);Lap(StepProfile.Phase.Network);
+                TickBuildings(dt);Lap(StepProfile.Phase.Buildings);
                 Clock+=dt;
-                TickProduction(dt);
-                TickResearch(dt);
-                TickBot(dt);
+                TickProduction(dt);Lap(StepProfile.Phase.Production);
+                TickResearch(dt);Lap(StepProfile.Phase.Research);
+                TickBot(dt);Lap(StepProfile.Phase.Bot);
                 // Movement runs in fixed steps, so a long frame and many short ones end in the same place.
                 for(Fix left=dt;left>(Fix)1e-6f;left-=Step)StepUnits(Math.Min(Step,left));
                 visionTimer+=dt;if(visionTimer>=(Fix).15f){visionTimer=0;UpdateVision();}
+                Lap(StepProfile.Phase.Vision);
+                if(Profile!=null)Profile.Steps++;
             }
             finally{stepping=false;}
         }
         public void UpdateVision()
         {
             for(int side=0;side<Sides;side++){Array.Clear(ground[side],0,ground[side].Length);Array.Clear(sky[side],0,sky[side].Length);}
+            // Observers of one side with the same sight on the same cell see the same: each is counted once.
+            observers.Clear();
             foreach(var u in Units)Reveal((int)u.X,(int)u.Z,u.Stats.Vision,u.Stats.Flying,u.Owner);
             foreach(var b in Buildings)if(b.Ready>=1)Reveal(b.X+b.Width/2,b.Z+b.Width/2,b.Stats.Vision,false,b.Owner);
             // Cheat: the player sees the whole map.
@@ -150,19 +155,49 @@ namespace Order.Simulation
             var grid=u.Stats.Flying?sky[side]:ground[side];
             return grid[x,z];
         }
-        // Ground observers cannot see up a cliff; air units see everything within their radius.
+        readonly HashSet<long> observers=new HashSet<long>();
+        Fix[] cellHeights;
+        // Ground observers cannot see up a cliff; air units see everything within their radius. A cell is seen when no cell
+        // on the line to it, the cell itself included, stands above the observer's eyes (Sight lists those lines).
         void Reveal(int sx,int sz,int radius,bool fromAir,int side)
         {
+            if(sx<0||sz<0||sx>63||sz>63||!observers.Add((((long)side*4096+sz*64+sx)*256+radius)*2+(fromAir?1:0)))return;
+            if(cellHeights==null){cellHeights=new Fix[4096];for(int z=0;z<64;z++)for(int x=0;x<64;x++)cellHeights[z*64+x]=Map.Height(x,z);}
             bool[,] ground=this.ground[side],sky=this.sky[side],explored=this.explored[side];
-            Fix observer=fromAir?Fix.MaxValue:Map.Height(sx,sz)+(Fix).6f;
-            for(int z=Math.Max(0,sz-radius);z<=Math.Min(63,sz+radius);z++)
-            for(int x=Math.Max(0,sx-radius);x<=Math.Min(63,sx+radius);x++)
+            var sight=Sight(radius,sx&1,sz&1);
+            Fix observer=fromAir?Fix.MaxValue:cellHeights[sz*64+sx]+(Fix).6f;
+            for(int k=0;k<sight.Dx.Length;k++)
             {
-                int dx=x-sx,dz=z-sz;if(dx*dx+dz*dz>radius*radius)continue;
+                int x=sx+sight.Dx[k],z=sz+sight.Dz[k];
+                if(x<0||z<0||x>63||z>63)continue;
                 sky[x,z]=true;
-                int steps=Math.Max(Math.Abs(dx),Math.Abs(dz));bool clear=true;
-                for(int i=1;i<=steps;i++){int xx=(int)Math.Round(sx+dx*(Fix)i/steps),zz=(int)Math.Round(sz+dz*(Fix)i/steps);if(Map.Height(xx,zz)>observer){clear=false;break;}}
+                bool clear=true;
+                if(!fromAir)for(int j=sight.Ray[k];j<sight.Ray[k+1];j++)if(cellHeights[(sz+sight.RayZ[j])*64+sx+sight.RayX[j]]>observer){clear=false;break;}
                 if(clear){ground[x,z]=true;explored[x,z]=true;}
+            }
+        }
+        // The cells within a radius and, for each, the cells on the line from the observer to it, as offsets. The line is
+        // rounded as it always was, halves to even, so it depends on whether the observer's cell is odd or even across and
+        // along: four tables a radius. They are pure arithmetic, the same for every match.
+        sealed class SightLines{public int[] Dx,Dz,Ray,RayX,RayZ;}
+        static readonly Dictionary<int,SightLines> sights=new Dictionary<int,SightLines>();
+        static SightLines Sight(int radius,int oddX,int oddZ)
+        {
+            int key=radius*4+oddX*2+oddZ;
+            lock(sights)
+            {
+                if(sights.TryGetValue(key,out var made))return made;
+                var dx=new List<int>();var dz=new List<int>();var ray=new List<int>{0};var rayX=new List<int>();var rayZ=new List<int>();
+                for(int z=-radius;z<=radius;z++)for(int x=-radius;x<=radius;x++)
+                {
+                    if(x*x+z*z>radius*radius)continue;
+                    dx.Add(x);dz.Add(z);
+                    int steps=Math.Max(Math.Abs(x),Math.Abs(z));
+                    for(int i=1;i<=steps;i++){rayX.Add((int)Math.Round(oddX+x*(Fix)i/steps)-oddX);rayZ.Add((int)Math.Round(oddZ+z*(Fix)i/steps)-oddZ);}
+                    ray.Add(rayX.Count);
+                }
+                var lines=new SightLines{Dx=dx.ToArray(),Dz=dz.ToArray(),Ray=ray.ToArray(),RayX=rayX.ToArray(),RayZ=rayZ.ToArray()};
+                sights[key]=lines;return lines;
             }
         }
     }
@@ -179,10 +214,14 @@ namespace Order.Simulation
         public int Health;
         public bool Alive=>Health>0;
         public UnitOrder Order { get; internal set; }
-        // The enemy the unit is aiming at or closing in on right now.
-        public PrototypeUnit Target { get; internal set; }
-        // The enemy building it attacks when no enemy unit is targeted.
-        public PrototypeBuilding TargetBuilding { get; internal set; }
+        // The enemy the unit is aiming at or closing in on right now, and the enemy building it attacks when no enemy unit is
+        // targeted. Each target keeps the units that target it (targetedBy), so melee units find the spots round it that
+        // allies are already heading for without looking at every unit.
+        public PrototypeUnit Target{get=>target;internal set{if(target==value)return;target?.targetedBy.Remove(this);target=value;value?.targetedBy.Add(this);}}
+        public PrototypeBuilding TargetBuilding{get=>targetBuilding;internal set{if(targetBuilding==value)return;targetBuilding?.targetedBy.Remove(this);targetBuilding=value;value?.targetedBy.Add(this);}}
+        PrototypeUnit target;
+        PrototypeBuilding targetBuilding;
+        internal readonly List<PrototypeUnit> targetedBy=new List<PrototypeUnit>();
         public ResourceDeposit HarvestTarget { get; internal set; }
         // Construction: the building this worker raises (it rises only while the worker stands by it), and the site the
         // worker walks to before that building is placed (kind -1: none).
@@ -212,6 +251,8 @@ namespace Order.Simulation
         public int Cocoon{get;internal set;}
         internal Fix sinceHit=PrototypeMatch.LongAgo,cocoonGrowth;
         // A leaper in the middle of a jump: from where to where, how far it has flown, where it passes its target.
+        // The unit's place in Units at the start of the step (PrototypeMatch.Blocks.cs).
+        internal int index;
         internal bool leaping,leapHit;
         internal Fix leapFromX,leapFromZ,leapToX,leapToZ,leapLength,leapDone,leapPass;
         internal PrototypeUnit leapTarget;
@@ -286,6 +327,8 @@ namespace Order.Simulation
         public Fix ResearchTime{get;internal set;}
         // The worker raising it, while it is at work on it; nobody when the construction waits.
         internal PrototypeUnit builder;
+        // The units that have it as their TargetBuilding.
+        internal readonly List<PrototypeUnit> targetedBy=new List<PrototypeUnit>();
         public PrototypeUnit Builder=>builder!=null&&builder.Alive&&builder.Constructing==this?builder:null;
         // Production: the queue (the front unit is in training), seconds trained on it, whether it has taken its supply
         // or waits for it, and where new units go.

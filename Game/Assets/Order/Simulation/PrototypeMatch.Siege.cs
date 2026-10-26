@@ -93,13 +93,13 @@ namespace Order.Simulation
             if (u.Order == UnitOrder.Attack) return u.orderedBuilding == null && Valid(u, u.ordered) && InBand(u, Gap(u, u.ordered)) ? u.ordered : null;
             if (Valid(u, u.Target) && InBand(u, Gap(u, u.Target))) return u.Target;
             PrototypeUnit best = null; Fix bestScore = Fix.MaxValue;
-            foreach (var v in Units)
+            foreach (var v in Near(u.X, u.Z, u.Stats.AttackRange + u.Stats.Radius + widest, false))
             {
-                if (v.Owner == u.Owner || !Valid(u, v)) continue;
+                if (v.Owner == u.Owner || Beyond(u, v, u.Stats.AttackRange) || !Valid(u, v)) continue;
                 Fix gap = Gap(u, v);
                 if (!InBand(u, gap)) continue;
                 Fix score = gap + (CanAttack(v, u) ? 0 : 100);
-                if (score < bestScore) { bestScore = score; best = v; }
+                if (First(score, v, bestScore, best)) { bestScore = score; best = v; }
             }
             return best;
         }
@@ -120,7 +120,7 @@ namespace Order.Simulation
         void Splash(PrototypeUnit attacker, PrototypeUnit target)
         {
             Fix reach = attacker.Stats.Splash;
-            foreach (var v in Units)
+            foreach (var v in Near(target.X, target.Z, reach + widest))
             {
                 if (v == target || !v.Alive || v.Owner == attacker.Owner || v.Stats.Flying) continue;
                 Fix dx = v.X - target.X, dz = v.Z - target.Z;

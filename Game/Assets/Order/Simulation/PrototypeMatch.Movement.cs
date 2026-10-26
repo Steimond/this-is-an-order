@@ -406,16 +406,23 @@ namespace Order.Simulation
         void StepUnits(Fix dt)
         {
             foreach (var u in Units) { u.levelY = HeightAt(u.X, u.Z); u.touchedArrived = false; u.startX = u.X; u.startZ = u.Z; }
+            FillBlocks();
             foreach (var u in Units) Fight(u, dt);
+            blocksTrue = false;
+            Lap(StepProfile.Phase.Fight);
             FillBuckets();
             foreach (var u in Units) if (u.leaping) StepLeap(u, dt); else if (!Anchored(u)) Follow(u, dt);
+            Lap(StepProfile.Phase.Move);
             for (int i = 0; i < 2; i++) { FillBuckets(); Separate(); }
+            Lap(StepProfile.Phase.Separate);
             foreach (var u in Units)
             {
                 if (!u.Stats.Flying) { KeepOutOfObstacles(u); continue; }
                 Fix r = u.Stats.Radius; u.X = Math.Max(r, Math.Min(64 - r, u.X)); u.Z = Math.Max(r, Math.Min(64 - r, u.Z));
             }
+            Lap(StepProfile.Phase.Obstacles);
             foreach (var u in Units) { if (!u.leaping && !Anchored(u)) UpdateArrival(u, dt); u.lastDx = u.X - u.startX; u.lastDz = u.Z - u.startZ; }
+            Lap(StepProfile.Phase.Arrival);
             TickConstruction(dt);
             TickRepair(dt);
             TickAutoRepair(dt);
@@ -423,8 +430,10 @@ namespace Order.Simulation
             TickMending(dt);
             TickHarvest(dt);
             TickDisassembly(dt);
+            Lap(StepProfile.Phase.Works);
             RemoveDead();
             RunQueues();
+            Lap(StepProfile.Phase.Cleanup);
         }
         // Exactly along the route: a lone unit ends precisely on its destination. In a crowd a unit pushed off its line does
         // not go back for every corner: once near one, with a clear straight line to the next, it cuts across.

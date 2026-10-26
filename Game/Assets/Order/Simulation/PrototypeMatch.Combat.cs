@@ -45,6 +45,18 @@ namespace Order.Simulation
             return Math.Sqrt((a.X - x) * (a.X - x) + (a.Z - z) * (a.Z - z)) - a.Stats.Radius;
         }
         public static bool InRange(PrototypeUnit attacker, PrototypeUnit target) => Gap(attacker, target) <= attacker.Stats.AttackRange;
+        // Whether the gap between the two is certainly beyond the reach, from the squared distance alone: a quick test
+        // before the exact Gap, with a margin far above the rounding of the root, so it never rejects what Gap accepts.
+        static readonly Fix BeyondMargin = Fix.One / 1024;
+        // Whether a candidate beats the best so far: a lower score, or the same score and earlier in Units, as a pass over
+        // all units in their order would pick (Near may list them in any order).
+        static bool First(Fix score, PrototypeUnit candidate, Fix bestScore, PrototypeUnit best) =>
+            score < bestScore || (score == bestScore && best != null && candidate.index < best.index);
+        static bool Beyond(PrototypeUnit a, PrototypeUnit b, Fix reach)
+        {
+            Fix dx = a.X - b.X, dz = a.Z - b.Z, far = reach + a.Stats.Radius + b.Stats.Radius + BeyondMargin;
+            return far > 0 && dx * dx + dz * dz > far * far;
+        }
         static Fix AcquireRange(PrototypeUnit u) => Math.Max(u.Stats.AttackRange + AcquireExtra, 4);
         static Fix Reaction(PrototypeUnit u) => u.Id * (Fix).618034f % 1 * (Fix).25f;
         bool Valid(PrototypeUnit u, PrototypeUnit target) => CanAttack(u, target) && SeenBy(u.Owner, target);
@@ -127,8 +139,10 @@ namespace Order.Simulation
             if (u.leaping) return;
             if (u.Stats.Siege) { FightDeployed(u, dt); return; }
             if (!u.Alive || u.Stats.Damage <= 0 || u.Order == UnitOrder.Move || u.HarvestTarget != null || u.Disassembling) { u.Target = null; u.TargetBuilding = null; return; }
+            long since = Mark();
             var target = PickTarget(u);
             var building = target == null ? PickBuilding(u) : null;
+            Spent(StepProfile.Phase.FightTargets, since);
             // A new target takes a moment to aim at, different for every unit, so a squad does not fire in one volley.
             bool fresh = (target != null && target != u.Target) || (building != null && building != u.TargetBuilding);
             if (fresh && u.cooldown <= 0) u.cooldown = Reaction(u);
@@ -140,14 +154,16 @@ namespace Order.Simulation
                 // Stand and shoot; an attack-move picks its route up again once the fight is over.
                 if (u.route.Count > 0) { u.route.Clear(); u.hasGoal = false; u.arrived = false; }
                 u.engaged = true;
-                if (u.cooldown <= 0) { u.cooldown += u.Stats.AttackCooldown; if (target != null) Hit(u, target); else Hit(u, building); }
+                if (u.cooldown <= 0) { since = Mark(); u.cooldown += u.Stats.AttackCooldown; if (target != null) Hit(u, target); else Hit(u, building); Spent(StepProfile.Phase.FightStrikes, since); }
                 return;
             }
             if (u.Order == UnitOrder.Hold) return;
             if (!u.engaged || u.route.Count == 0 || (u.chaseTimer -= dt) <= 0)
             {
+                since = Mark();
                 if (target != null) CloseIn(u, target);
                 else CloseIn(u, building);
+                Spent(StepProfile.Phase.FightApproach, since);
             }
         }
         void Chase(PrototypeUnit u, Fix x, Fix z)
@@ -260,16 +276,21 @@ namespace Order.Simulation
             }
             return (b.X - clearance, b.Z);
         }
+        // A unit standing on the spot, or an ally of the same layer heading for it to strike the same target.
         bool Taken(PrototypeUnit u, Fix x, Fix z, object target)
         {
-            foreach (var v in Units)
+            foreach (var v in Near(x, z, u.Stats.Radius + widest, false))
             {
                 if (v == u || v.Stats.Flying != u.Stats.Flying || Ghost(v)) continue;
-                Fix reach = (u.Stats.Radius + v.Stats.Radius) * (Fix).95f;
-                Fix dx = v.X - x, dz = v.Z - z;
+                Fix reach = (u.Stats.Radius + v.Stats.Radius) * (Fix).95f, dx = v.X - x, dz = v.Z - z;
                 if (dx * dx + dz * dz < reach * reach) return true;
-                if (!v.Moving || !v.engaged || (v.Target != target && v.TargetBuilding != target)) continue;
-                dx = v.goalX - x; dz = v.goalZ - z;
+            }
+            var heading = target is PrototypeUnit unit ? unit.targetedBy : target is PrototypeBuilding building ? building.targetedBy : null;
+            if (heading == null) return false;
+            foreach (var v in heading)
+            {
+                if (v == u || v.Stats.Flying != u.Stats.Flying || Ghost(v) || !v.Moving || !v.engaged) continue;
+                Fix reach = (u.Stats.Radius + v.Stats.Radius) * (Fix).95f, dx = v.goalX - x, dz = v.goalZ - z;
                 if (dx * dx + dz * dz < reach * reach) return true;
             }
             return false;
@@ -307,14 +328,14 @@ namespace Order.Simulation
             bool hold = u.Order == UnitOrder.Hold;
             Fix acquire = hold ? u.Stats.AttackRange : AcquireRange(u);
             PrototypeUnit inRange = null, near = null; Fix inRangeScore = Fix.MaxValue, nearScore = Fix.MaxValue;
-            foreach (var v in Units)
+            foreach (var v in Near(u.X, u.Z, acquire + u.Stats.Radius + widest, false))
             {
-                if (v.Owner == u.Owner || !Valid(u, v)) continue;
+                if (v.Owner == u.Owner || Beyond(u, v, acquire) || !Valid(u, v)) continue;
                 Fix gap = Gap(u, v);
                 if (gap > acquire) continue;
                 Fix score = gap + (CanAttack(v, u) ? 0 : 100);
-                if (gap <= u.Stats.AttackRange && score < inRangeScore) { inRangeScore = score; inRange = v; }
-                if (score < nearScore) { nearScore = score; near = v; }
+                if (gap <= u.Stats.AttackRange && First(score, v, inRangeScore, inRange)) { inRangeScore = score; inRange = v; }
+                if (First(score, v, nearScore, near)) { nearScore = score; near = v; }
             }
             if (inRange != null) return inRange;
             if (keep && Gap(u, current) <= acquire + AcquireExtra) return current;
@@ -375,7 +396,7 @@ namespace Order.Simulation
         // Idle allies near the spot that can hit the attacker come to help.
         void CallForHelp(int side, Fix x, Fix z, PrototypeUnit attacker, PrototypeUnit victim)
         {
-            foreach (var v in Units)
+            foreach (var v in Near(x, z, HelpRadius, false))
             {
                 if (v.Owner != side || v == victim || v.Order != UnitOrder.Idle || v.Target != null || v.HarvestTarget != null || !CanAttack(v, attacker)) continue;
                 Fix dx = v.X - x, dz = v.Z - z;
