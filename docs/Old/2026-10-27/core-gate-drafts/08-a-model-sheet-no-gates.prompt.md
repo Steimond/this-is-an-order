@@ -1,0 +1,5 @@
+# Ядро A — без ворот
+
+Встроенный image_gen. Исходный лист 07 сохранён в Old/2026-10-27/core-gate-drafts.
+
+Edit the attached CORE A building modeling sheet. Preserve exact architecture, pale grey armor, graphite joints, cyan accents, four corner masses and stepped octagonal tower. CRITICAL REMOVE ALL DOORS, GATES, HATCH-SHAPED ENTRANCES AND RAMPS in EVERY view. Replace former front worker doorway and ramp by uninterrupted solid armored base wall matching other sides. Side and rear X-shaped door panels also replaced by plain structural armor. TOP no protruding front ramp, square balanced footprint. Building has NO privileged production front. Nanite material seeps from a subtle continuous dark seam at ground-level perimeter, not a tunnel, pipe or doorway. Keep foundation closed and solid, no large open gaps. Five panels FRONT, SIDE, REAR, TOP, THREE QUARTER of same structure, neutral state, no fluid effect obscuring silhouette, no workers or machinery. Title CORE A / MODEL REFERENCE. All five views must agree on doorless base. Never invent new superstructure. Fictional videogame art.

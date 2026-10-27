@@ -1,0 +1,5 @@
+# Исправление капсулы
+
+Встроенный image_gen. Исходный лист сохранён в ../../Old/2026-10-27/seeder-capsule-drafts/08-a-capsule-system.png.
+
+Edit ONLY TOP RIGHT CAPSULE panel of supplied concept sheet. Keep other three panels exactly unchanged. Replace mini copies of parent robot entirely with a simple small elongated smooth oval transport POD shaped like a blunt seed, with THREE thin shell petals, no central tower no top ring no feet no legs no thrusters. Closed pod on left and same pod opened on ground on right, containing small rolling spheres identical to bottom left robot design. Pod is a disposable shell much smaller than parent robot, each sphere approx one quarter pod length. Opening three thin shell petals laid on ground, no thick structural legs. These are unambiguously containers, NOT mini carrier machines. Muted pale grey metal shell graphite inner tray cyan small stripe. Keep panel title CAPSULE and remove other explanatory text from that panel. Preserve main big robot and bottom COMBAT/REPAIR panels without changes. Fictional videogame concept art.
