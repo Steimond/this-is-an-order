@@ -1,0 +1,24 @@
+{
+  "parts": [
+    "dark annular foundation",
+    "inner intake rim",
+    "large quarter shell 0",
+    "radial converter 0",
+    "inner process conduit 0",
+    "outer status strip 0",
+    "large quarter shell 1",
+    "radial converter 1",
+    "inner process conduit 1",
+    "outer status strip 1",
+    "large quarter shell 2",
+    "radial converter 2",
+    "inner process conduit 2",
+    "outer status strip 2",
+    "large quarter shell 3",
+    "radial converter 3",
+    "inner process conduit 3",
+    "outer status strip 3"
+  ],
+  "units": "arbitrary proportions; not meters or game cells",
+  "limits": "Same-mesh projection scaffold only; not an exact reconstruction of the approved artwork."
+}

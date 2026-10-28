@@ -4,9 +4,10 @@
   "complete": true,
   "counts": {
     "units": 11,
-    "buildingTypes": 10,
+    "buildingTypes": 11,
     "unitSheets": 14,
-    "buildingSheets": 11
+    "buildingSheets": 12,
+    "buildingTypesWithVisuals": 11
   },
   "units": [
     {
@@ -240,6 +241,29 @@
         "guardian-directions/09-af-air-model-sheet.png"
       ],
       "note": "Selected main 3/4 appearances are included in the two state sheets."
+    },
+    {
+      "id": "plasma-extractor",
+      "label": "Экстрактор плазмы · A",
+      "status": "selected",
+      "visuals": [
+        "resonance-plasma-extractor-directions/a.png"
+      ],
+      "modelSheets": [
+        "resonance-buildings-modeling/plasma-extractor/model-sheet.png"
+      ],
+      "note": "User selected A. Low annular collector; four sectors and four radial converters. Artistic sheet and proportional scaffold are not exact production geometry.",
+      "proposalGallery": "resonance-plasma-extractor-directions/gallery.html",
+      "proposals": [
+        "resonance-plasma-extractor-directions/a.png",
+        "resonance-plasma-extractor-directions/b.png",
+        "resonance-plasma-extractor-directions/c.png",
+        "resonance-plasma-extractor-directions/d.png",
+        "resonance-plasma-extractor-directions/e.png",
+        "resonance-plasma-extractor-directions/f.png"
+      ],
+      "guide": "resonance-buildings-modeling/plasma-extractor/guide.png",
+      "obj": "resonance-buildings-modeling/plasma-extractor/blockout.obj"
     }
   ],
   "reserve": [
