@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-28",
+  "selected": {
+    "relay": "relay-a",
+    "matrix": "matrix-e",
+    "deep-core": "deep-core-a",
+    "reservoir": "reservoir-e",
+    "computer": "computer-b5",
+    "firmware": "firmware-b",
+    "nest": "nest-a2"
+  },
+  "pending": {},
+  "matrixFootprint": "Прямоугольное пятно допустимо; точный размер по клеткам ещё не выбран. Прежние 3×3 не обязательны.",
+  "materials": "Нанитные ёмкости использовать по смыслу, не как обязательный элемент всех зданий. У Вычислителя и Узла прошивки исключить.",
+  "selectedSources": {
+    "computer": {
+      "label": "Вычислитель B5",
+      "file": "round-2/computer-b5.png"
+    },
+    "firmware": {
+      "label": "Узел прошивки B · второй проход",
+      "file": "round-2/firmware-b.png"
+    },
+    "nest": {
+      "label": "Гнездо A2",
+      "file": "round-2/nest-a2.png"
+    }
+  },
+  "firmwareAnimation": "Движение программирующего барабана и считывающей головки может показывать работу исследования; конкретная анимация ещё не подготовлена."
+}

@@ -1,0 +1,249 @@
+{
+  "computer": {
+    "bounds": [
+      [
+        -2,
+        2
+      ],
+      [
+        -1.7,
+        1.7
+      ],
+      [
+        0,
+        3.68
+      ]
+    ],
+    "parts": [
+      "foundation",
+      "corner anchor -1 -1",
+      "corner anchor -1 1",
+      "corner anchor 1 -1",
+      "corner anchor 1 1",
+      "dry compute cassette -1",
+      "cassette solid front -1",
+      "cassette status -1",
+      "dry compute cassette 0",
+      "cassette solid front 0",
+      "cassette status 0",
+      "dry compute cassette 1",
+      "cassette solid front 1",
+      "cassette status 1",
+      "end cheek -1",
+      "end cheek foot -1",
+      "end cheek 1",
+      "end cheek foot 1",
+      "common top bridge"
+    ],
+    "units": "arbitrary proportions, not game footprint",
+    "limits": "Massing scaffold, not exact artistic reconstruction"
+  },
+  "relay": {
+    "bounds": [
+      [
+        -1.05,
+        1.05
+      ],
+      [
+        -1.05,
+        1.05
+      ],
+      [
+        0,
+        5.25
+      ]
+    ],
+    "parts": [
+      "foundation",
+      "corner anchor -1 -1",
+      "corner anchor -1 1",
+      "corner anchor 1 -1",
+      "corner anchor 1 1",
+      "mast core",
+      "contained central chamber",
+      "unequal antenna blade -0.44",
+      "blade front status -0.44",
+      "unequal antenna blade 0.44",
+      "blade front status 0.44"
+    ],
+    "units": "arbitrary proportions, not game footprint",
+    "limits": "Massing scaffold, not exact artistic reconstruction"
+  },
+  "firmware": {
+    "bounds": [
+      [
+        -2.3,
+        2.3
+      ],
+      [
+        -2.1,
+        2.1
+      ],
+      [
+        0,
+        3.2399999999999998
+      ]
+    ],
+    "parts": [
+      "foundation",
+      "corner anchor -1 -1",
+      "corner anchor -1 1",
+      "corner anchor 1 -1",
+      "corner anchor 1 1",
+      "solid programming drum",
+      "end ring -1.46",
+      "end ring 1.46",
+      "solid indexed band -0.75",
+      "solid indexed band 0",
+      "solid indexed band 0.75",
+      "bridge support -1",
+      "bridge support 1",
+      "single programming head bridge",
+      "read write head",
+      "head status"
+    ],
+    "units": "arbitrary proportions, not game footprint",
+    "limits": "Massing scaffold, not exact artistic reconstruction"
+  },
+  "matrix": {
+    "bounds": [
+      [
+        -3.25,
+        3.25
+      ],
+      [
+        -1.75,
+        1.75
+      ],
+      [
+        0,
+        3.06
+      ]
+    ],
+    "parts": [
+      "foundation",
+      "corner anchor -1 -1",
+      "corner anchor -1 1",
+      "corner anchor 1 -1",
+      "corner anchor 1 1",
+      "sample pedestal -2",
+      "sample pedestal 0",
+      "sample pedestal 2",
+      "cube sample",
+      "sphere sample",
+      "pyramid sample",
+      "canopy side frame -1",
+      "canopy side frame 1",
+      "long rear canopy beam",
+      "lower front frame"
+    ],
+    "units": "arbitrary proportions, not game footprint",
+    "limits": "Massing scaffold, not exact artistic reconstruction"
+  },
+  "nest": {
+    "bounds": [
+      [
+        -2.9,
+        2.9
+      ],
+      [
+        -2.5114736709748717,
+        2.6999999999999997
+      ],
+      [
+        0,
+        5.1977271036845565
+      ]
+    ],
+    "parts": [
+      "hex foundation",
+      "central research hub",
+      "hub cap",
+      "claw lower 0",
+      "claw middle 0",
+      "claw tip 0",
+      "claw anchor 0",
+      "hub radial connector 0",
+      "claw lower 1",
+      "claw middle 1",
+      "claw tip 1",
+      "claw anchor 1",
+      "hub radial connector 1",
+      "claw lower 2",
+      "claw middle 2",
+      "claw tip 2",
+      "claw anchor 2",
+      "hub radial connector 2"
+    ],
+    "units": "arbitrary proportions, not game footprint",
+    "limits": "Massing scaffold, not exact artistic reconstruction"
+  },
+  "deep-core": {
+    "bounds": [
+      [
+        -2.825,
+        2.825
+      ],
+      [
+        -2.825,
+        2.825
+      ],
+      [
+        -1.54,
+        1.4
+      ]
+    ],
+    "parts": [
+      "corner tower -1 -1",
+      "corner cap -1 -1",
+      "descending column -1 -1",
+      "corner tower -1 1",
+      "corner cap -1 1",
+      "descending column -1 1",
+      "corner tower 1 -1",
+      "corner cap 1 -1",
+      "descending column 1 -1",
+      "corner tower 1 1",
+      "corner cap 1 1",
+      "descending column 1 1",
+      "rim rail X -1",
+      "rim rail Y -1",
+      "rim rail X 1",
+      "rim rail Y 1",
+      "recessed floor"
+    ],
+    "units": "arbitrary proportions, not game footprint",
+    "limits": "Massing scaffold, not exact artistic reconstruction"
+  },
+  "reservoir": {
+    "bounds": [
+      [
+        -2.15,
+        2.15
+      ],
+      [
+        -2.5,
+        2.5
+      ],
+      [
+        0,
+        3.5755523314571733
+      ]
+    ],
+    "parts": [
+      "foundation",
+      "corner anchor -1 -1",
+      "corner anchor -1 1",
+      "corner anchor 1 -1",
+      "corner anchor 1 1",
+      "single inclined vessel",
+      "low front collar",
+      "high rear collar",
+      "inclined support -1",
+      "inclined support 1",
+      "small side buffer"
+    ],
+    "units": "arbitrary proportions, not game footprint",
+    "limits": "Massing scaffold, not exact artistic reconstruction"
+  }
+}

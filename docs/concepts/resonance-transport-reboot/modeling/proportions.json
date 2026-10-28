@@ -1,0 +1,24 @@
+{
+  "units": "arbitrary, not gameplay size",
+  "axes": {
+    "front": "-Y",
+    "up": "+Z",
+    "symmetry": "X=0"
+  },
+  "assembledHeight": 6.16,
+  "totalWidth": 4.28,
+  "carrierHeight": 3.36,
+  "capsuleHeight": 2.8,
+  "dockingPlaneZ": 3,
+  "engineCount": 2,
+  "hiddenLatchCount": 2,
+  "commonScale": 67,
+  "commonCenter": [
+    0,
+    0,
+    3.24
+  ],
+  "carrierIdentity": "identical vertices, faces and parts in attached.obj and empty.obj",
+  "capsule": "closed and opaque; bottom-release; no windows",
+  "limits": "Geometrically consistent scaffold; rear details and docking interface are modeling proposals, not an exact reconstruction of the selected hero."
+}

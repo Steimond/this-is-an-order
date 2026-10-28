@@ -1,0 +1,50 @@
+[
+  {
+    "id": "computer",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-ca3b8d3c-68cc-4abb-b281-9812740c8a3e.png",
+    "file": "computer/model-sheet.png"
+  },
+  {
+    "id": "nest",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-dd4b37fe-3a12-4ec9-b25a-0eb21d07c3ef.png",
+    "file": "nest/model-sheet-v2.png",
+    "previousSource": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-2b1bc7a2-dad2-4347-b235-245bea2f0152.png",
+    "repaired": true
+  },
+  {
+    "id": "relay",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-03b5b0d7-ec27-4d24-9a44-abd5a688abee.png",
+    "file": "relay/model-sheet.png"
+  },
+  {
+    "id": "firmware",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-81144049-dc70-4aa6-b2f4-69cbede464e5.png",
+    "file": "firmware/model-sheet.png"
+  },
+  {
+    "id": "deep-core",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-b0e8dc01-af43-4067-b24d-b66b0855b283.png",
+    "file": "deep-core/model-sheet-v2.png",
+    "previousSource": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-5475f1a9-f0e8-47fd-aad6-8f3d55dc68e5.png",
+    "repaired": true
+  },
+  {
+    "id": "reservoir",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-56e5b43c-cfa2-4382-85fc-c49c681b8cbd.png",
+    "file": "reservoir/model-sheet-v2.png",
+    "previousSource": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-9d2c8824-d6c4-4478-9a4e-1c0c85749bc7.png",
+    "repaired": true
+  },
+  {
+    "id": "matrix",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-8eebc098-6ecd-41ea-a40f-3d549071744f.png",
+    "file": "matrix/model-sheet.png"
+  }
+]

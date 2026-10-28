@@ -1,0 +1,52 @@
+{
+  "emitter": {
+    "width": 4.6,
+    "length": 4.3,
+    "height": 3.2,
+    "trackWidth": 0.9,
+    "lensDiameter": 1.44
+  },
+  "golem": {
+    "width": 3.18,
+    "length": 5.45,
+    "mainPivot": [
+      0,
+      -0.175,
+      1.775
+    ],
+    "shieldCenterRear": [
+      0,
+      2.65,
+      2.4
+    ],
+    "shieldCenterFront": [
+      0,
+      -3,
+      1.15
+    ],
+    "armLength": 2.893311251835862,
+    "sweepDegrees": 180,
+    "oneDrivenDegreeOfFreedom": true,
+    "orientation": "passive parallel linkage keeps shield upright; linked wings open during sweep; short front device ends behind deployed plate"
+  },
+  "glider": {
+    "span": 8,
+    "length": 3.2,
+    "bodyWidth": 1
+  },
+  "catcher": {
+    "span": 6,
+    "length": 5.95,
+    "podAxes": "forward -Y only; rear has closed plate"
+  },
+  "grenade-carrier": {
+    "width": 3.7,
+    "length": 4.5,
+    "channelWidth": 1.6
+  },
+  "seeder": {
+    "closedDiameter": 1.9,
+    "closedHeight": 2.9,
+    "petals": 4
+  }
+}

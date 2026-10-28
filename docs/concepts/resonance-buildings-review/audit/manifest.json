@@ -1,0 +1,42 @@
+[
+  {
+    "id": "audit-core",
+    "building": "audit",
+    "buildingName": "Проверка Ядра",
+    "variant": "",
+    "name": "Ядро — исправленный лист",
+    "description": "Квадратная база, четыре опоры и четыре угловых блока; настоящий боковой вид.",
+    "file": "audit/core-corrected-study.png",
+    "promptFile": "audit/core-corrected-study.prompt.md"
+  },
+  {
+    "id": "audit-assembly",
+    "building": "audit",
+    "buildingName": "Проверка Сборочного узла",
+    "variant": "",
+    "name": "Сборочный — исправленный лист",
+    "description": "Две одинаковые цистерны, единый насос, одинаковые опоры и длины.",
+    "file": "audit/assembly-corrected-study.png",
+    "promptFile": "audit/assembly-corrected-study.prompt.md"
+  },
+  {
+    "id": "audit-guardian-ground",
+    "building": "audit",
+    "buildingName": "Проверка Стража",
+    "variant": "",
+    "name": "Страж — наземная форма",
+    "description": "Одинаковое основание в проекциях; длинная разомкнутая головка F.",
+    "file": "audit/guardian-ground-corrected-study.png",
+    "promptFile": "audit/guardian-ground-corrected-study.prompt.md"
+  },
+  {
+    "id": "audit-guardian-air",
+    "building": "audit",
+    "buildingName": "Проверка Стража",
+    "variant": "",
+    "name": "Страж — ПВО",
+    "description": "То же основание; две направляющие под одним углом.",
+    "file": "audit/guardian-air-corrected-study.png",
+    "promptFile": "audit/guardian-air-corrected-study.prompt.md"
+  }
+]

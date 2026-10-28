@@ -1,0 +1,135 @@
+[
+  {
+    "id": "nod",
+    "label": "Нод · A1",
+    "note": "Сферический резервуар с одним центральным поясом качения и золотистыми контактными электродами. Без манипуляторов.",
+    "hero": "nod-hero.png",
+    "sheets": [
+      "nod-model-sheet.png"
+    ],
+    "source": "worker-contact-directions/01-variants.png",
+    "heroSource": "resonance-clean-panel-experiment/01-nod.png",
+    "title": "NOD",
+    "legacyFolder": "worker-contact-directions"
+  },
+  {
+    "id": "spider",
+    "label": "Паучок · B",
+    "note": "Шесть ног, передняя ударная пара, группа сенсоров разного размера.",
+    "hero": "spider-hero.png",
+    "sheets": [
+      "spider-model-sheet.png"
+    ],
+    "source": "spider-directions/03-b-model-sheet.png",
+    "heroSource": "resonance-clean-panel-experiment/02-spider.png",
+    "title": "SPIDER",
+    "legacyFolder": "spider-directions"
+  },
+  {
+    "id": "needler",
+    "label": "Игломёт · C",
+    "note": "Четыре ноги, три вертикально расположенных ствола одной кассеты, задняя защищённая нанитная камера. Иглы: 1 → 2 → 3 с равными интервалами.",
+    "hero": "needler-hero.png",
+    "sheets": [
+      "needler-model-sheet.png"
+    ],
+    "source": "needler-directions/01-variants.png",
+    "heroSource": "resonance-clean-panel-experiment/00-needler-style-reference.png",
+    "title": "NEEDLER",
+    "legacyFolder": "needler-directions"
+  },
+  {
+    "id": "emitter",
+    "label": "Излучатель · D",
+    "note": "Две гусеницы, открытая оптическая рама и одна центральная линза.",
+    "hero": "emitter-hero.png",
+    "sheets": [
+      "emitter-model-sheet.png"
+    ],
+    "source": "emitter-directions/03-d-model-sheet.png",
+    "heroSource": "resonance-clean-panel-experiment/03-emitter.png",
+    "title": "EMITTER",
+    "legacyFolder": "emitter-directions"
+  },
+  {
+    "id": "golem",
+    "label": "Голем · B5",
+    "note": "Четыре коротких гусеничных блока. Походная форма — сложенная плита сзади; оборонная — та же раскрытая плита впереди.",
+    "hero": "golem-hero.png",
+    "sheets": [
+      "golem-model-sheet.png",
+      "golem-deployed-model-sheet.png"
+    ],
+    "source": "golem-mobile-directions/07-b5-transport-model-sheet.png",
+    "heroSource": "resonance-clean-panel-experiment/04-golem.png",
+    "title": "GOLEM",
+    "legacyFolder": "golem-mobile-directions"
+  },
+  {
+    "id": "saboteur",
+    "label": "Взломщик · A",
+    "note": "Четыре колеса, широкая двухсекционная антенная панель.",
+    "hero": "saboteur-hero.png",
+    "sheets": [
+      "saboteur-model-sheet.png"
+    ],
+    "source": "saboteur-directions/02-a-model-sheet.png",
+    "heroSource": "resonance-clean-panel-experiment/05-saboteur.png",
+    "title": "SABOTEUR",
+    "legacyFolder": "saboteur-directions"
+  },
+  {
+    "id": "glider",
+    "label": "Планёр · A",
+    "note": "Широкое крыло-бумеранг A, один электрический излучатель под носом. За основу принят новый основной ракурс.",
+    "hero": "glider-hero.png",
+    "sheets": [
+      "glider-model-sheet.png"
+    ],
+    "source": "glider-directions/01-a.png",
+    "heroSource": "resonance-clean-panel-experiment/07-glider.png",
+    "title": "GLIDER",
+    "legacyFolder": "glider-directions"
+  },
+  {
+    "id": "catcher",
+    "label": "Ловец · B",
+    "note": "Самолёт B «Утка», два прямоугольных ракетных блока частично утоплены в крыло снизу, без пилонов.",
+    "hero": "catcher-hero.png",
+    "sheets": [
+      "catcher-model-sheet.png"
+    ],
+    "source": "catcher-airframe-directions/08-b-model-reference.png",
+    "heroSource": "resonance-clean-panel-experiment/08-catcher.png",
+    "title": "CATCHER",
+    "legacyFolder": "catcher-airframe-directions"
+  },
+  {
+    "id": "grenade-carrier",
+    "label": "Носитель нанитных гранат · D",
+    "note": "Две гусеницы, низкий центральный канал выпуска, три секции магазина поперёк задней части.",
+    "hero": "grenade-carrier-hero.png",
+    "sheets": [
+      "grenade-carrier-model-sheet.png"
+    ],
+    "source": "grenade-carrier-directions/07-d-model-sheet.png",
+    "heroSource": "resonance-clean-panel-experiment/06-grenade-carrier.png",
+    "title": "GRENADE-CARRIER",
+    "legacyFolder": "grenade-carrier-directions"
+  },
+  {
+    "id": "seeder",
+    "label": "Сеятель · A",
+    "note": "Вертикальный корпус «Колокол», четыре раскрывающиеся панели-опоры. Капсулы с контактными шариками; лечебный режим после исследования.",
+    "hero": "seeder-hero.png",
+    "sheets": [
+      "seeder-model-sheet.png",
+      "seeder-deployed-model-sheet.png"
+    ],
+    "source": "seeder-directions/07-a-body-model-sheet.png",
+    "heroSource": "resonance-clean-panel-experiment/09-seeder.png",
+    "title": "SEEDER",
+    "legacyFolder": "seeder-directions"
+  }
+]
+

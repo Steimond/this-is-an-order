@@ -1,0 +1,250 @@
+{
+  "date": "2026-10-28",
+  "scope": "documented selected visuals and artistic modeling views, not final game assets",
+  "complete": true,
+  "counts": {
+    "units": 11,
+    "buildingTypes": 10,
+    "unitSheets": 14,
+    "buildingSheets": 11
+  },
+  "units": [
+    {
+      "id": "nod",
+      "label": "Нод · A1",
+      "visuals": [
+        "resonance-final/nod-hero.png"
+      ],
+      "modelSheets": [
+        "resonance-final/nod-model-sheet-v2.png"
+      ]
+    },
+    {
+      "id": "spider",
+      "label": "Паучок · B",
+      "visuals": [
+        "resonance-final/spider-hero-v2.png"
+      ],
+      "modelSheets": [
+        "resonance-final/spider-model-sheet-v2.png"
+      ]
+    },
+    {
+      "id": "needler",
+      "label": "Игломёт · C",
+      "visuals": [
+        "resonance-final/needler-hero.png"
+      ],
+      "modelSheets": [
+        "resonance-final/needler-model-sheet-v2.png"
+      ]
+    },
+    {
+      "id": "emitter",
+      "label": "Излучатель · D",
+      "visuals": [
+        "resonance-final/emitter-hero.png"
+      ],
+      "modelSheets": [
+        "resonance-final/emitter-model-sheet-v2.png"
+      ]
+    },
+    {
+      "id": "golem",
+      "label": "Голем · B5",
+      "visuals": [
+        "resonance-final/golem-hero-v2.png"
+      ],
+      "modelSheets": [
+        "resonance-final/golem-model-sheet-v2.png",
+        "resonance-final/golem-deployed-model-sheet-v2.png"
+      ]
+    },
+    {
+      "id": "saboteur",
+      "label": "Взломщик · A",
+      "visuals": [
+        "resonance-final/saboteur-hero.png"
+      ],
+      "modelSheets": [
+        "resonance-final/saboteur-model-sheet-v2.png"
+      ]
+    },
+    {
+      "id": "glider",
+      "label": "Планёр · A",
+      "visuals": [
+        "resonance-final/glider-hero.png"
+      ],
+      "modelSheets": [
+        "resonance-final/glider-model-sheet-v2.png"
+      ]
+    },
+    {
+      "id": "catcher",
+      "label": "Ловец · B",
+      "visuals": [
+        "resonance-final/catcher-hero.png"
+      ],
+      "modelSheets": [
+        "resonance-final/catcher-model-sheet-v2.png"
+      ]
+    },
+    {
+      "id": "grenade-carrier",
+      "label": "Носитель нанитных гранат · D",
+      "visuals": [
+        "resonance-final/grenade-carrier-hero.png"
+      ],
+      "modelSheets": [
+        "resonance-final/grenade-carrier-model-sheet-v2.png"
+      ]
+    },
+    {
+      "id": "seeder",
+      "label": "Сеятель · A",
+      "visuals": [
+        "resonance-final/seeder-hero.png"
+      ],
+      "modelSheets": [
+        "resonance-final/seeder-model-sheet-v2.png",
+        "resonance-final/seeder-deployed-model-sheet-v2.png"
+      ]
+    },
+    {
+      "id": "transport",
+      "label": "Транспортник Резонанса · G",
+      "visuals": [
+        "resonance-transport-reboot/g.png"
+      ],
+      "modelSheets": [
+        "resonance-transport-reboot/modeling/g-attached-model-sheet.png",
+        "resonance-transport-reboot/modeling/g-empty-model-sheet.png"
+      ]
+    }
+  ],
+  "buildings": [
+    {
+      "id": "computer",
+      "label": "Вычислитель · B5",
+      "visuals": [
+        "resonance-buildings-review/round-2/computer-b5.png"
+      ],
+      "modelSheets": [
+        "resonance-buildings-modeling/computer/model-sheet.png"
+      ],
+      "guide": "resonance-buildings-modeling/computer/guide.png",
+      "obj": "resonance-buildings-modeling/computer/blockout.obj"
+    },
+    {
+      "id": "relay",
+      "label": "Ретранслятор · A",
+      "visuals": [
+        "resonance-buildings-review/relay/01-a.png"
+      ],
+      "modelSheets": [
+        "resonance-buildings-modeling/relay/model-sheet.png"
+      ],
+      "guide": "resonance-buildings-modeling/relay/guide.png",
+      "obj": "resonance-buildings-modeling/relay/blockout.obj"
+    },
+    {
+      "id": "firmware",
+      "label": "Узел прошивки · B",
+      "visuals": [
+        "resonance-buildings-review/round-2/firmware-b.png"
+      ],
+      "modelSheets": [
+        "resonance-buildings-modeling/firmware/model-sheet.png"
+      ],
+      "guide": "resonance-buildings-modeling/firmware/guide.png",
+      "obj": "resonance-buildings-modeling/firmware/blockout.obj"
+    },
+    {
+      "id": "matrix",
+      "label": "Матрица форм · E",
+      "visuals": [
+        "resonance-buildings-review/matrix/05-e.png"
+      ],
+      "modelSheets": [
+        "resonance-buildings-modeling/matrix/model-sheet.png"
+      ],
+      "guide": "resonance-buildings-modeling/matrix/guide.png",
+      "obj": "resonance-buildings-modeling/matrix/blockout.obj"
+    },
+    {
+      "id": "nest",
+      "label": "Гнездо · A2",
+      "visuals": [
+        "resonance-buildings-review/round-2/nest-a2.png"
+      ],
+      "modelSheets": [
+        "resonance-buildings-modeling/nest/model-sheet-v2.png"
+      ],
+      "guide": "resonance-buildings-modeling/nest/guide.png",
+      "obj": "resonance-buildings-modeling/nest/blockout.obj"
+    },
+    {
+      "id": "deep-core",
+      "label": "Глубинное ядро · A",
+      "visuals": [
+        "resonance-buildings-review/deep-core/01-a.png"
+      ],
+      "modelSheets": [
+        "resonance-buildings-modeling/deep-core/model-sheet-v2.png"
+      ],
+      "guide": "resonance-buildings-modeling/deep-core/guide.png",
+      "obj": "resonance-buildings-modeling/deep-core/blockout.obj"
+    },
+    {
+      "id": "reservoir",
+      "label": "Резервуар · E",
+      "visuals": [
+        "resonance-buildings-review/reservoir/05-e.png"
+      ],
+      "modelSheets": [
+        "resonance-buildings-modeling/reservoir/model-sheet-v2.png"
+      ],
+      "guide": "resonance-buildings-modeling/reservoir/guide.png",
+      "obj": "resonance-buildings-modeling/reservoir/blockout.obj"
+    },
+    {
+      "id": "core",
+      "label": "Ядро · A «Сердце»",
+      "visuals": [
+        "core-heart-directions/01-a.png"
+      ],
+      "modelSheets": [
+        "core-heart-directions/07-a-model-sheet.png"
+      ]
+    },
+    {
+      "id": "assembly",
+      "label": "Сборочный узел · A «Цистерны»",
+      "visuals": [
+        "assembly-materials/01-a.png"
+      ],
+      "modelSheets": [
+        "assembly-materials/07-a-model-sheet.png"
+      ]
+    },
+    {
+      "id": "guardian",
+      "label": "Страж · A + F",
+      "visuals": [
+        "guardian-directions/08-af-ground-model-sheet.png",
+        "guardian-directions/09-af-air-model-sheet.png"
+      ],
+      "modelSheets": [
+        "guardian-directions/08-af-ground-model-sheet.png",
+        "guardian-directions/09-af-air-model-sheet.png"
+      ],
+      "note": "Selected main 3/4 appearances are included in the two state sheets."
+    }
+  ],
+  "reserve": [
+    "Прыгун",
+    "Облако"
+  ],
+  "limits": "Detailed geometry, unseen surface proposals, animation, effects and open mechanics remain unresolved; artistic sheet views are not guaranteed exact."
+}

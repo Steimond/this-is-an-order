@@ -2,9 +2,16 @@
 
 Голосовая RTS на Unity: люди и нанитные машины, экономика, базы и бой. Сначала бот, затем PvP 1 на 1; целевая платформа — Windows / Steam.
 
-**[Единый расширяемый дизайн-документ](docs/DESIGN.md)** — правила, полные ростеры/здания/улучшения, визуал, HUD, голос, архитектура, состояние прототипа, проверки и задачи.
+**[Открыть весь проект в одном HTML-документе](docs/PROJECT.html)** — выбранные концепты со встроенными изображениями, полный текст правил и таблиц, поиск, оглавление и печать / PDF. Работает без интернета.
 
-- [Актуальные концепты](docs/concepts/gallery.html).
+[Исходный дизайн-документ](docs/DESIGN.md) — единственный актуальный текстовый источник. После изменений пересобрать HTML: `node tools/docs/build-handbook.cjs` (использует пакеты `marked` и `sharp` из комплектного Node.js Codex).
+
+- [Выбранные концепты в общем документе](docs/PROJECT.html#visuals).
+- [Резонанс: единые основные визуалы и модельные листы](docs/concepts/resonance-final/gallery.html) — 10 юнитов в утверждённом стиле чистых панелей.
+- [Транспортник Резонанса: выбран исходный G](docs/concepts/resonance-transport-reboot/gallery.html#g) — закрытая нижняя капсула; [ракурсы для моделирования и OBJ](docs/concepts/resonance-transport-reboot/modeling/gallery.html).
+- [Резонанс: ракурсы всех десяти зданий](docs/concepts/resonance-buildings-modeling/gallery.html) — основные виды, семь новых модельных листов, каркасы и OBJ.
+- [Здания: второй проход и выбор 28 октября](docs/concepts/resonance-buildings-review/round-2/gallery.html) — Вычислитель и Узел прошивки без баков, Гнездо A2 / F.
+- [42 новых концепта зданий Резонанса](docs/concepts/resonance-buildings-review/gallery.html) — по шесть вариантов для семи зданий; [проверка выбранных построек](docs/concepts/resonance-buildings-review/audit/gallery.html).
 - [Что осталось перенести и уточнить](docs/DESIGN.md#audit).
 - [Следующие задачи](docs/DESIGN.md#backlog).
 - [Архив документов и скетчей](docs/Old/2026-10-25/README-ARCHIVE.md).

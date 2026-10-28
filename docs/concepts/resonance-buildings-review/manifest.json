@@ -1,0 +1,471 @@
+{
+  "date": "2026-10-27",
+  "status": "proposals-not-approved",
+  "variantsPerBuilding": 6,
+  "groups": [
+    {
+      "id": "computer",
+      "name": "Вычислитель",
+      "size": "2x2",
+      "role": "Small supply/capacity building, +10 army capacity, no network coverage of its own, no unit production. Visually compact computation hardware, not reactor, battery, transmitter or command center."
+    },
+    {
+      "id": "relay",
+      "name": "Ретранслятор",
+      "size": "1x1",
+      "role": "Very small network-extension building, slim readable beacon/communications structure, no army capacity, no production, no attack. Distinct from larger compute structures."
+    },
+    {
+      "id": "firmware",
+      "name": "Узел прошивки",
+      "size": "3x3",
+      "role": "Research building for weapon/armor modifications, not factory and not unit spawn point. Physical programming/calibration machinery. No visible guns, units or people."
+    },
+    {
+      "id": "matrix",
+      "name": "Матрица форм",
+      "size": "3x3",
+      "role": "Tier-II research and form-template technology building. Studies/formalizes geometry; does not manufacture units. Physical mold/template/metrology apparatus, not a factory gate or landing pad."
+    },
+    {
+      "id": "nest",
+      "name": "Гнездо",
+      "size": "4x4",
+      "role": "Air-form technology/research building only. It unlocks aerial units and studies upgrades, but ALL units are produced elsewhere at the assembly node. No aircraft, hangar, exit, runway, helipad or launch gate."
+    },
+    {
+      "id": "deep-core",
+      "name": "Глубинное ядро",
+      "size": "3x3",
+      "role": "Tier-III technology building, compact dense underground/depth research machinery. NOT the headquarters, NOT network coverage, NOT unit production. Distinct from the chosen spherical HQ heart. Depth and heavy grounded machinery should read without effects."
+    },
+    {
+      "id": "reservoir",
+      "name": "Резервуар",
+      "size": "2x2",
+      "role": "Compact stored-charge recovery support building. Helps up to three out-of-combat nonworker allied units recover, no instant combat healing, no production, no network. Must be distinct from Assembly Node's TWO LONG PARALLEL CYLINDRICAL TANKS. One integrated reserve volume/manifold, no medics, crosses, healing beams, nearby units or circular field effects."
+    }
+  ],
+  "jobs": [
+    {
+      "id": "computer-a",
+      "building": "computer",
+      "buildingName": "Вычислитель",
+      "variant": "A",
+      "name": "Пакет",
+      "description": "Три низких вычислительных блока",
+      "file": "computer/01-a.png",
+      "promptFile": "computer/01-a.prompt.md"
+    },
+    {
+      "id": "computer-b",
+      "building": "computer",
+      "buildingName": "Вычислитель",
+      "variant": "B",
+      "name": "Память",
+      "description": "Вертикальная стопка памяти",
+      "file": "computer/02-b.png",
+      "promptFile": "computer/02-b.prompt.md"
+    },
+    {
+      "id": "computer-c",
+      "building": "computer",
+      "buildingName": "Вычислитель",
+      "variant": "C",
+      "name": "Кольцо вычислений",
+      "description": "Низкий кольцевой массив",
+      "file": "computer/03-c.png",
+      "promptFile": "computer/03-c.prompt.md"
+    },
+    {
+      "id": "computer-d",
+      "building": "computer",
+      "buildingName": "Вычислитель",
+      "variant": "D",
+      "name": "Мост",
+      "description": "Вычислительная перемычка",
+      "file": "computer/04-d.png",
+      "promptFile": "computer/04-d.prompt.md"
+    },
+    {
+      "id": "computer-e",
+      "building": "computer",
+      "buildingName": "Вычислитель",
+      "variant": "E",
+      "name": "Террасы",
+      "description": "Ступенчатая вычислительная башня",
+      "file": "computer/05-e.png",
+      "promptFile": "computer/05-e.prompt.md"
+    },
+    {
+      "id": "computer-f",
+      "building": "computer",
+      "buildingName": "Вычислитель",
+      "variant": "F",
+      "name": "Четыре кассеты",
+      "description": "Радиальные модули памяти",
+      "file": "computer/06-f.png",
+      "promptFile": "computer/06-f.prompt.md"
+    },
+    {
+      "id": "relay-a",
+      "building": "relay",
+      "buildingName": "Ретранслятор",
+      "variant": "A",
+      "name": "Вилка",
+      "description": "Два тонких излучающих пера",
+      "file": "relay/01-a.png",
+      "promptFile": "relay/01-a.prompt.md"
+    },
+    {
+      "id": "relay-b",
+      "building": "relay",
+      "buildingName": "Ретранслятор",
+      "variant": "B",
+      "name": "Контур",
+      "description": "Петлевой передатчик",
+      "file": "relay/02-b.png",
+      "promptFile": "relay/02-b.prompt.md"
+    },
+    {
+      "id": "relay-c",
+      "building": "relay",
+      "buildingName": "Ретранслятор",
+      "variant": "C",
+      "name": "Гребень",
+      "description": "Три наклонные пластины",
+      "file": "relay/03-c.png",
+      "promptFile": "relay/03-c.prompt.md"
+    },
+    {
+      "id": "relay-d",
+      "building": "relay",
+      "buildingName": "Ретранслятор",
+      "variant": "D",
+      "name": "Лепесток",
+      "description": "Одна вогнутая антенна",
+      "file": "relay/04-d.png",
+      "promptFile": "relay/04-d.prompt.md"
+    },
+    {
+      "id": "relay-e",
+      "building": "relay",
+      "buildingName": "Ретранслятор",
+      "variant": "E",
+      "name": "Шпиль",
+      "description": "Ступенчатая мачта",
+      "file": "relay/05-e.png",
+      "promptFile": "relay/05-e.prompt.md"
+    },
+    {
+      "id": "relay-f",
+      "building": "relay",
+      "buildingName": "Ретранслятор",
+      "variant": "F",
+      "name": "Скоба",
+      "description": "Открытая угловая рамка",
+      "file": "relay/06-f.png",
+      "promptFile": "relay/06-f.prompt.md"
+    },
+    {
+      "id": "firmware-a",
+      "building": "firmware",
+      "buildingName": "Узел прошивки",
+      "variant": "A",
+      "name": "Рамки",
+      "description": "Два программирующих портала",
+      "file": "firmware/01-a.png",
+      "promptFile": "firmware/01-a.prompt.md"
+    },
+    {
+      "id": "firmware-b",
+      "building": "firmware",
+      "buildingName": "Узел прошивки",
+      "variant": "B",
+      "name": "Кодовый столп",
+      "description": "Монолит с программирующими поясами",
+      "file": "firmware/02-b.png",
+      "promptFile": "firmware/02-b.prompt.md"
+    },
+    {
+      "id": "firmware-c",
+      "building": "firmware",
+      "buildingName": "Узел прошивки",
+      "variant": "C",
+      "name": "Читалки",
+      "description": "Три наклонных блока считывания",
+      "file": "firmware/03-c.png",
+      "promptFile": "firmware/03-c.prompt.md"
+    },
+    {
+      "id": "firmware-d",
+      "building": "firmware",
+      "buildingName": "Узел прошивки",
+      "variant": "D",
+      "name": "Подкова",
+      "description": "Открытая калибровочная рама",
+      "file": "firmware/04-d.png",
+      "promptFile": "firmware/04-d.prompt.md"
+    },
+    {
+      "id": "firmware-e",
+      "building": "firmware",
+      "buildingName": "Узел прошивки",
+      "variant": "E",
+      "name": "Призмы",
+      "description": "Две встречные призмы",
+      "file": "firmware/05-e.png",
+      "promptFile": "firmware/05-e.prompt.md"
+    },
+    {
+      "id": "firmware-f",
+      "building": "firmware",
+      "buildingName": "Узел прошивки",
+      "variant": "F",
+      "name": "Скоба записи",
+      "description": "Один большой С-образный суппорт",
+      "file": "firmware/06-f.png",
+      "promptFile": "firmware/06-f.prompt.md"
+    },
+    {
+      "id": "matrix-a",
+      "building": "matrix",
+      "buildingName": "Матрица форм",
+      "variant": "A",
+      "name": "Шестигранник",
+      "description": "Шестигранный стенд форм",
+      "file": "matrix/01-a.png",
+      "promptFile": "matrix/01-a.prompt.md"
+    },
+    {
+      "id": "matrix-b",
+      "building": "matrix",
+      "buildingName": "Матрица форм",
+      "variant": "B",
+      "name": "Клещи",
+      "description": "Два встречных формодержателя",
+      "file": "matrix/02-b.png",
+      "promptFile": "matrix/02-b.prompt.md"
+    },
+    {
+      "id": "matrix-c",
+      "building": "matrix",
+      "buildingName": "Матрица форм",
+      "variant": "C",
+      "name": "Три плоскости",
+      "description": "Пересекающиеся шаблоны",
+      "file": "matrix/03-c.png",
+      "promptFile": "matrix/03-c.prompt.md"
+    },
+    {
+      "id": "matrix-d",
+      "building": "matrix",
+      "buildingName": "Матрица форм",
+      "variant": "D",
+      "name": "Лепестковый стенд",
+      "description": "Шесть радиальных сегментов",
+      "file": "matrix/04-d.png",
+      "promptFile": "matrix/04-d.prompt.md"
+    },
+    {
+      "id": "matrix-e",
+      "building": "matrix",
+      "buildingName": "Матрица форм",
+      "variant": "E",
+      "name": "Образцы",
+      "description": "Банк объёмных шаблонов",
+      "file": "matrix/05-e.png",
+      "promptFile": "matrix/05-e.prompt.md"
+    },
+    {
+      "id": "matrix-f",
+      "building": "matrix",
+      "buildingName": "Матрица форм",
+      "variant": "F",
+      "name": "Двойная матрица",
+      "description": "Два смещённых контура",
+      "file": "matrix/06-f.png",
+      "promptFile": "matrix/06-f.prompt.md"
+    },
+    {
+      "id": "nest-a",
+      "building": "nest",
+      "buildingName": "Гнездо",
+      "variant": "A",
+      "name": "Три пера",
+      "description": "Три высоких аэродинамических плавника",
+      "file": "nest/01-a.png",
+      "promptFile": "nest/01-a.prompt.md"
+    },
+    {
+      "id": "nest-b",
+      "building": "nest",
+      "buildingName": "Гнездо",
+      "variant": "B",
+      "name": "Крылатый мост",
+      "description": "Низкие аэродинамические арки",
+      "file": "nest/02-b.png",
+      "promptFile": "nest/02-b.prompt.md"
+    },
+    {
+      "id": "nest-c",
+      "building": "nest",
+      "buildingName": "Гнездо",
+      "variant": "C",
+      "name": "Три камеры",
+      "description": "Наклонные исследовательские каналы",
+      "file": "nest/03-c.png",
+      "promptFile": "nest/03-c.prompt.md"
+    },
+    {
+      "id": "nest-d",
+      "building": "nest",
+      "buildingName": "Гнездо",
+      "variant": "D",
+      "name": "Чаша потока",
+      "description": "Низкая чаша с высоким килем",
+      "file": "nest/04-d.png",
+      "promptFile": "nest/04-d.prompt.md"
+    },
+    {
+      "id": "nest-e",
+      "building": "nest",
+      "buildingName": "Гнездо",
+      "variant": "E",
+      "name": "Два крыла",
+      "description": "Разнесённые аэродинамические пластины",
+      "file": "nest/05-e.png",
+      "promptFile": "nest/05-e.prompt.md"
+    },
+    {
+      "id": "nest-f",
+      "building": "nest",
+      "buildingName": "Гнездо",
+      "variant": "F",
+      "name": "Жалюзи",
+      "description": "Перекрёстный аэродинамический стенд",
+      "file": "nest/06-f.png",
+      "promptFile": "nest/06-f.prompt.md"
+    },
+    {
+      "id": "deep-core-a",
+      "building": "deep-core",
+      "buildingName": "Глубинное ядро",
+      "variant": "A",
+      "name": "Колодец",
+      "description": "Квадратный заглублённый комплекс",
+      "file": "deep-core/01-a.png",
+      "promptFile": "deep-core/01-a.prompt.md"
+    },
+    {
+      "id": "deep-core-b",
+      "building": "deep-core",
+      "buildingName": "Глубинное ядро",
+      "variant": "B",
+      "name": "Грань",
+      "description": "Шестигранная шахта",
+      "file": "deep-core/02-b.png",
+      "promptFile": "deep-core/02-b.prompt.md"
+    },
+    {
+      "id": "deep-core-c",
+      "building": "deep-core",
+      "buildingName": "Глубинное ядро",
+      "variant": "C",
+      "name": "Ступени",
+      "description": "Прямоугольный каскад в глубину",
+      "file": "deep-core/03-c.png",
+      "promptFile": "deep-core/03-c.prompt.md"
+    },
+    {
+      "id": "deep-core-d",
+      "building": "deep-core",
+      "buildingName": "Глубинное ядро",
+      "variant": "D",
+      "name": "Перемычка",
+      "description": "Массивный мост над шахтой",
+      "file": "deep-core/04-d.png",
+      "promptFile": "deep-core/04-d.prompt.md"
+    },
+    {
+      "id": "deep-core-e",
+      "building": "deep-core",
+      "buildingName": "Глубинное ядро",
+      "variant": "E",
+      "name": "Три глубины",
+      "description": "Три внутренних технологических столпа",
+      "file": "deep-core/05-e.png",
+      "promptFile": "deep-core/05-e.prompt.md"
+    },
+    {
+      "id": "deep-core-f",
+      "building": "deep-core",
+      "buildingName": "Глубинное ядро",
+      "variant": "F",
+      "name": "Погружение",
+      "description": "Монолит в заглублённом воротнике",
+      "file": "deep-core/06-f.png",
+      "promptFile": "deep-core/06-f.prompt.md"
+    },
+    {
+      "id": "reservoir-a",
+      "building": "reservoir",
+      "buildingName": "Резервуар",
+      "variant": "A",
+      "name": "Капсула",
+      "description": "Одна закрытая горизонтальная капсула",
+      "file": "reservoir/01-a.png",
+      "promptFile": "reservoir/01-a.prompt.md"
+    },
+    {
+      "id": "reservoir-b",
+      "building": "reservoir",
+      "buildingName": "Резервуар",
+      "variant": "B",
+      "name": "Мембрана",
+      "description": "Вертикальный эластичный буфер",
+      "file": "reservoir/02-b.png",
+      "promptFile": "reservoir/02-b.prompt.md"
+    },
+    {
+      "id": "reservoir-c",
+      "building": "reservoir",
+      "buildingName": "Резервуар",
+      "variant": "C",
+      "name": "Буфер-кольцо",
+      "description": "Низкий тороидальный запас",
+      "file": "reservoir/03-c.png",
+      "promptFile": "reservoir/03-c.prompt.md"
+    },
+    {
+      "id": "reservoir-d",
+      "building": "reservoir",
+      "buildingName": "Резервуар",
+      "variant": "D",
+      "name": "Меха",
+      "description": "Стопка сжимаемых камер",
+      "file": "reservoir/04-d.png",
+      "promptFile": "reservoir/04-d.prompt.md"
+    },
+    {
+      "id": "reservoir-e",
+      "building": "reservoir",
+      "buildingName": "Резервуар",
+      "variant": "E",
+      "name": "Наклон",
+      "description": "Один наклонный сосуд",
+      "file": "reservoir/05-e.png",
+      "promptFile": "reservoir/05-e.prompt.md"
+    },
+    {
+      "id": "reservoir-f",
+      "building": "reservoir",
+      "buildingName": "Резервуар",
+      "variant": "F",
+      "name": "Барабан",
+      "description": "Короткий секционный барабан",
+      "file": "reservoir/06-f.png",
+      "promptFile": "reservoir/06-f.prompt.md"
+    }
+  ]
+}

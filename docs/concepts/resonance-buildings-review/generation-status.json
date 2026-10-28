@@ -1,0 +1,278 @@
+[
+  {
+    "id": "computer-a",
+    "status": "completed",
+    "file": "computer/01-a.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-217f019d-4a08-43e6-9207-56f1e115b4a5.png"
+  },
+  {
+    "id": "computer-b",
+    "status": "completed",
+    "file": "computer/02-b.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-e822df11-144e-4c9d-801c-a8e18a313872.png"
+  },
+  {
+    "id": "computer-c",
+    "status": "completed",
+    "file": "computer/03-c.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-450f63b5-7f85-4272-b9f8-2b503c33576f.png"
+  },
+  {
+    "id": "computer-d",
+    "status": "completed",
+    "file": "computer/04-d.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-72c8db43-16a8-4d65-b9fe-f7ebbaf84492.png"
+  },
+  {
+    "id": "computer-e",
+    "status": "completed",
+    "file": "computer/05-e.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-0ff7e491-390b-416b-ad3d-0a9d815e5583.png"
+  },
+  {
+    "id": "computer-f",
+    "status": "completed",
+    "file": "computer/06-f.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-40bfa0ff-fb06-4104-8dab-df4db1ec4ac8.png"
+  },
+  {
+    "id": "relay-a",
+    "status": "completed",
+    "file": "relay/01-a.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-61d84223-4cde-4f6b-8153-459819def4ea.png"
+  },
+  {
+    "id": "relay-b",
+    "status": "completed",
+    "file": "relay/02-b.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-4bc79c87-ba67-44ed-bde5-408962d3c381.png"
+  },
+  {
+    "id": "relay-c",
+    "status": "completed",
+    "file": "relay/03-c.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-5bd5812c-7bcb-4231-a00e-8fb3b3fb8665.png"
+  },
+  {
+    "id": "relay-d",
+    "status": "completed",
+    "file": "relay/04-d.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-8f0e8a8d-5406-45d1-9fac-0fb4a66f8576.png"
+  },
+  {
+    "id": "relay-e",
+    "status": "completed",
+    "file": "relay/05-e.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-dc2ba17c-62fb-4406-a68f-fddb96931866.png"
+  },
+  {
+    "id": "relay-f",
+    "status": "completed",
+    "file": "relay/06-f.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-e25c3971-9a78-4513-91ee-4b675e1fa0f6.png"
+  },
+  {
+    "id": "firmware-a",
+    "status": "completed",
+    "file": "firmware/01-a.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-60b6f101-1e59-4aee-b3a6-a8f0b08561e8.png"
+  },
+  {
+    "id": "firmware-b",
+    "status": "completed",
+    "file": "firmware/02-b.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-d5f33b7d-1647-432d-b715-f2fc8bbff516.png"
+  },
+  {
+    "id": "firmware-c",
+    "status": "completed",
+    "file": "firmware/03-c.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-b6879d19-5a63-44ac-ac03-b64bfecbe1f4.png"
+  },
+  {
+    "id": "firmware-d",
+    "status": "completed",
+    "file": "firmware/04-d.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-7b6d2687-dd9d-4fb1-8532-27ad03ebd401.png"
+  },
+  {
+    "id": "firmware-e",
+    "status": "completed",
+    "file": "firmware/05-e.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-6e790c81-02c1-4e30-975e-a9ac3945835d.png"
+  },
+  {
+    "id": "firmware-f",
+    "status": "completed",
+    "file": "firmware/06-f.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-ff0de6ae-66f8-4ad9-b656-3251756654d6.png"
+  },
+  {
+    "id": "matrix-a",
+    "status": "completed",
+    "file": "matrix/01-a.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-3197239a-b651-4032-8be8-9623351fe362.png"
+  },
+  {
+    "id": "matrix-b",
+    "status": "completed",
+    "file": "matrix/02-b.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-25e287b5-07fe-499d-9821-1a1a486efce3.png"
+  },
+  {
+    "id": "matrix-c",
+    "status": "completed",
+    "file": "matrix/03-c.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-ef37d679-48f1-4e1f-9e7d-316c288e2d0e.png"
+  },
+  {
+    "id": "matrix-d",
+    "status": "completed",
+    "file": "matrix/04-d.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-ad83f091-c365-412f-bc96-4b6b8d1fb15c.png"
+  },
+  {
+    "id": "matrix-e",
+    "status": "completed",
+    "file": "matrix/05-e.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-20307ed8-8577-4ae5-b9d6-6939db8c4241.png"
+  },
+  {
+    "id": "matrix-f",
+    "status": "completed",
+    "file": "matrix/06-f.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-e59f5e30-56b6-4692-a661-862061cd821d.png"
+  },
+  {
+    "id": "nest-a",
+    "status": "completed",
+    "file": "nest/01-a.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-4e3dc9eb-43e2-4638-ad84-ef5bbd200ec0.png"
+  },
+  {
+    "id": "nest-b",
+    "status": "completed",
+    "file": "nest/02-b.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-47cca820-5faf-42c5-b075-918a7774e273.png"
+  },
+  {
+    "id": "nest-c",
+    "status": "completed",
+    "file": "nest/03-c.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-2f4e0eb5-7421-4916-ba71-104104ddee94.png"
+  },
+  {
+    "id": "nest-d",
+    "status": "completed",
+    "file": "nest/04-d.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-ccad54e3-d690-41b0-b8a8-46f6f6ded5e3.png"
+  },
+  {
+    "id": "nest-e",
+    "status": "completed",
+    "file": "nest/05-e.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-e7dd382a-a987-4019-93c5-f3d36cbd98b1.png"
+  },
+  {
+    "id": "nest-f",
+    "status": "completed",
+    "file": "nest/06-f.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-cb8c518b-42c5-4d52-ad40-0e5e21be30ab.png"
+  },
+  {
+    "id": "deep-core-a",
+    "status": "completed",
+    "file": "deep-core/01-a.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-a5d66702-762d-4a18-afe5-786678c12552.png"
+  },
+  {
+    "id": "deep-core-b",
+    "status": "completed",
+    "file": "deep-core/02-b.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-bef37589-3419-4139-b388-a0d40033b340.png"
+  },
+  {
+    "id": "deep-core-c",
+    "status": "completed",
+    "file": "deep-core/03-c.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-6ebd34fd-b220-40d6-944c-02b5402ca17e.png"
+  },
+  {
+    "id": "deep-core-d",
+    "status": "completed",
+    "file": "deep-core/04-d.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-f65bc731-5dd0-482e-aaef-e3b42b9d339e.png"
+  },
+  {
+    "id": "deep-core-e",
+    "status": "completed",
+    "file": "deep-core/05-e.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-036450db-daca-496b-b121-75184e21e633.png"
+  },
+  {
+    "id": "deep-core-f",
+    "status": "completed",
+    "file": "deep-core/06-f.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-37285a6b-50ee-404e-9235-efdca17084fa.png"
+  },
+  {
+    "id": "reservoir-a",
+    "status": "completed",
+    "file": "reservoir/01-a.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-376bbfb5-0582-4ad7-989c-cb7642cc4886.png"
+  },
+  {
+    "id": "reservoir-b",
+    "status": "completed",
+    "file": "reservoir/02-b.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-ca0c5bac-df24-44a3-92de-f1ca34dc9a63.png"
+  },
+  {
+    "id": "reservoir-c",
+    "status": "completed",
+    "file": "reservoir/03-c.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-b6ae476e-513a-4316-9fd2-8e0697ac07ba.png"
+  },
+  {
+    "id": "reservoir-d",
+    "status": "completed",
+    "file": "reservoir/04-d.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-25a30939-8530-47d8-b136-af188c1109c7.png"
+  },
+  {
+    "id": "reservoir-e",
+    "status": "completed",
+    "file": "reservoir/05-e.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-eecc5779-e218-4c9f-8f3a-0d81c533af09.png"
+  },
+  {
+    "id": "reservoir-f",
+    "status": "completed",
+    "file": "reservoir/06-f.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-be0ce847-96e9-488f-8ecd-cfe9070e1131.png"
+  },
+  {
+    "id": "audit-core",
+    "status": "completed",
+    "file": "audit/core-corrected-study.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-aef898b9-bada-4171-88a9-f7a1118edce6.png"
+  },
+  {
+    "id": "audit-assembly",
+    "status": "completed",
+    "file": "audit/assembly-corrected-study.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-46fd7c0e-bb31-4f51-9d32-cd3c9853db57.png"
+  },
+  {
+    "id": "audit-guardian-ground",
+    "status": "completed",
+    "file": "audit/guardian-ground-corrected-study.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-1512da91-7a12-4899-bb97-f43645b6e197.png"
+  },
+  {
+    "id": "audit-guardian-air",
+    "status": "completed",
+    "file": "audit/guardian-air-corrected-study.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-36bbd11c-056f-4601-ac54-57ec4ee11ad8.png"
+  }
+]

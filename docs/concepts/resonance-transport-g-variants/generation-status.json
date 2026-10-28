@@ -1,0 +1,40 @@
+[
+  {
+    "id": "g1",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-7dacc1ce-8ba8-4bad-a1e8-073c8c2b420e.png",
+    "file": "g1.png"
+  },
+  {
+    "id": "g4",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-a4e9d9ef-b397-4d77-974b-b570fb215285.png",
+    "file": "g4.png"
+  },
+  {
+    "id": "g2",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-9af595e1-8a35-426d-abea-a30fab07671a.png",
+    "file": "g2.png"
+  },
+  {
+    "id": "g6",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-7f6155e8-c53e-4649-9d2f-ea7f4f5dae50.png",
+    "file": "g6-v2.png",
+    "refined": true
+  },
+  {
+    "id": "g5",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-f42e2e83-acaa-4bec-b872-8018c88762e0.png",
+    "file": "g5-v2.png",
+    "refined": true
+  },
+  {
+    "id": "g3",
+    "status": "completed",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-82dc0bf6-4815-4d34-846f-ec452afd1636.png",
+    "file": "g3.png"
+  }
+]

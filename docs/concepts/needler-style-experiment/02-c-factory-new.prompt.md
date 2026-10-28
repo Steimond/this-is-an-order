@@ -1,0 +1,5 @@
+# Игломёт — свежесобранный
+
+Встроенный image_gen, редактирование 01-c-material-study.png. Эксперимент, не утверждённый дизайн.
+
+Use case: precise-object-edit. Edit the attached NEEDLER style experiment image. ONLY change surface condition to factory-new, freshly assembled by nanites. Remove all rust, brown streaks, grime, scratches, chipped paint, worn edges and corrosion on light armor, gun, legs and dark metal. Replace with pristine satin light-grey ceramic-metal panels and clean graphite metal frame. Keep realistic subtle material roughness and lighting, not plastic, not chrome. Preserve EXACT geometry, silhouette, proportions, pose, four legs and four feet, three vertically stacked forward-facing rectangular barrels, all joints, panel seams and fasteners (these are construction details, not damage). Preserve protected translucent nanite chamber at rear, cyan accents, camera, background, shadows, composition and title. No added equipment or redesign. Same image with clean new surfaces.

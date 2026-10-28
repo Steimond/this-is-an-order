@@ -1,0 +1,121 @@
+{
+  "date": "2026-10-28",
+  "status": "selected-visuals-modeling-references",
+  "jobs": [
+    {
+      "id": "computer",
+      "label": "Вычислитель · B5",
+      "hero": "resonance-buildings-review/round-2/computer-b5.png",
+      "title": "COMPUTER B5",
+      "detail": "Preserve exactly THREE upright SOLID opaque dry computing cassettes between TWO pale armored end cheeks, and ONE common broad pale top bridge. The three cassettes form a lateral row, parallel front-facing graphite ribs and small cyan slits. No transparent glass, liquid chambers or nanite tanks anywhere. Same three slab widths, heights and spacing in TOP and FRONT; REAR shows dry connectors and back faces, not three new modules. Compact low square foundation and selected large side braces.",
+      "file": "computer/model-sheet.png",
+      "guide": "computer/guide.png",
+      "obj": "computer/blockout.obj",
+      "promptFile": "computer/model-sheet.prompt.md",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/round-2/computer-b5.png",
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-modeling/computer/guide.png"
+      ],
+      "prompt": "Create a MODELING REFERENCE SHEET for the EXACT selected stationary sci-fi industrial building in FIRST reference, not a redesign or alternative. Preserve its silhouette, materials and main part proportions. Broad factory-clean satin light-gray armor, graphite framework, restrained cyan status lights, no dirt or extra fine seams. SECOND reference when provided is a simple single-mesh MASSING GUIDE: use its fixed object arrangement and orthographic view directions, but retain the selected hero's detailed silhouette and shells over rough box shapes. Landscape 1536x1024 sheet, five clearly separated fully uncropped views: FRONT, SIDE, REAR in upper row; TOP lower-left and larger THREE QUARTER lower-right. Orthographic panels must be truly straight on, NO downward tilt showing top in FRONT/SIDE/REAR. TOP is straight overhead, not 3/4. Same object proportions and consistent scale in all orthographic views, neutral gray studio background. No other buildings, figures, action, doors, gates or extra props. No extra little duplicated views. Label view names and title. Preserve exactly THREE upright SOLID opaque dry computing cassettes between TWO pale armored end cheeks, and ONE common broad pale top bridge. The three cassettes form a lateral row, parallel front-facing graphite ribs and small cyan slits. No transparent glass, liquid chambers or nanite tanks anywhere. Same three slab widths, heights and spacing in TOP and FRONT; REAR shows dry connectors and back faces, not three new modules. Compact low square foundation and selected large side braces. Title: COMPUTER B5 / MODEL REFERENCE."
+    },
+    {
+      "id": "relay",
+      "label": "Ретранслятор · A",
+      "hero": "resonance-buildings-review/relay/01-a.png",
+      "title": "RELAY A",
+      "detail": "Exactly TWO UNequal tall flat antenna blades around one narrow contained vertical center chamber, small square anchored base. In FRONT the tall blade is LEFT (-X) and short blade RIGHT (+X), in REAR these must correctly reverse onscreen. Do not equalize heights, add a third blade, or mirror asymmetry wrongly. SIDE shows thin blade thickness, not same wide frontal silhouette. Keep single narrow central smoky chamber only as present in hero; no extra vessels.",
+      "file": "relay/model-sheet.png",
+      "guide": "relay/guide.png",
+      "obj": "relay/blockout.obj",
+      "promptFile": "relay/model-sheet.prompt.md",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/relay/01-a.png",
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-modeling/relay/guide.png"
+      ],
+      "prompt": "Create a MODELING REFERENCE SHEET for the EXACT selected stationary sci-fi industrial building in FIRST reference, not a redesign or alternative. Preserve its silhouette, materials and main part proportions. Broad factory-clean satin light-gray armor, graphite framework, restrained cyan status lights, no dirt or extra fine seams. SECOND reference when provided is a simple single-mesh MASSING GUIDE: use its fixed object arrangement and orthographic view directions, but retain the selected hero's detailed silhouette and shells over rough box shapes. Landscape 1536x1024 sheet, five clearly separated fully uncropped views: FRONT, SIDE, REAR in upper row; TOP lower-left and larger THREE QUARTER lower-right. Orthographic panels must be truly straight on, NO downward tilt showing top in FRONT/SIDE/REAR. TOP is straight overhead, not 3/4. Same object proportions and consistent scale in all orthographic views, neutral gray studio background. No other buildings, figures, action, doors, gates or extra props. No extra little duplicated views. Label view names and title. Exactly TWO UNequal tall flat antenna blades around one narrow contained vertical center chamber, small square anchored base. In FRONT the tall blade is LEFT (-X) and short blade RIGHT (+X), in REAR these must correctly reverse onscreen. Do not equalize heights, add a third blade, or mirror asymmetry wrongly. SIDE shows thin blade thickness, not same wide frontal silhouette. Keep single narrow central smoky chamber only as present in hero; no extra vessels. Title: RELAY A / MODEL REFERENCE."
+    },
+    {
+      "id": "firmware",
+      "label": "Узел прошивки · B",
+      "hero": "resonance-buildings-review/round-2/firmware-b.png",
+      "title": "FIRMWARE B",
+      "detail": "One large SOLID opaque indexed horizontal programming DRUM inside an armored rectangular cradle, ONE fixed broad read/write head above it on its bridge. No glass or liquid anywhere. Assign drum axis fore-aft (-Y to +Y): FRONT sees circular drum end, SIDE sees long cylindrical side with bands, REAR sees opposite end, TOP sees same drum length and one head/bridge. All views show same drum diameter and support heights. This is dry computation/calibration machinery, not fluid storage. Keep the hero's single broad chunky overhead head, no extra robotic arms.",
+      "file": "firmware/model-sheet.png",
+      "guide": "firmware/guide.png",
+      "obj": "firmware/blockout.obj",
+      "promptFile": "firmware/model-sheet.prompt.md",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/round-2/firmware-b.png",
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-modeling/firmware/guide.png"
+      ],
+      "prompt": "Create a MODELING REFERENCE SHEET for the EXACT selected stationary sci-fi industrial building in FIRST reference, not a redesign or alternative. Preserve its silhouette, materials and main part proportions. Broad factory-clean satin light-gray armor, graphite framework, restrained cyan status lights, no dirt or extra fine seams. SECOND reference when provided is a simple single-mesh MASSING GUIDE: use its fixed object arrangement and orthographic view directions, but retain the selected hero's detailed silhouette and shells over rough box shapes. Landscape 1536x1024 sheet, five clearly separated fully uncropped views: FRONT, SIDE, REAR in upper row; TOP lower-left and larger THREE QUARTER lower-right. Orthographic panels must be truly straight on, NO downward tilt showing top in FRONT/SIDE/REAR. TOP is straight overhead, not 3/4. Same object proportions and consistent scale in all orthographic views, neutral gray studio background. No other buildings, figures, action, doors, gates or extra props. No extra little duplicated views. Label view names and title. One large SOLID opaque indexed horizontal programming DRUM inside an armored rectangular cradle, ONE fixed broad read/write head above it on its bridge. No glass or liquid anywhere. Assign drum axis fore-aft (-Y to +Y): FRONT sees circular drum end, SIDE sees long cylindrical side with bands, REAR sees opposite end, TOP sees same drum length and one head/bridge. All views show same drum diameter and support heights. This is dry computation/calibration machinery, not fluid storage. Keep the hero's single broad chunky overhead head, no extra robotic arms. Title: FIRMWARE B / MODEL REFERENCE."
+    },
+    {
+      "id": "matrix",
+      "label": "Матрица форм · E",
+      "hero": "resonance-buildings-review/matrix/05-e.png",
+      "title": "FORM MATRIX E",
+      "detail": "RECTANGULAR broad research display bed with THREE physical samples under the same low smoked canopy: CUBE at LEFT (-X), SPHERE in CENTER, PYRAMID at RIGHT (+X) in FRONT. In REAR order reverses appropriately. Exactly ONE of each, same sizes and spacing in all views, opaque metal samples on three pedestals. Wide rectangular footprint, NOT square 3x3; no exact gameplay cell size or dimensions written. Canopy frame and corner supports match selected hero; don't add liquid tanks, extra sample or holograms.",
+      "file": "matrix/model-sheet.png",
+      "guide": "matrix/guide.png",
+      "obj": "matrix/blockout.obj",
+      "promptFile": "matrix/model-sheet.prompt.md",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/matrix/05-e.png",
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-modeling/matrix/guide.png"
+      ],
+      "prompt": "Create a MODELING REFERENCE SHEET for the EXACT selected stationary sci-fi industrial building in FIRST reference, not a redesign or alternative. Preserve its silhouette, materials and main part proportions. Broad factory-clean satin light-gray armor, graphite framework, restrained cyan status lights, no dirt or extra fine seams. SECOND reference when provided is a simple single-mesh MASSING GUIDE: use its fixed object arrangement and orthographic view directions, but retain the selected hero's detailed silhouette and shells over rough box shapes. Landscape 1536x1024 sheet, five clearly separated fully uncropped views: FRONT, SIDE, REAR in upper row; TOP lower-left and larger THREE QUARTER lower-right. Orthographic panels must be truly straight on, NO downward tilt showing top in FRONT/SIDE/REAR. TOP is straight overhead, not 3/4. Same object proportions and consistent scale in all orthographic views, neutral gray studio background. No other buildings, figures, action, doors, gates or extra props. No extra little duplicated views. Label view names and title. RECTANGULAR broad research display bed with THREE physical samples under the same low smoked canopy: CUBE at LEFT (-X), SPHERE in CENTER, PYRAMID at RIGHT (+X) in FRONT. In REAR order reverses appropriately. Exactly ONE of each, same sizes and spacing in all views, opaque metal samples on three pedestals. Wide rectangular footprint, NOT square 3x3; no exact gameplay cell size or dimensions written. Canopy frame and corner supports match selected hero; don't add liquid tanks, extra sample or holograms. Title: FORM MATRIX E / MODEL REFERENCE."
+    },
+    {
+      "id": "nest",
+      "label": "Гнездо · A2",
+      "hero": "resonance-buildings-review/round-2/nest-a2.png",
+      "title": "AERIAL RESEARCH NEST A2",
+      "detail": "EXACTLY THREE IDENTICAL opaque armored CLAWS/FEATHERS arranged at 120 degrees around the central solid research hub. One rear claw and two front-side claws. They curve upward and inward like a three-jaw grapple, all tips same height around a small open center gap. TOP MUST show THREE radial roots and THREE inward tips, never four. Same three claws in every view, correct occlusion only, don't duplicate a claw to fill symmetry. Keep their selected broad smooth pale shells, dark inner edges, no glass fin reservoirs or extra tanks. No landing platform or aircraft production bay.",
+      "file": "nest/model-sheet-v2.png",
+      "guide": "nest/guide.png",
+      "obj": "nest/blockout.obj",
+      "promptFile": "nest/model-sheet-v2.prompt.md",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/round-2/nest-a2.png",
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-modeling/nest/guide.png"
+      ],
+      "prompt": "Create a MODELING REFERENCE SHEET for the EXACT selected stationary sci-fi industrial building in FIRST reference, not a redesign or alternative. Preserve its silhouette, materials and main part proportions. Broad factory-clean satin light-gray armor, graphite framework, restrained cyan status lights, no dirt or extra fine seams. SECOND reference when provided is a simple single-mesh MASSING GUIDE: use its fixed object arrangement and orthographic view directions, but retain the selected hero's detailed silhouette and shells over rough box shapes. Landscape 1536x1024 sheet, five clearly separated fully uncropped views: FRONT, SIDE, REAR in upper row; TOP lower-left and larger THREE QUARTER lower-right. Orthographic panels must be truly straight on, NO downward tilt showing top in FRONT/SIDE/REAR. TOP is straight overhead, not 3/4. Same object proportions and consistent scale in all orthographic views, neutral gray studio background. No other buildings, figures, action, doors, gates or extra props. No extra little duplicated views. Label view names and title. EXACTLY THREE IDENTICAL opaque armored CLAWS/FEATHERS arranged at 120 degrees around the central solid research hub. One rear claw and two front-side claws. They curve upward and inward like a three-jaw grapple, all tips same height around a small open center gap. TOP MUST show THREE radial roots and THREE inward tips, never four. Same three claws in every view, correct occlusion only, don't duplicate a claw to fill symmetry. Keep their selected broad smooth pale shells, dark inner edges, no glass fin reservoirs or extra tanks. No landing platform or aircraft production bay. Title: AERIAL RESEARCH NEST A2 / MODEL REFERENCE.",
+      "previousSheet": "nest/model-sheet.png"
+    },
+    {
+      "id": "deep-core",
+      "label": "Глубинное ядро · A",
+      "hero": "resonance-buildings-review/deep-core/01-a.png",
+      "title": "DEEP CORE A",
+      "detail": "Square recessed research WELL, FOUR corner armored pylons with circular caps, FOUR rim beams around ONE open deep central cavity, descending dark machinery inside. Preserve selected low exterior mass, corner proportions and inner column arrangement, single continuous square opening. TOP and 3/4 reveal depth and contained dark nanite chamber, not a flat filled lid. FRONT/SIDE/REAR show low exterior rim and anchors on ground, don't turn buried parts into stilts or raise whole structure like a bridge. No central tower, sphere or transmitter. Same square frame and FOUR corners all views.",
+      "file": "deep-core/model-sheet-v2.png",
+      "guide": "deep-core/guide.png",
+      "obj": "deep-core/blockout.obj",
+      "promptFile": "deep-core/model-sheet-v2.prompt.md",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/deep-core/01-a.png"
+      ],
+      "prompt": "Create a MODELING REFERENCE SHEET for the EXACT selected stationary sci-fi industrial building in FIRST reference, not a redesign or alternative. Preserve its silhouette, materials and main part proportions. Broad factory-clean satin light-gray armor, graphite framework, restrained cyan status lights, no dirt or extra fine seams. SECOND reference when provided is a simple single-mesh MASSING GUIDE: use its fixed object arrangement and orthographic view directions, but retain the selected hero's detailed silhouette and shells over rough box shapes. Landscape 1536x1024 sheet, five clearly separated fully uncropped views: FRONT, SIDE, REAR in upper row; TOP lower-left and larger THREE QUARTER lower-right. Orthographic panels must be truly straight on, NO downward tilt showing top in FRONT/SIDE/REAR. TOP is straight overhead, not 3/4. Same object proportions and consistent scale in all orthographic views, neutral gray studio background. No other buildings, figures, action, doors, gates or extra props. No extra little duplicated views. Label view names and title. Square recessed research WELL, FOUR corner armored pylons with circular caps, FOUR rim beams around ONE open deep central cavity, descending dark machinery inside. Preserve selected low exterior mass, corner proportions and inner column arrangement, single continuous square opening. TOP and 3/4 reveal depth and contained dark nanite chamber, not a flat filled lid. FRONT/SIDE/REAR show low exterior rim and anchors on ground, don't turn buried parts into stilts or raise whole structure like a bridge. No central tower, sphere or transmitter. Same square frame and FOUR corners all views. Title: DEEP CORE A / MODEL REFERENCE.",
+      "previousSheet": "deep-core/model-sheet.png"
+    },
+    {
+      "id": "reservoir",
+      "label": "Резервуар · E",
+      "hero": "resonance-buildings-review/reservoir/05-e.png",
+      "title": "RECOVERY RESERVOIR E",
+      "detail": "Exactly ONE LARGE INCLINED contained smoky vessel on a rectangular armored base: fore end LOW (-Y), rear end HIGH (+Y), same inclination throughout SIDE and 3/4. Round low front cap and raised rear upper cap, single main transparent shell containing dark nanite mass as selected. TOP same one central vessel, not two tanks. Keep small side service buffer present in hero, distinguish it from main vessel. FRONT low end and REAR high end must differ logically, no reverse inclination or duplicate machinery to force front-rear symmetry. Same braces, vessel length, diameter and cap positions across views.",
+      "file": "reservoir/model-sheet-v2.png",
+      "guide": "reservoir/guide.png",
+      "obj": "reservoir/blockout.obj",
+      "promptFile": "reservoir/model-sheet-v2.prompt.md",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/reservoir/05-e.png",
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-modeling/reservoir/guide.png"
+      ],
+      "prompt": "Create a MODELING REFERENCE SHEET for the EXACT selected stationary sci-fi industrial building in FIRST reference, not a redesign or alternative. Preserve its silhouette, materials and main part proportions. Broad factory-clean satin light-gray armor, graphite framework, restrained cyan status lights, no dirt or extra fine seams. SECOND reference when provided is a simple single-mesh MASSING GUIDE: use its fixed object arrangement and orthographic view directions, but retain the selected hero's detailed silhouette and shells over rough box shapes. Landscape 1536x1024 sheet, five clearly separated fully uncropped views: FRONT, SIDE, REAR in upper row; TOP lower-left and larger THREE QUARTER lower-right. Orthographic panels must be truly straight on, NO downward tilt showing top in FRONT/SIDE/REAR. TOP is straight overhead, not 3/4. Same object proportions and consistent scale in all orthographic views, neutral gray studio background. No other buildings, figures, action, doors, gates or extra props. No extra little duplicated views. Label view names and title. Exactly ONE LARGE INCLINED contained smoky vessel on a rectangular armored base: fore end LOW (-Y), rear end HIGH (+Y), same inclination throughout SIDE and 3/4. Round low front cap and raised rear upper cap, single main transparent shell containing dark nanite mass as selected. TOP same one central vessel, not two tanks. Keep small side service buffer present in hero, distinguish it from main vessel. FRONT low end and REAR high end must differ logically, no reverse inclination or duplicate machinery to force front-rear symmetry. Same braces, vessel length, diameter and cap positions across views. Title: RECOVERY RESERVOIR E / MODEL REFERENCE.",
+      "previousSheet": "reservoir/model-sheet.png"
+    }
+  ],
+  "limits": "Artistic sheets are not mathematically exact; proportion guides are views of one simplified mesh per building."
+}

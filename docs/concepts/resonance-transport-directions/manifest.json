@@ -1,0 +1,83 @@
+{
+  "date": "2026-10-28",
+  "status": "historical-direction-rejected",
+  "jobs": [
+    {
+      "id": "a",
+      "variant": "A",
+      "name": "Крестовина",
+      "file": "a.png",
+      "prompt": "Create a single new unit concept hero for Resonance faction RTS, 1536x1024 landscape. The attached aircraft is MATERIAL AND RENDER STYLE reference ONLY; do not copy its airplane wings, missiles, fuselage or silhouette. Design an UNMANNED QUADCOPTER TRANSPORT with EXACTLY FOUR vertical-lift rotor assemblies, two forward and two rear, all readable in elevated front three-quarter view. A clearly separate detachable opaque TROOP CONTAINER hangs BELOW the flying frame, attached by visible quick-release mechanical locks; show a narrow physical air gap, not a fused fuselage. Container is an armored passenger pod, not a liquid tank or shipping crate logo. It can later be dropped and transformed by nanites into a terrain ramp; imply broad contiguous structural shell panels and recessed seams, do not show a deployed ramp or invented complicated hinges. A small integrated service cartridge may suggest finite healing nanites; no giant transparent fluid vessels, no medical crosses or holograms. No cockpit, pilot, weapons, missiles, wings, humanoid limbs, additional propellers, jet flame or landing diorama. Large clean fresh satin light-gray panels, graphite mechanics, restrained cyan status slits, few seams, high quality realistic hard-surface render matching reference faction. Hover a short distance above neutral gray studio floor, soft contact shadow, full aircraft uncropped with margins. One hero only, no orthographic views, no exploded diagram, no inset or alternate state. A straightforward heavy-lift X frame, four short diagonal armored arms, four large OPEN three-blade rotors with protected central hubs. Compact low square carrier body above a deep chamfered rectangular container. Broad squat utilitarian silhouette, front and rear arms clearly separated. Small discreet upper-left text: TRANSPORT / A. No other text."
+    },
+    {
+      "id": "b",
+      "variant": "B",
+      "name": "Обойма",
+      "file": "b.png",
+      "prompt": "Create a single new unit concept hero for Resonance faction RTS, 1536x1024 landscape. The attached aircraft is MATERIAL AND RENDER STYLE reference ONLY; do not copy its airplane wings, missiles, fuselage or silhouette. Design an UNMANNED QUADCOPTER TRANSPORT with EXACTLY FOUR vertical-lift rotor assemblies, two forward and two rear, all readable in elevated front three-quarter view. A clearly separate detachable opaque TROOP CONTAINER hangs BELOW the flying frame, attached by visible quick-release mechanical locks; show a narrow physical air gap, not a fused fuselage. Container is an armored passenger pod, not a liquid tank or shipping crate logo. It can later be dropped and transformed by nanites into a terrain ramp; imply broad contiguous structural shell panels and recessed seams, do not show a deployed ramp or invented complicated hinges. A small integrated service cartridge may suggest finite healing nanites; no giant transparent fluid vessels, no medical crosses or holograms. No cockpit, pilot, weapons, missiles, wings, humanoid limbs, additional propellers, jet flame or landing diorama. Large clean fresh satin light-gray panels, graphite mechanics, restrained cyan status slits, few seams, high quality realistic hard-surface render matching reference faction. Hover a short distance above neutral gray studio floor, soft contact shadow, full aircraft uncropped with margins. One hero only, no orthographic views, no exploded diagram, no inset or alternate state. A broad H frame made of TWO parallel slim longitudinal booms joined by two crosspieces, FOUR circular DUCTED lift fans at boom ends. The detachable long rectangular container is nestled centrally below between booms, four angular quick-release hooks at its upper corners. Clean balanced low profile. Small discreet upper-left text: TRANSPORT / B. No other text."
+    },
+    {
+      "id": "c",
+      "variant": "C",
+      "name": "Краб",
+      "file": "c.png",
+      "prompt": "Create a single new unit concept hero for Resonance faction RTS, 1536x1024 landscape. The attached aircraft is MATERIAL AND RENDER STYLE reference ONLY; do not copy its airplane wings, missiles, fuselage or silhouette. Design an UNMANNED QUADCOPTER TRANSPORT with EXACTLY FOUR vertical-lift rotor assemblies, two forward and two rear, all readable in elevated front three-quarter view. A clearly separate detachable opaque TROOP CONTAINER hangs BELOW the flying frame, attached by visible quick-release mechanical locks; show a narrow physical air gap, not a fused fuselage. Container is an armored passenger pod, not a liquid tank or shipping crate logo. It can later be dropped and transformed by nanites into a terrain ramp; imply broad contiguous structural shell panels and recessed seams, do not show a deployed ramp or invented complicated hinges. A small integrated service cartridge may suggest finite healing nanites; no giant transparent fluid vessels, no medical crosses or holograms. No cockpit, pilot, weapons, missiles, wings, humanoid limbs, additional propellers, jet flame or landing diorama. Large clean fresh satin light-gray panels, graphite mechanics, restrained cyan status slits, few seams, high quality realistic hard-surface render matching reference faction. Hover a short distance above neutral gray studio floor, soft contact shadow, full aircraft uncropped with margins. One hero only, no orthographic views, no exploded diagram, no inset or alternate state. A compact diamond-shaped central drone with four thick swept-out arms, FOUR large faceted ring-shrouded rotors well outboard. Below it a short broad deep cargo pod with sloping armored shoulders. Pronounced broad span and short pod, sturdy industrial crab-like top silhouette, no legs. Small discreet upper-left text: TRANSPORT / C. No other text."
+    },
+    {
+      "id": "d",
+      "variant": "D",
+      "name": "Стрела",
+      "file": "d.png",
+      "prompt": "Create a single new unit concept hero for Resonance faction RTS, 1536x1024 landscape. The attached aircraft is MATERIAL AND RENDER STYLE reference ONLY; do not copy its airplane wings, missiles, fuselage or silhouette. Design an UNMANNED QUADCOPTER TRANSPORT with EXACTLY FOUR vertical-lift rotor assemblies, two forward and two rear, all readable in elevated front three-quarter view. A clearly separate detachable opaque TROOP CONTAINER hangs BELOW the flying frame, attached by visible quick-release mechanical locks; show a narrow physical air gap, not a fused fuselage. Container is an armored passenger pod, not a liquid tank or shipping crate logo. It can later be dropped and transformed by nanites into a terrain ramp; imply broad contiguous structural shell panels and recessed seams, do not show a deployed ramp or invented complicated hinges. A small integrated service cartridge may suggest finite healing nanites; no giant transparent fluid vessels, no medical crosses or holograms. No cockpit, pilot, weapons, missiles, wings, humanoid limbs, additional propellers, jet flame or landing diorama. Large clean fresh satin light-gray panels, graphite mechanics, restrained cyan status slits, few seams, high quality realistic hard-surface render matching reference faction. Hover a short distance above neutral gray studio floor, soft contact shadow, full aircraft uncropped with margins. One hero only, no orthographic views, no exploded diagram, no inset or alternate state. A narrow long central spine with two fore and two aft short lateral arms; FOUR oval-shrouded round rotor discs. One long slim detachable armored container beneath the spine with slanted front and rear ends, smooth broad side shell. Fast narrow silhouette distinct from a passenger airplane, no wings. Small discreet upper-left text: TRANSPORT / D. No other text."
+    },
+    {
+      "id": "e",
+      "variant": "E",
+      "name": "Скоба",
+      "file": "e.png",
+      "prompt": "Create a single new unit concept hero for Resonance faction RTS, 1536x1024 landscape. The attached aircraft is MATERIAL AND RENDER STYLE reference ONLY; do not copy its airplane wings, missiles, fuselage or silhouette. Design an UNMANNED QUADCOPTER TRANSPORT with EXACTLY FOUR vertical-lift rotor assemblies, two forward and two rear, all readable in elevated front three-quarter view. A clearly separate detachable opaque TROOP CONTAINER hangs BELOW the flying frame, attached by visible quick-release mechanical locks; show a narrow physical air gap, not a fused fuselage. Container is an armored passenger pod, not a liquid tank or shipping crate logo. It can later be dropped and transformed by nanites into a terrain ramp; imply broad contiguous structural shell panels and recessed seams, do not show a deployed ramp or invented complicated hinges. A small integrated service cartridge may suggest finite healing nanites; no giant transparent fluid vessels, no medical crosses or holograms. No cockpit, pilot, weapons, missiles, wings, humanoid limbs, additional propellers, jet flame or landing diorama. Large clean fresh satin light-gray panels, graphite mechanics, restrained cyan status slits, few seams, high quality realistic hard-surface render matching reference faction. Hover a short distance above neutral gray studio floor, soft contact shadow, full aircraft uncropped with margins. One hero only, no orthographic views, no exploded diagram, no inset or alternate state. A tall compact gantry-shaped upper carrier bridging above the container with two substantial arch supports and four short rotor outriggers. FOUR OPEN broad rotors, one at each corner, clearly apart from the pod. Squat wide barrel-roofed detachable rectangular pod; strong visible hanging space and paired quick-release saddle clamps. Small discreet upper-left text: TRANSPORT / E. No other text."
+    },
+    {
+      "id": "f",
+      "variant": "F",
+      "name": "Платформа",
+      "file": "f.png",
+      "prompt": "Create a single new unit concept hero for Resonance faction RTS, 1536x1024 landscape. The attached aircraft is MATERIAL AND RENDER STYLE reference ONLY; do not copy its airplane wings, missiles, fuselage or silhouette. Design an UNMANNED QUADCOPTER TRANSPORT with EXACTLY FOUR vertical-lift rotor assemblies, two forward and two rear, all readable in elevated front three-quarter view. A clearly separate detachable opaque TROOP CONTAINER hangs BELOW the flying frame, attached by visible quick-release mechanical locks; show a narrow physical air gap, not a fused fuselage. Container is an armored passenger pod, not a liquid tank or shipping crate logo. It can later be dropped and transformed by nanites into a terrain ramp; imply broad contiguous structural shell panels and recessed seams, do not show a deployed ramp or invented complicated hinges. A small integrated service cartridge may suggest finite healing nanites; no giant transparent fluid vessels, no medical crosses or holograms. No cockpit, pilot, weapons, missiles, wings, humanoid limbs, additional propellers, jet flame or landing diorama. Large clean fresh satin light-gray panels, graphite mechanics, restrained cyan status slits, few seams, high quality realistic hard-surface render matching reference faction. Hover a short distance above neutral gray studio floor, soft contact shadow, full aircraft uncropped with margins. One hero only, no orthographic views, no exploded diagram, no inset or alternate state. A very flat chamfered-square lifting deck with FOUR large inset DUCTED lift fans in its four separate corners, each rotor exposed from above. A large smooth wedge-sided detachable cargo container hangs underneath on four short locks. Broad low monolithic flight platform, central graphite reinforcement and pale uninterrupted deck plates. Small discreet upper-left text: TRANSPORT / F. No other text."
+    }
+  ],
+  "refinements": [
+    {
+      "id": "c4",
+      "variant": "C4",
+      "name": "Репульсоры · широкий высокий контейнер",
+      "file": "c4.png",
+      "note": "C4 на просмотр: четыре закрытых репульсора; более широкий и высокий прямоугольный контейнер. Равные выступы, общая ось и постоянная ширина зафиксированы в контрольном каркасе с пятью ракурсами. Художественный визуал сверять с ним.",
+      "geometryGuide": "c4-geometry-guide.png",
+      "blockout": "c4-geometry-guide.obj"
+    },
+    {
+      "id": "c3",
+      "variant": "C3",
+      "name": "Компактный нижний модуль · скрытое крепление",
+      "file": "c3.png",
+      "note": "Уточнение автора: без видимых подвесов, вплотную под корпусом, строго по его продольной оси. Выступы спереди и сзади — ориентировочно по 1/4 длины центрального корпуса, без роторов. На просмотр.",
+      "review": "В центральном приподнятом ракурсе контейнер и корпус визуально соосны; видимых подвесов нет. Точный масштаб и габариты закрепить на будущей общей модели.",
+      "superseded": true
+    },
+    {
+      "id": "c2",
+      "variant": "C2",
+      "name": "Квадрокоптер C · длинный контейнер",
+      "file": "c2.png",
+      "note": "Предыдущая попытка: контейнер слишком велик, видимые подвесы отменены автором; сохранено для истории.",
+      "superseded": true
+    }
+  ],
+  "historicalSelection": {
+    "airframe": "c.png",
+    "container": "C4: одинаковая ширина по всей длине, 1,5 прежней ширины, увеличенная высота вниз, равные выступы по 1/4 длины центрального корпуса; скрытое крепление.",
+    "approvedFullVisual": false,
+    "propulsion": "Четыре репульсорных двигателя вместо винтов — визуальная проба, ещё не утверждена."
+  },
+  "currentSearch": "../resonance-transport-reboot/gallery.html"
+}

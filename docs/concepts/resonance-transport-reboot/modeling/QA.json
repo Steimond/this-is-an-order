@@ -1,0 +1,7 @@
+{
+  "sharedCarrierExactlyIdentical": true,
+  "finiteProjectionCoordinates": true,
+  "sharedGuideScale": 67,
+  "sharedDockingPlaneZ": 3,
+  "limits": "Validates shared scaffold, not the generated artistic surfaces."
+}

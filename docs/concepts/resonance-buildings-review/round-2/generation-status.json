@@ -1,0 +1,81 @@
+[
+  {
+    "id": "computer-b1",
+    "status": "completed",
+    "file": "computer-b1.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-c5d9aba6-21a8-4de5-afc9-dfa8961dc376.png"
+  },
+  {
+    "id": "computer-b2",
+    "status": "completed",
+    "file": "computer-b2.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-504f3560-144f-4ff4-a3eb-01b77c07e729.png"
+  },
+  {
+    "id": "computer-b3",
+    "status": "completed",
+    "file": "computer-b3.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-8c0f0ad7-ce99-41f4-8d14-5f7b1cf5416f.png"
+  },
+  {
+    "id": "computer-b4",
+    "status": "completed",
+    "file": "computer-b4.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-1c79b23b-f18b-49ce-b5e2-e94630881b12.png"
+  },
+  {
+    "id": "computer-b5",
+    "status": "completed",
+    "file": "computer-b5.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-03485ae8-43dc-4dc8-8656-9318e7a16ba4.png"
+  },
+  {
+    "id": "computer-b6",
+    "status": "completed",
+    "file": "computer-b6.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-95c94219-85b4-425d-8eb8-fc3d2a5eb360.png"
+  },
+  {
+    "id": "firmware-a",
+    "status": "completed",
+    "file": "firmware-a.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-138a96a7-37d2-4045-b3b8-c10e10eba982.png"
+  },
+  {
+    "id": "firmware-b",
+    "status": "completed",
+    "file": "firmware-b.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-7bf3287a-baff-4c3f-819a-04e7d8c2617d.png"
+  },
+  {
+    "id": "firmware-c",
+    "status": "completed",
+    "file": "firmware-c.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-56b2abc4-f5ef-4b47-9edb-c2338795f934.png"
+  },
+  {
+    "id": "firmware-d",
+    "status": "completed",
+    "file": "firmware-d.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-f1b6535f-6360-4481-9d60-faef5635ca2e.png"
+  },
+  {
+    "id": "firmware-e",
+    "status": "completed",
+    "file": "firmware-e.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-52a688df-8fd5-4e01-8bb5-f4f6643c8882.png"
+  },
+  {
+    "id": "firmware-f",
+    "status": "completed",
+    "file": "firmware-f.png",
+    "source": "C:\\Users\\user\\.codex\\generated_images\\01a17f14-38c6-7a71-ac2b-fe4e5d404cb1\\exec-9121a4eb-23d0-46b1-a832-7a4a271c86d0.png"
+  },
+  {
+    "id": "nest-a2",
+    "status": "completed",
+    "file": "nest-a2.png",
+    "source": "C:/Users/user/.codex/generated_images/01a17f14-38c6-7a71-ac2b-fe4e5d404cb1/exec-32e64bad-a86f-4df1-bf3d-dab892ffe069.png",
+    "corrected": true
+  }
+]

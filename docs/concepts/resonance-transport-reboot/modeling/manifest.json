@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-28",
+  "unit": "Транспортник Резонанса",
+  "selectedVisual": "../g.png",
+  "visualStatus": "original-g-selected",
+  "sheetStatus": "prepared-for-review",
+  "states": [
+    {
+      "id": "attached",
+      "sheet": "g-attached-model-sheet.png",
+      "guide": "attached-guide.png",
+      "obj": "attached.obj",
+      "description": "Закрытая капсула установлена"
+    },
+    {
+      "id": "empty",
+      "sheet": "g-empty-model-sheet.png",
+      "guide": "empty-guide.png",
+      "obj": "empty.obj",
+      "description": "Та же верхняя модель без нижней капсулы"
+    }
+  ],
+  "capsule": "capsule.obj",
+  "qa": "QA.json",
+  "proportions": "proportions.json",
+  "limits": "Shared scaffold is geometrically consistent. Artistic sheets are not exact final model renders; unseen rear and docking details remain proposals."
+}

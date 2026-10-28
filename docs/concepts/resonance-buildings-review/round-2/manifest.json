@@ -1,0 +1,151 @@
+{
+  "date": "2026-10-28",
+  "status": "proposals",
+  "jobs": [
+    {
+      "id": "computer-b1",
+      "group": "computer",
+      "variant": "B1",
+      "name": "Сухие кассеты",
+      "file": "computer-b1.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design COMPUTER / B1. Small stationary +10 army capacity computation building; no transmission antenna or production. The attached image is silhouette and style reference ONLY: remove its fluid/glass tank vocabulary completely. Preserve the reference B compact silhouette, side armored cheeks and exactly three upright rounded rectangular modules. Replace ALL transparent reservoirs with opaque solid graphite compute cartridges, pale armored faces, recessed circuit slots and fine dry heat-sink edges. No glass anywhere. All internals are solid dry-state computing hardware. Absolutely NO tanks, reservoirs, nanite particles, transparent fluid chambers, liquids, bubbles or plasma. Small top-left title COMPUTER / B1."
+    },
+    {
+      "id": "computer-b2",
+      "group": "computer",
+      "variant": "B2",
+      "name": "Радиаторные пластины",
+      "file": "computer-b2.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design COMPUTER / B2. Small stationary +10 army capacity computation building; no transmission antenna or production. The attached image is silhouette and style reference ONLY: remove its fluid/glass tank vocabulary completely. Three thick upright solid computational slabs between two white armored end cheeks. Each slab has a continuous white side shell and recessed dark fin stack along its narrow edge; slight height progression. Dry electronics, compact dense architecture. All internals are solid dry-state computing hardware. Absolutely NO tanks, reservoirs, nanite particles, transparent fluid chambers, liquids, bubbles or plasma. Small top-left title COMPUTER / B2."
+    },
+    {
+      "id": "computer-b3",
+      "group": "computer",
+      "variant": "B3",
+      "name": "Вычислительный пакет",
+      "file": "computer-b3.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design COMPUTER / B3. Small stationary +10 army capacity computation building; no transmission antenna or production. The attached image is silhouette and style reference ONLY: remove its fluid/glass tank vocabulary completely. Three uniform solid rectangular memory books, close-packed, curved upper corners, dark recessed connector spine, one large light-gray ceramic face per book, few cyan indicator dots. Armored outer side supports as reference B. All internals are solid dry-state computing hardware. Absolutely NO tanks, reservoirs, nanite particles, transparent fluid chambers, liquids, bubbles or plasma. Small top-left title COMPUTER / B3."
+    },
+    {
+      "id": "computer-b4",
+      "group": "computer",
+      "variant": "B4",
+      "name": "Ступенчатый блок",
+      "file": "computer-b4.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design COMPUTER / B4. Small stationary +10 army capacity computation building; no transmission antenna or production. The attached image is silhouette and style reference ONLY: remove its fluid/glass tank vocabulary completely. Reference B restyled as three opaque stepped processor modules, ascending toward rear, broad smooth white covers with dark internal fin channels. Retain compact rectangular footprint and paired end supports. All internals are solid dry-state computing hardware. Absolutely NO tanks, reservoirs, nanite particles, transparent fluid chambers, liquids, bubbles or plasma. Small top-left title COMPUTER / B4."
+    },
+    {
+      "id": "computer-b5",
+      "group": "computer",
+      "variant": "B5",
+      "name": "Связанные ядра",
+      "file": "computer-b5.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design COMPUTER / B5. Small stationary +10 army capacity computation building; no transmission antenna or production. The attached image is silhouette and style reference ONLY: remove its fluid/glass tank vocabulary completely. Three upright opaque graphite processor cassettes, connected by one low broad white upper bridge, solid side cheeks and horizontal dry connector bus at base. Open air gaps reveal only metal heat sinks and connector blocks. All internals are solid dry-state computing hardware. Absolutely NO tanks, reservoirs, nanite particles, transparent fluid chambers, liquids, bubbles or plasma. Small top-left title COMPUTER / B5."
+    },
+    {
+      "id": "computer-b6",
+      "group": "computer",
+      "variant": "B6",
+      "name": "Керамическая память",
+      "file": "computer-b6.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design COMPUTER / B6. Small stationary +10 army capacity computation building; no transmission antenna or production. The attached image is silhouette and style reference ONLY: remove its fluid/glass tank vocabulary completely. Reference B's three upright rounded slabs realized as solid ivory ceramic computation blades seated in black metal sockets, three vertical cyan slit indicators, broad white side supports, a low smooth common base. Very clean simple large masses. All internals are solid dry-state computing hardware. Absolutely NO tanks, reservoirs, nanite particles, transparent fluid chambers, liquids, bubbles or plasma. Small top-left title COMPUTER / B6."
+    },
+    {
+      "id": "firmware-a",
+      "group": "firmware",
+      "variant": "A",
+      "name": "Контактный гребень",
+      "file": "firmware-a.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design FIRMWARE RESEARCH / A. A new research building for weapon/armor modifications, no unit production. Reference image ONLY for palette, materials and render quality; DO NOT copy its tanks, upright cassette silhouette or shape. A low broad programming bed with a single overhead comb of five chunky downward dry electrical contacts above an empty calibration platen. Solid machinery, one asymmetric side service block. No gate-shaped full frame. All apparatus is dry solid metal/ceramic electronics. Absolutely NO tanks, vessels, reservoirs, glass chambers, liquids, nanite particles, bubbles, smoky fluid, specimen displays or floating objects. Title FIRMWARE / A."
+    },
+    {
+      "id": "firmware-b",
+      "group": "firmware",
+      "variant": "B",
+      "name": "Печатный барабан",
+      "file": "firmware-b.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design FIRMWARE RESEARCH / B. A new research building for weapon/armor modifications, no unit production. Reference image ONLY for palette, materials and render quality; DO NOT copy its tanks, upright cassette silhouette or shape. A broad squat horizontal faceted programming drum partly embedded in a rectangular armored cradle; one thick stationary read/write head over its upper rim. Drum has opaque code grooves and cyan indexing marks; not a fluid vessel. All apparatus is dry solid metal/ceramic electronics. Absolutely NO tanks, vessels, reservoirs, glass chambers, liquids, nanite particles, bubbles, smoky fluid, specimen displays or floating objects. Title FIRMWARE / B."
+    },
+    {
+      "id": "firmware-c",
+      "group": "firmware",
+      "variant": "C",
+      "name": "Калибратор",
+      "file": "firmware-c.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design FIRMWARE RESEARCH / C. A new research building for weapon/armor modifications, no unit production. Reference image ONLY for palette, materials and render quality; DO NOT copy its tanks, upright cassette silhouette or shape. Two compact opposed articulated calibration jaws mounted on low solid rectangular bases, enclosing a small opaque upgrade wafer on a central dry workbed. Precise physical tooling; no nanite mass. All apparatus is dry solid metal/ceramic electronics. Absolutely NO tanks, vessels, reservoirs, glass chambers, liquids, nanite particles, bubbles, smoky fluid, specimen displays or floating objects. Title FIRMWARE / C."
+    },
+    {
+      "id": "firmware-d",
+      "group": "firmware",
+      "variant": "D",
+      "name": "Кодовые диски",
+      "file": "firmware-d.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design FIRMWARE RESEARCH / D. A new research building for weapon/armor modifications, no unit production. Reference image ONLY for palette, materials and render quality; DO NOT copy its tanks, upright cassette silhouette or shape. Three thick opaque metal data discs on one short horizontal spindle inside a low open sided armored chassis, with a single squared read/write arm. Strong low asymmetric research building silhouette, no transparent cover. All apparatus is dry solid metal/ceramic electronics. Absolutely NO tanks, vessels, reservoirs, glass chambers, liquids, nanite particles, bubbles, smoky fluid, specimen displays or floating objects. Title FIRMWARE / D."
+    },
+    {
+      "id": "firmware-e",
+      "group": "firmware",
+      "variant": "E",
+      "name": "Программатор",
+      "file": "firmware-e.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design FIRMWARE RESEARCH / E. A new research building for weapon/armor modifications, no unit production. Reference image ONLY for palette, materials and render quality; DO NOT copy its tanks, upright cassette silhouette or shape. One broad slanted solid ceramic programming plate over a recessed dry electronics bench, dark rails and large connector sockets, offset pair of low armored power blocks. Single strong wedge silhouette, no upright fins or tanks. All apparatus is dry solid metal/ceramic electronics. Absolutely NO tanks, vessels, reservoirs, glass chambers, liquids, nanite particles, bubbles, smoky fluid, specimen displays or floating objects. Title FIRMWARE / E."
+    },
+    {
+      "id": "firmware-f",
+      "group": "firmware",
+      "variant": "F",
+      "name": "Индексатор",
+      "file": "firmware-f.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/computer/02-b.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Design FIRMWARE RESEARCH / F. A new research building for weapon/armor modifications, no unit production. Reference image ONLY for palette, materials and render quality; DO NOT copy its tanks, upright cassette silhouette or shape. A squat hexagonal indexing carousel of six opaque small upgrade cartridges with one fixed chunky scanning head on a short side cantilever. Thick white perimeter shells and dry graphite exposed mechanical track; no glass dome. All apparatus is dry solid metal/ceramic electronics. Absolutely NO tanks, vessels, reservoirs, glass chambers, liquids, nanite particles, bubbles, smoky fluid, specimen displays or floating objects. Title FIRMWARE / F."
+    },
+    {
+      "id": "nest-a2",
+      "group": "nest",
+      "variant": "A2",
+      "name": "Три симметричных когтя",
+      "file": "nest-a2.png",
+      "refs": [
+        "C:/Projects/this-is-an-order/docs/concepts/resonance-buildings-review/nest/01-a.png"
+      ],
+      "prompt": "Create ONE full building concept hero, 1536x1024 landscape, gray studio background and floor, elevated front three-quarter view, full object uncropped, realistic hard surface game concept. Same Resonance faction art direction as reference: large clean satin light-gray armor shells, dark graphite structural machinery, small restrained cyan status lights, precise industrial design, no wear, no tiny excessive panel seams. No people, vehicles, weapons, doors, hangars, portals, holograms or effects. Edit the referenced AERIAL RESEARCH NEST A architecture. Preserve palette, base technology and central hub. Replace its THREE uneven swept feathers with EXACTLY THREE IDENTICAL curved industrial claw-shaped solid fins, equal height and size, distributed with precise three-fold radial symmetry at 120 degrees around the center. Each claw rises from its outer base and curls inward toward the upper center, like a three-jaw forklift grapple reaching upward. All three tips stop at same height around one small central gap; tips never touch. Show all THREE claws clearly, one rear claw and two forward-side claws, avoid fourth fin. Large smooth white outer shells, dark dry vented inner edges. Avoid unnecessary nanite-filled fin windows; three fins are opaque mechanical material. It remains stationary aerial technology research, not unit factory or hangar. Retain center machinery, but don't add tanks. One hero, no inset views. Title AERIAL RESEARCH NEST / A2.",
+      "correctionPrompt": "nest-a2-correction.prompt.md",
+      "review": "После исправления видны три когтя; первая попытка с четырьмя исключена из галереи. Геометрическая симметрия требует будущей модели."
+    }
+  ]
+}
