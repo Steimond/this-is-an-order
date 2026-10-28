@@ -1,0 +1,23 @@
+{
+  "approved": "C Side shield",
+  "inputs": [
+    "../c.png",
+    "model-sheet.png"
+  ],
+  "geometryReferences": [
+    "guide.png",
+    "blockout.obj"
+  ],
+  "neutral": "stationary, lights OFF, no firing flashes, smoke or glow; orange paint diffuse",
+  "authority": "c.png approved silhouette and proportions; guide from single geometry for strict axes and occlusion; artistic sheet contains perspective/pose errors",
+  "separateGroups": [
+    "fixed base",
+    "yaw mount with shield and orange service box",
+    "pitch housing",
+    "recoiling barrel",
+    "separate shot VFX"
+  ],
+  "exclude": [
+    "active aiming/recoil preview screenshots"
+  ]
+}

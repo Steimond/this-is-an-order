@@ -1,0 +1,27 @@
+{
+  "units": "arbitrary relative units; NOT meters or fixed game cells",
+  "foundation": [
+    4.8,
+    6
+  ],
+  "roofHeights": [
+    1.3,
+    2.12,
+    3.02
+  ],
+  "pipe": {
+    "side": "right",
+    "start": [
+      2.04,
+      -1.3,
+      1.18
+    ],
+    "end": [
+      2.04,
+      1.72,
+      2.36
+    ],
+    "flow": "low front toward high rear"
+  },
+  "limits": "Proportion scaffold. Final sand shells, trims, ports and window shape follow approved e.png. Deposit entirely concealed under continuous foundation."
+}

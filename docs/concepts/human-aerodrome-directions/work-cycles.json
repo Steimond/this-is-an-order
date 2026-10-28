@@ -1,0 +1,75 @@
+{
+  "status": "unselected concepts",
+  "footprintCells": [
+    4,
+    4
+  ],
+  "modelingState": "All lights OFF, gates and launch hatches CLOSED, moving parts at rest, orange is diffuse paint",
+  "workQueue": "One production/research queue; animate only while actual progress advances",
+  "states": {
+    "idle": "stationary mechanism and no active light sequence",
+    "production": "work cycle active",
+    "research": "work cycle active for shared research queue",
+    "cancelled": "end work cycle, lights off, return mechanism to rest",
+    "complete": "end work cycle; launch event separate and does not delay gameplay"
+  },
+  "timing": "schematic only; slower research rhythm is a proposal",
+  "variants": [
+    {
+      "id": "a",
+      "name": "A «Подкова»",
+      "description": "Низкая подкова вокруг передней площадки; крылья разной высоты.",
+      "cycle": "Световая волна по внутреннему ободу подковы.",
+      "type": "lights"
+    },
+    {
+      "id": "b",
+      "name": "B «Расщеплённое крыло»",
+      "description": "Две крупные складчатые оболочки и смещённый центральный шов.",
+      "cycle": "Короткий наклон вентиляционной створки между оболочками.",
+      "type": "flap"
+    },
+    {
+      "id": "c",
+      "name": "C «Кольцевой ангар»",
+      "description": "Гранёный круглый ангар с закрытой выпускной палубой сверху.",
+      "cycle": "Последовательность линз по плечу корпуса; люк открывается отдельно при выпуске.",
+      "type": "lights"
+    },
+    {
+      "id": "d",
+      "name": "D «Консоль»",
+      "description": "Приподнятая палуба над низким ангаром, опирающаяся на диагональные фермы.",
+      "cycle": "Небольшая сервисная каретка ходит вдоль боковой направляющей палубы.",
+      "type": "slide"
+    },
+    {
+      "id": "e",
+      "name": "E «Двойной свод»",
+      "description": "Два неравных свода с общей сервисной ложбиной и передней площадкой.",
+      "cycle": "Две вентиляционные панели поочерёдно приподнимаются.",
+      "type": "flap"
+    },
+    {
+      "id": "f",
+      "name": "F «Диагональ»",
+      "description": "Клиновидный ангар и восьмигранная площадка делят квадрат по диагонали.",
+      "cycle": "Бегущая последовательность на диагональном фасаде и краю площадки.",
+      "type": "lights"
+    },
+    {
+      "id": "g",
+      "name": "G «Ступени»",
+      "description": "Три смещённые террасы спускаются к передней лётной палубе.",
+      "cycle": "Световой цикл проходит по трём ступеням корпуса.",
+      "type": "lights"
+    },
+    {
+      "id": "h",
+      "name": "H «Поперечный мост»",
+      "description": "Толстый поперечный корпус-мост на двух закрытых боковых опорах.",
+      "cycle": "Инспекционный модуль перемещается по передней горизонтальной направляющей.",
+      "type": "slide"
+    }
+  ]
+}

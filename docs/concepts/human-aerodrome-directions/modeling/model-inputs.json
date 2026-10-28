@@ -1,0 +1,25 @@
+{
+  "approved": "D Console with rooftop beacon",
+  "inputs": [
+    "hero-neutral.png",
+    "model-sheet.png"
+  ],
+  "proportionReferences": [
+    "guide.png",
+    "blockout.obj"
+  ],
+  "exclude": [
+    "../d.png (historical design without beacon)",
+    "active effect previews and their screenshots"
+  ],
+  "neutral": "all lights OFF, dark gray cover, gate CLOSED, carriage at rest, no emissive albedo",
+  "authority": "hero-neutral for approved architecture and surfaces, shared geometry for strict projection/occlusion; sheet is artistic and may contain perspective errors",
+  "separateParts": [
+    "fixed pedestal",
+    "fixed cover",
+    "rotating internal reflector",
+    "emissive channel",
+    "horizontal carriage group",
+    "fixed rails"
+  ]
+}

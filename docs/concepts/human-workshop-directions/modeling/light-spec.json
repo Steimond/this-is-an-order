@@ -1,0 +1,26 @@
+{
+  "footprintCells": [
+    3,
+    3
+  ],
+  "units": "6 arbitrary horizontal units = 3 game cells; not meters",
+  "sectorCount": 8,
+  "sectorOrder": "0 front, increments toward building right around circumference",
+  "emissiveMasks": [
+    "light_sector_0",
+    "light_sector_1",
+    "light_sector_2",
+    "light_sector_3",
+    "light_sector_4",
+    "light_sector_5",
+    "light_sector_6",
+    "light_sector_7"
+  ],
+  "fixed": "all geometry; no mechanical motion rig",
+  "work": "two adjacent panels at a time, sequence moves around band",
+  "idle": "diagnostic sequence inactive; background lamps may stay steady",
+  "cancelled": "end active sequence and return to idle",
+  "complete": "end sequence; optional brief uniform confirmation with no gameplay delay",
+  "timing": "not approved; gallery timing is schematic only",
+  "limits": "Eight-sector shared scaffold, not exact shell reconstruction. Facet/panel count in artistic sheets must be checked against single geometry."
+}

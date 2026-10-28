@@ -1,0 +1,25 @@
+{
+  "approved": "Command module A, tilt carrier + independent inner rotor",
+  "inputs": [
+    "hero-neutral.png",
+    "model-sheet.png"
+  ],
+  "geometryReferences": [
+    "guide.png",
+    "guide-horizontal.png",
+    "blockout.obj",
+    "blockout-horizontal.obj"
+  ],
+  "exclude": [
+    "../a.png (historical single-ring bearing concept)",
+    "active effect preview and screenshots"
+  ],
+  "neutral": "all lights and electricity OFF; orange is diffuse paint; closed doors; dark electrodes",
+  "authority": "hero-neutral for surface character; guides of one geometry for projections and exact mechanical hierarchy; artistic sheet has perspective errors",
+  "separateGroups": [
+    "fixed building/towers",
+    "tilting outer carrier",
+    "spinning inner rotor/electrodes",
+    "electrical VFX"
+  ]
+}

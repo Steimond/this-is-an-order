@@ -1,0 +1,62 @@
+{
+  "status": "G selected; other variants are proposals; not implemented game effects",
+  "referenceState": "all lights and effects OFF; orange is diffuse paint",
+  "inputExclusions": "gallery animation sketches are NOT base-color texture inputs",
+  "common": {
+    "work": "cycle only on actual research progress",
+    "idle": "no active research cycle",
+    "cancelled": "stop working cycle",
+    "completion": "no delay to game result"
+  },
+  "variants": [
+    {
+      "id": "a",
+      "name": "A «Наведение»",
+      "architecture": "Низкий центр с поворотным отражателем.",
+      "cycle": "Небольшой поворот отражателя в опоре во время исследования."
+    },
+    {
+      "id": "b",
+      "name": "B «Лепестки связи»",
+      "architecture": "Гранёный корпус с двумя складными панелями связи.",
+      "cycle": "Ограниченные наклоны панелей; корпус неподвижен."
+    },
+    {
+      "id": "c",
+      "name": "C «Три уровня»",
+      "architecture": "Три уровня и ряд диагностических линз.",
+      "cycle": "Последовательность световых групп вдоль шести панелей."
+    },
+    {
+      "id": "d",
+      "name": "D «Пульт»",
+      "architecture": "Низкий корпус с поднятым двухсекционным пультом.",
+      "cycle": "Чередование световых рисунков между двумя секциями."
+    },
+    {
+      "id": "e",
+      "name": "E «Триангуляция»",
+      "architecture": "Треугольный центр с тремя угловыми блоками.",
+      "cycle": "Световой цикл трёх диагностических секторов."
+    },
+    {
+      "id": "f",
+      "name": "F «Перемычка»",
+      "architecture": "Два низких блока с диагностической перемычкой.",
+      "cycle": "Бегущая последовательность по панелям перемычки."
+    },
+    {
+      "id": "g",
+      "name": "G «Рёбра»",
+      "architecture": "Клиновидный корпус и три аппаратных ребра.",
+      "cycle": "Сдвинутые по фазе волны яркости в трёх полосах."
+    },
+    {
+      "id": "h",
+      "name": "H «Поворотная рамка»",
+      "architecture": "Поворотная рамка над низким корпусом.",
+      "cycle": "Панель слегка наклоняется вперёд-назад в неподвижных опорах."
+    }
+  ]
+}
+

@@ -1,0 +1,57 @@
+const fs=require('node:fs'),path=require('node:path'),{createRequire}=require('node:module');
+const req=createRequire(path.join(path.dirname(process.execPath),'../node_modules/package.json')),sharp=req('sharp');
+const dir=path.resolve(__dirname,'../../docs/concepts/human-ground-turret-directions/modeling');
+const source=fs.readFileSync(path.join(__dirname,'build-reference-blockouts.cjs'),'utf8');
+const helpers=source.slice(source.indexOf('const add='),source.indexOf('const specs='));
+const renderer=source.slice(source.indexOf('function renderParts('),source.indexOf('async function main('));
+const build=new Function(helpers+renderer+`
+const sand='#cbb99a',frame='#394047',orange='#b87938';
+box('FIXED square 2x2 foundation',[0,0,.10],[4,4,.20],frame);
+cylinder('FIXED octagonal sand housing',[0,0,.20],[0,0,.66],1.98,sand,8);
+for(const x of [-1.70,1.70])for(const y of [-1.70,1.70])box('FIXED restrained corner clamp '+x+' '+y,[x,y,.35],[.32,.32,.32],frame);
+const fixed=parts.length;
+cylinder('YAW rotating azimuth platform',[0,0,.66],[0,0,.86],1.04,frame,32);
+box('YAW lower cradle',[.20,0,1.10],[.78,.94,.44],sand);
+const profile=[[-1.00,.90],[-1.00,1.17],[-.22,2.56],[.40,2.56],[.48,1.02]],v=[];
+for(const x of [-.83,-.63])for(const [y,z]of profile)v.push([x,y,z]);
+const n=profile.length,f=[Array.from({length:n},(_,i)=>n-1-i),Array.from({length:n},(_,i)=>n+i)];for(let i=0;i<n;i++)f.push([i,(i+1)%n,(i+1)%n+n,i+n]);mesh('YAW asymmetric sand side shield',v,f,sand);
+box('YAW orange rear-left service box',[-1.02,.48,1.60],[.48,.56,.72],orange);
+for(const x of [-.13,.54]){
+box('YAW bearing upright '+x,[x,-.05,1.46],[.12,.34,.44],frame);
+cylinder('YAW fixed pitch bearing '+x,[x-.06,-.05,1.65],[x+.06,-.05,1.65],.19,frame,20);
+}
+box('PITCH compact upper housing',[.20,-.05,1.75],[.57,1.10,.40],frame);
+box('PITCH sand upper cover',[.20,.02,1.965],[.60,.78,.06],sand);
+box('PITCH orange rear mark',[.20,.51,1.80],[.42,.03,.18],orange);
+cylinder('RECOIL barrel sleeve',[.20,-.55,1.76],[.20,-.87,1.76],.12,frame,16);
+cylinder('RECOIL long slim barrel',[.20,-.87,1.76],[.20,-2.76,1.76],.065,frame,16);
+box('RECOIL restrained rectangular muzzle',[.20,-2.87,1.76],[.17,.24,.16],frame);
+const fixedVerts=parts.slice(0,fixed).flatMap(p=>p.vertices);
+if(fixedVerts.some(v=>Math.abs(v[0])>2+1e-8||Math.abs(v[1])>2+1e-8))throw Error('Fixed base exceeds 2x2');
+const upper=parts.slice(fixed).flatMap(p=>p.vertices),radius=Math.max(...upper.map(p=>Math.hypot(p[0],p[1])));
+if(radius<2||radius>3.1)throw Error('Unexpected sweep radius');
+return {svg:sheet(parts,'human ground turret C - strict proportions'),obj:obj(parts),radius};
+`);
+async function main(){fs.mkdirSync(dir,{recursive:true});const d=build();if(/NaN|Infinity/.test(d.svg+d.obj))throw Error('Invalid geometry');fs.writeFileSync(path.join(dir,'guide.svg'),d.svg);await sharp(Buffer.from(d.svg)).png().toFile(path.join(dir,'guide.png'));fs.writeFileSync(path.join(dir,'blockout.obj'),d.obj);
+const gen=JSON.parse(fs.readFileSync(path.join(dir,'generation.json'),'utf8'));fs.copyFileSync(gen.source,path.join(dir,'model-sheet.png'));fs.writeFileSync(path.join(dir,'model-sheet.prompt.md'),gen.prompt+'\n');
+fs.writeFileSync(path.join(dir,'motion-spec.json'),JSON.stringify({variant:'C Side shield',constructionFootprintCells:[2,2],units:'4 arbitrary units = 2 cells; not meters',axes:'X right, Y rear, Z up, front -Y',hierarchy:{fixed:['foundation','lower equipment hull','corner clamps'],yaw:{pivot:[0,0,.76],axis:[0,0,1],children:['side shield','rear-left service box','cradle','pitch pivot']},pitch:{pivot:[.20,-.05,1.65],axis:[-1,0,0],children:['upper housing','barrel/recoil group']},recoil:{axis:[0,1,0],children:['slim barrel','sleeve','muzzle']}},yawDegrees:'360 visual envelope to validate final model',elevationDegrees:'not approved; tune ground aiming, avoid shield collision',recoil:'short backward stroke along barrel; no timing or amplitude approved',idle:'no firing effects; aiming follows gameplay rules, no perpetual work loop',attack:'yaw/pitch to actual target; recoil follows actual shot',targetLayer:'ground only',lights:'all OFF in modeling inputs',sweepRadiusBlockout:d.radius,validation:'fixed base fits 2x2; long barrel extends beyond footprint; computed sweep radius, not asserted inside base',open:'moving overhang vs adjacent building placement/collision rules unresolved; final pitch/recoil/shield clearances and sweep require validation',balance:'weapon appearance chosen, damage/range/period and inherited cost/HP need BQ-31 review',limitations:'proportion guide only, final game mesh rig materials and effects not created'},null,2));
+fs.writeFileSync(path.join(dir,'model-inputs.json'),JSON.stringify({approved:'C Side shield',inputs:['../c.png','model-sheet.png'],geometryReferences:['guide.png','blockout.obj'],neutral:'stationary, lights OFF, no firing flashes, smoke or glow; orange paint diffuse',authority:'c.png approved silhouette and proportions; guide from single geometry for strict axes and occlusion; artistic sheet contains perspective/pose errors',separateGroups:['fixed base','yaw mount with shield and orange service box','pitch housing','recoiling barrel','separate shot VFX'],exclude:['active aiming/recoil preview screenshots']},null,2));
+fs.writeFileSync(path.join(dir,'README.md'),`# Наземная турель C «Боковой щит» — моделирование
+
+Выбрана автором 2026-10-28. C принята за строгие пропорции: длинный тонкий ствол, компактный механизм, асимметричный боковой щит и низкое основание. Остальные раздутые/мультяшные пропорции не являются направлением. [Основной вид](../c.png) · [пять художественных ракурсов](model-sheet.png) · [проекции одной геометрии](guide.png) · [OBJ](blockout.obj) · [паспорт движения](motion-spec.json) · [галерея](gallery.html).
+
+Основание предварительно 2×2, песочная оболочка, графитовая механика, один ствол и приглушённый оранжевый задний левый сервисный короб. Самостоятельно стреляет только по земле, гарнизона нет. Широкий щит сбоку и длинный тонкий ствол сохранять; не увеличивать толщину брони/ствола, размер дульной части и ног ради стилизации.
+
+Неподвижны основание и нижний аппаратный корпус. Щит, сервисный короб и люлька поворачиваются вместе по азимуту. Верхний оружейный корпус наклоняется в люльке; ствол со втулкой и дульной частью имеет отдельный короткий откат назад. Наведение и отдача следуют реальной цели/выстрелу; постоянного производственного цикла нет. Углы, скорость, отдача и длительности не утверждены боевыми параметрами.
+
+Для AI-моделирования передавать ../c.png и model-sheet.png. Свет выключен, нет вспышек, дыма, трассеров и свечения; оранжевый — краска. VFX и эмиссия отдельно от albedo. Художественный лист имеет ошибки: RIGHT ближе к виду со стороны щита; TOP показывает иную ориентацию верхней установки. Не копировать несогласованные позы в отдельные геометрии. Строгие направления и расположение частей — по guide.png/OBJ, поверхности и характер пропорций — по c.png. Невидимые детали пока предложены.
+
+Координаты: X вправо, Y назад, Z вверх, фасад -Y. Четыре условных единицы = две клетки, не метры. Проверено размещение неподвижного основания внутри 2×2. Длинный ствол выступает за основание; радиус вращаемого габарита рассчитан и записан в motion-spec.json. НЕ считать, что вся турель при вращении помещается в 2×2. Перед игровым ассетом согласовать допустимый вынос и соседство зданий, проверить полный азимут, наклон, отдачу, щит и короб на одной геометрии. Точные зазоры пока не подтверждены.
+
+Исходные 100 М / 0 П, 25 с, 600 HP, 2×2 и казарма перенесены от старого поста как старт для проверки, не новый утверждённый баланс. Урон, дальность, темп и приоритет целей — BQ-31. Выбор ствола не фиксирует снаряд, калибр, бонус против брони или дальность.
+
+Модельный лист — встроенный imagegen, точный промпт рядом. Каркас — tools/docs/build-human-ground-turret-modeling.cjs. Детальная сетка, UV, материалы, риг и VFX в игре ещё не созданы. Стройка людей и разрушение обеих рас — следующий этап после завершения общего дизайна зданий; шейдер/отдельные модели/сочетание пока не выбраны.
+`);
+fs.writeFileSync(path.join(dir,'gallery.html'),`<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Наземная турель C — моделирование</title><style>body{margin:24px;background:#191e21;color:#ece8df;font:18px/1.5 system-ui}main{max-width:1600px;margin:auto}img{width:100%;height:auto;display:block;border-radius:10px}a{color:#eab16a}p{color:#c3c9ca}button{font:inherit;padding:8px 14px;margin:4px;background:#39464e;color:#eee;border:1px solid #65717a;border-radius:6px;cursor:pointer}.preview{max-width:650px;margin:auto}.aim{transform-origin:200px 85px;animation:aim 4s ease-in-out infinite;animation-play-state:paused}.recoil{animation:recoil .9s ease-out infinite;animation-play-state:paused}.preview[data-state=work] .aim,.preview[data-state=work] .recoil{animation-play-state:running}.preview[data-state=idle] .aim,.preview[data-state=idle] .recoil{animation:none}@keyframes aim{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(20deg)}}@keyframes recoil{0%,55%,100%{transform:translateX(0)}62%{transform:translateX(-12px)}}svg{width:100%;display:block}@media(prefers-reduced-motion:reduce){.aim,.recoil{animation:none!important}}</style><main><h1>Наземная турель · C «Боковой щит»</h1><p>Выбрана за строгие пропорции: тонкий длинный ствол, боковой щит, компактная установка на низком основании. Только наземные цели.</p><p><a href="README.md">Паспорт моделирования</a> · <a href="motion-spec.json">Оси и части</a> · <a href="model-inputs.json">Входы для AI</a> · <a href="blockout.obj">OBJ</a> · <a href="../gallery.html">История вариантов</a></p><h2>Утверждённый основной вид</h2><img src="../c.png" alt="Турель C без эффектов"><h2>Пять художественных ракурсов</h2><p>Лист содержит ошибки бокового направления и позы сверху. Строгие проекции — на каркасе ниже.</p><img src="model-sheet.png" alt="Модельный лист C, без света и стрельбы"><h2>Проекции одной геометрии</h2><p>Основание 2×2, ствол выступает за него. Проверить вынос при вращении и размещение соседних зданий; не сжимать ствол ради пятна.</p><img src="guide.png" alt="Каркас C с тонким стволом и боковым щитом"><h2>Отдельная схема наведения и отдачи</h2><p>Условный вид сверху, не точный игровой риг или темп стрельбы. Поворот/наклон следуют цели, отдача — событию выстрела. Вспышки и дым не включены в модельный референс.</p><section class="preview" data-state="idle"><button data-state="idle">Покой</button><button data-state="work">Пример движения</button><svg viewBox="0 0 400 180"><rect x="20" y="15" width="360" height="150" rx="8" fill="#303b43"/><circle cx="200" cy="85" r="50" fill="#596970"/><g class="aim"><rect x="155" y="52" width="72" height="20" fill="#cbb99a"/><rect x="170" y="73" width="65" height="25" fill="#394047"/><rect class="recoil" x="225" y="80" width="122" height="8" fill="#839097"/><rect x="151" y="98" width="28" height="28" fill="#b87938"/></g></svg></section><p>Подробные строительство и разрушение ещё не разработаны; ими займёмся после завершения визуала ПВО.</p></main><script>document.querySelectorAll('button[data-state]').forEach(b=>b.onclick=()=>b.closest('section').dataset.state=b.dataset.state);</script></html>`);
+console.log('Turret C: base inside 2x2; barrel sweep radius '+d.radius.toFixed(3)+' blockout units; overhang explicitly recorded.');}
+main().catch(e=>{console.error(e);process.exitCode=1;});

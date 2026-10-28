@@ -1,0 +1,88 @@
+{
+  "variant": "A Orbital frame",
+  "footprintCells": [
+    3,
+    3
+  ],
+  "units": "6 arbitrary horizontal units = 3 cells; not meters",
+  "axes": "X right, Y rear, Z up, front -Y",
+  "hierarchy": {
+    "fixed": [
+      "base",
+      "shell",
+      "roof",
+      "two towers",
+      "trunnion housings"
+    ],
+    "tiltPivot": {
+      "position": [
+        0,
+        0,
+        3.6
+      ],
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "children": [
+        "outer carrier",
+        "spin pivot"
+      ]
+    },
+    "spinPivot": {
+      "localPosition": [
+        0,
+        0,
+        0
+      ],
+      "localAxis": [
+        0,
+        0,
+        1
+      ],
+      "children": [
+        "inner rotor",
+        "four electrodes",
+        "arc attachment points"
+      ]
+    }
+  },
+  "poses": {
+    "restTiltDegrees": 45,
+    "workingTiltDegrees": 0,
+    "spin": "only at 0 degree tilt, axis then equals world Z"
+  },
+  "sequence": [
+    "hold inclined rest, spin stopped, arcs OFF",
+    "tilt carrier and rotor together to horizontal, spin stopped, arcs OFF",
+    "hold carrier horizontal, spin inner rotor, intermittent arcs inside aperture",
+    "arcs OFF, decelerate rotor",
+    "when stopped return carrier to rest"
+  ],
+  "arcs": {
+    "state": "separate visual effect only",
+    "appearance": "short intermittent white-amber electric arcs between inner-rim contact points, confined to aperture",
+    "excluded": "no portal, filled energy disc, weapon beam or gameplay damage",
+    "albedo": "no emissive baked lightning; separate effect/material"
+  },
+  "cancelled": "arcs OFF, decelerate rotor then return tilt to rest",
+  "idle": "inclined rest; no spin or arcs",
+  "activation": "not yet tied to a gameplay queue; building unlocks technology and has no production/research queue",
+  "timing": "cycle lengths, rates, easing and trigger unapproved",
+  "validation": "sampled tilt 0..45 by 3 degrees and spin 0..355 by 5 degrees; rotor remains within 3x3, above sealed roof and inside tower inner faces; final detailed bearings and clamps still require collision check",
+  "proportions": {
+    "pivotHeight": 3.6,
+    "carrierRadii": [
+      1.84,
+      1.97
+    ],
+    "rotorRadii": [
+      1.54,
+      1.79
+    ],
+    "ringRadialGap": 0.05,
+    "closedRoofHeight": 1.92
+  },
+  "limitations": "coarse guide, not final mesh, rig or effect"
+}

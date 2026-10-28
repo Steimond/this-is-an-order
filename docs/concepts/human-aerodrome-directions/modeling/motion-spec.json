@@ -1,0 +1,65 @@
+{
+  "variant": "D Console with rotating signal beacon",
+  "footprintCells": [
+    4,
+    4
+  ],
+  "units": "8 arbitrary horizontal units = 4 cells, not meters",
+  "axes": "X right, Y rear, Z up; front -Y",
+  "modelingState": "all emission OFF, dark gray beacon cover, gate CLOSED, carriage at rest",
+  "beacon": {
+    "count": 1,
+    "position": [
+      -2.68,
+      2.59,
+      3.82
+    ],
+    "axis": [
+      0,
+      0,
+      1
+    ],
+    "motion": "internal reflector rotates around vertical axis; pedestal and protective cover remain fixed",
+    "activeLight": "amber rotating sweep; separate emissive mask/material or light effect, no bright pattern baked in albedo",
+    "idle": "off and stopped",
+    "cancelled": "off; rotation stops",
+    "production": "rotate and emit while actual queue progress advances",
+    "research": "same active-work indication for shared research queue",
+    "complete": "stop and switch off; no delay to gameplay",
+    "timing": "speed, sweep width, intensity and fade unapproved; preview schematic only"
+  },
+  "carriage": {
+    "count": 1,
+    "group": "orange housing and attached graphite center move together",
+    "axis": [
+      0,
+      1,
+      0
+    ],
+    "neutralCenter": [
+      -2.835,
+      0.35,
+      2.95
+    ],
+    "proposedCenterYRange": [
+      -1.45,
+      0.9
+    ],
+    "motion": "short horizontal service loop retained from D concept, secondary to beacon; never crosses flight deck",
+    "cancelled": "end cycle and return to park",
+    "clearance": "end-stop range validated on coarse rail, refine detailed clamps and bearings"
+  },
+  "fixed": [
+    "base",
+    "lower hangar",
+    "closed gate at rest",
+    "deck",
+    "diagonal supports",
+    "service block",
+    "rails",
+    "beacon pedestal and cover"
+  ],
+  "queue": "One shared aircraft-production/research queue; no independent simultaneous jobs",
+  "launch": "separate future event, no rule requiring landing or docking, no delay introduced",
+  "limitations": "coarse shared proportion guide; hidden shell details proposed; final mesh UV materials rig and Unity effect not created"
+}

@@ -1,0 +1,63 @@
+{
+  "status": "eight proposals, none selected",
+  "neutralReferenceState": "all lamps off and mechanisms at rest",
+  "queue": "one active unit or research order; same queue, not simultaneous",
+  "modes": {
+    "idle": "work cycle off",
+    "production": "mechanism/light cycle follows active unit assembly",
+    "research": "same node can use alternate rhythm, exact difference not approved",
+    "cancelled": "stop work cycle",
+    "completion": "optional gate event separate from continuous work, no gameplay delay"
+  },
+  "variants": [
+    {
+      "id": "a",
+      "name": "A «Сборочный цех»",
+      "architecture": "Два сборочных пролёта и широкие закрытые ворота.",
+      "cycle": "Световая последовательность над воротами."
+    },
+    {
+      "id": "b",
+      "name": "B «Испытательная плита»",
+      "architecture": "Единый корпус с испытательной плитой.",
+      "cycle": "Короткие вертикальные ходы плиты в направляющих."
+    },
+    {
+      "id": "c",
+      "name": "C «Передаточный мост»",
+      "architecture": "Низкий цех с передаточным мостом на крыше.",
+      "cycle": "Один передаточный узел ходит вдоль рельсов и возвращается."
+    },
+    {
+      "id": "d",
+      "name": "D «Тепловой цикл»",
+      "architecture": "Цех с техническим боковым блоком.",
+      "cycle": "Две вентиляционные створки приподнимаются поочерёдно."
+    },
+    {
+      "id": "e",
+      "name": "E «Привод»",
+      "architecture": "Низкий передний зал и высокий блок привода.",
+      "cycle": "Маховик вращается внутри неподвижного защитного кожуха."
+    },
+    {
+      "id": "f",
+      "name": "F «Бронесвод»",
+      "architecture": "Широкий гранёный бронесвод.",
+      "cycle": "Световой цикл в панелях на плече свода."
+    },
+    {
+      "id": "g",
+      "name": "G «Карусель»",
+      "architecture": "Гранёный корпус с карусельным узлом.",
+      "cycle": "Диск поворачивается внутри неподвижной защитной рамы."
+    },
+    {
+      "id": "h",
+      "name": "H «Сдвиг»",
+      "architecture": "Два смещённых объёма с центральным выпускным залом.",
+      "cycle": "Ступенчатая последовательность световых панелей."
+    }
+  ]
+}
+

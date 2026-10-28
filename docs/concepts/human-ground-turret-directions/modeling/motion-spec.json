@@ -1,0 +1,74 @@
+{
+  "variant": "C Side shield",
+  "constructionFootprintCells": [
+    2,
+    2
+  ],
+  "units": "4 arbitrary units = 2 cells; not meters",
+  "axes": "X right, Y rear, Z up, front -Y",
+  "hierarchy": {
+    "fixed": [
+      "foundation",
+      "lower equipment hull",
+      "corner clamps"
+    ],
+    "yaw": {
+      "pivot": [
+        0,
+        0,
+        0.76
+      ],
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "children": [
+        "side shield",
+        "rear-left service box",
+        "cradle",
+        "pitch pivot"
+      ]
+    },
+    "pitch": {
+      "pivot": [
+        0.2,
+        -0.05,
+        1.65
+      ],
+      "axis": [
+        -1,
+        0,
+        0
+      ],
+      "children": [
+        "upper housing",
+        "barrel/recoil group"
+      ]
+    },
+    "recoil": {
+      "axis": [
+        0,
+        1,
+        0
+      ],
+      "children": [
+        "slim barrel",
+        "sleeve",
+        "muzzle"
+      ]
+    }
+  },
+  "yawDegrees": "360 visual envelope to validate final model",
+  "elevationDegrees": "not approved; tune ground aiming, avoid shield collision",
+  "recoil": "short backward stroke along barrel; no timing or amplitude approved",
+  "idle": "no firing effects; aiming follows gameplay rules, no perpetual work loop",
+  "attack": "yaw/pitch to actual target; recoil follows actual shot",
+  "targetLayer": "ground only",
+  "lights": "all OFF in modeling inputs",
+  "sweepRadiusBlockout": 3.0035520638071187,
+  "validation": "fixed base fits 2x2; long barrel extends beyond footprint; computed sweep radius, not asserted inside base",
+  "open": "moving overhang vs adjacent building placement/collision rules unresolved; final pitch/recoil/shield clearances and sweep require validation",
+  "balance": "weapon appearance chosen, damage/range/period and inherited cost/HP need BQ-31 review",
+  "limitations": "proportion guide only, final game mesh rig materials and effects not created"
+}

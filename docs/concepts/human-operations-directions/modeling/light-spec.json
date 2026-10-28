@@ -1,0 +1,22 @@
+{
+  "footprintCells": [
+    3,
+    3
+  ],
+  "units": "6 arbitrary horizontal units = 3 cells, not meters",
+  "processorRibs": 3,
+  "lightStrips": 3,
+  "geometryMotion": "none; all ribs and strips fixed",
+  "modelingState": "all emission OFF, neutral dark lenses, no baked working pattern",
+  "emissiveMasks": [
+    "research_strip_0",
+    "research_strip_1",
+    "research_strip_2"
+  ],
+  "work": "brightness waves shifted in phase across three strips",
+  "idle": "research sequence off",
+  "cancelled": "end research sequence",
+  "complete": "end sequence, no delay to gameplay",
+  "timing": "not approved; preview schematic only",
+  "limits": "Shared proportion blockout; shell facets, vents and hidden surfaces follow chosen g.png, final mesh not created."
+}

@@ -1,0 +1,53 @@
+{
+  "variant": "R2-D Vertical assembly",
+  "footprintCells": [
+    3,
+    3
+  ],
+  "units": "6 arbitrary units = 3 cells; not meters",
+  "axes": "X right, Y rear, Z up; front is -Y",
+  "modelingState": "all lights off, all gates closed, carriage parked mid-stroke",
+  "movingGroup": "MOVING carriage housing and clamps; one rigid group",
+  "fixedGroups": [
+    "tower shell",
+    "track backing",
+    "two vertical guides",
+    "hall shells",
+    "roof ribs",
+    "buttresses",
+    "gate frame"
+  ],
+  "pivot": {
+    "position": [
+      -2.025,
+      -1.97,
+      3.2
+    ],
+    "axis": [
+      0,
+      0,
+      1
+    ],
+    "motion": "translation only"
+  },
+  "proposedTravel": {
+    "centerMin": 1.15,
+    "centerMax": 4.65,
+    "neutralCenter": 3.2,
+    "units": "blockout units; tune final mesh"
+  },
+  "carriageCount": 1,
+  "railCount": 2,
+  "clearance": "guide end stops validated; carriage outside tower skin, left of vehicle hall and gate path",
+  "states": {
+    "idle": "stationary parked carriage; working lights off",
+    "production": "one carriage reciprocates vertically while shared queue advances",
+    "research": "same carriage work while shared research queue advances",
+    "cancelled": "end work cycle and return carriage to park",
+    "complete": "end work loop without delaying gameplay; return to park can be visual blend",
+    "cancel": "end loop without invented production delay"
+  },
+  "timing": "duration, easing and return blend not approved; separate gallery schematic only",
+  "materials": "matte sand shell; graphite steel; muted orange diffuse paint; dark gray unlit lenses; emission separate from albedo",
+  "limitations": "coarse shared proportion mesh; rear details proposed; detailed asset, rig and Unity animation not created"
+}

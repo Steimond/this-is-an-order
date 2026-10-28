@@ -1,0 +1,51 @@
+{
+  "bounds": [
+    [
+      -2,
+      2
+    ],
+    [
+      -2,
+      2
+    ],
+    [
+      0,
+      2.9800000000000004
+    ]
+  ],
+  "footprintCells": [
+    2,
+    2
+  ],
+  "units": "4 arbitrary horizontal units = 2 game cells; not meters",
+  "parts": [
+    "square foundation",
+    "sealed insulated store",
+    "foot -1.75 -1.75",
+    "post -1.75 -1.75",
+    "amber marker -1.75",
+    "foot -1.75 1.75",
+    "post -1.75 1.75",
+    "foot 1.75 -1.75",
+    "post 1.75 -1.75",
+    "amber marker 1.75",
+    "foot 1.75 1.75",
+    "post 1.75 1.75",
+    "upper x beam -1",
+    "lower x rail -1",
+    "upper y beam -1",
+    "lower y rail -1",
+    "closed sliding leaf -1",
+    "upper x beam 1",
+    "lower x rail 1",
+    "upper y beam 1",
+    "lower y rail 1",
+    "closed sliding leaf 1",
+    "front threshold",
+    "right ventilation",
+    "roof climate unit",
+    "climate grille",
+    "roof conduit"
+  ],
+  "limits": "Square proportional scaffold only; final shell surfaces follow selected f.png."
+}

@@ -1,0 +1,36 @@
+{
+  "units": "6 arbitrary horizontal units = 3 game cells; not meters",
+  "footprintCells": [
+    3,
+    3
+  ],
+  "carriageCount": 2,
+  "axis": "local Y, front to rear",
+  "carriageCenterX": 2.08,
+  "carriageCenterZ": 2.05,
+  "carriageSize": [
+    0.82,
+    0.58,
+    0.32
+  ],
+  "travelCenterRanges": [
+    [
+      -1.1,
+      -0.5
+    ],
+    [
+      0.5,
+      1.1
+    ]
+  ],
+  "minimumSweptGap": 0.42000000000000004,
+  "rangeStatus": "proposed blockout ranges, not final dimensions",
+  "states": {
+    "idle": "parked; background lamps may stay steady",
+    "work": "alternating forward and return strokes while real order progresses",
+    "cancelled": "end work motion and return to park",
+    "complete": "stop work cycle; optional short return to park, no production delay",
+    "cancel": "stop work cycle; visual return must not change gameplay"
+  },
+  "limits": "One shared schematic mesh; shell details and courtyard facade follow approved f2.png. Motion ranges checked for no carriage overlap or end stop collision."
+}
