@@ -13,6 +13,7 @@
 - [Здания: второй проход и выбор 28 октября](docs/concepts/resonance-buildings-review/round-2/gallery.html) — Вычислитель и Узел прошивки без баков, Гнездо A2 / F.
 - [42 новых концепта зданий Резонанса](docs/concepts/resonance-buildings-review/gallery.html) — по шесть вариантов для семи зданий; [проверка выбранных построек](docs/concepts/resonance-buildings-review/audit/gallery.html).
 - [Что осталось перенести и уточнить](docs/DESIGN.md#audit).
+- [Единый реестр балансных вопросов перед релизом](docs/DESIGN.md#balance-register).
 - [Следующие задачи](docs/DESIGN.md#backlog).
 - [Архив документов и скетчей](docs/Old/2026-10-25/README-ARCHIVE.md).
 
