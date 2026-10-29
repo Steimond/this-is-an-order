@@ -1,0 +1,27 @@
+const fs=require('node:fs'),path=require('node:path'),{createRequire}=require('node:module');
+const sharp=createRequire(path.join(path.dirname(process.execPath),'../node_modules/package.json'))('sharp');
+const root=path.resolve(__dirname,'../..'),dir=path.join(root,'docs/concepts/human-rifleman-directions');
+const data=JSON.parse(fs.readFileSync(path.join(dir,'generation.json'),'utf8'));
+const selected=fs.existsSync(path.join(dir,'selection.json'));
+async function build(){
+ const cells=[];
+ for(let i=0;i<data.variants.length;i++){
+  const v=data.variants[i];fs.copyFileSync(v.source,path.join(dir,v.id+'.png'));fs.writeFileSync(path.join(dir,v.id+'.prompt.md'),v.prompt+'\n');
+  cells.push({input:await sharp(path.join(dir,v.id+'.png')).resize(512,768,{fit:'contain',background:'#182027'}).png().toBuffer(),left:i*512,top:48});
+  cells.push({input:Buffer.from(`<svg width="512" height="48"><rect width="512" height="48" fill="#182027"/><text x="20" y="33" fill="#efba78" font-family="Arial" font-size="25">${v.name}</text></svg>`),left:i*512,top:0});
+ }
+ await sharp({create:{width:2048,height:816,channels:3,background:'#182027'}}).composite(cells).png().toFile(path.join(dir,'overview.png'));
+ const css='body{margin:0;background:#182027;color:#e4e6e7;font:16px/1.6 system-ui}header,main{max-width:1320px;margin:auto;padding:24px}a{color:#efba78}nav{display:flex;gap:22px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}article{background:#25313a;padding:18px;border-radius:12px}img{width:100%;height:auto;display:block}h2{margin:0 0 12px}@media(max-width:750px){.grid{grid-template-columns:1fr}}';
+ fs.writeFileSync(path.join(dir,'gallery.html'),`<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Стрелок людей · варианты A–D</title><style>${css}</style><header><h1>Стрелок людей · варианты A–D</h1><p>29 октября 2026 · следующий юнит после рабочего B. Выбор внешности ещё не сделан.</p><p>Песочная броня, графитовая экипировка и сдержанные оранжевые акценты. Четыре предложения одного лёгкого стрелка: состав защиты и оружие не меняют его игровые свойства.</p><nav><a href="overview.png">Все четыре рядом</a><a href="README.md">Роль и подготовка к анимации</a><a href="../../PROJECT.html#art">Дизайн</a><a href="../human-worker-directions/round-2/modeling/gallery.html">Выбранный рабочий B</a></nav><p>Одна винтовка против земли и воздуха, стрельба только стоя. После выбора — согласованные ракурсы, риг и полный набор анимаций; сменный удлинённый ствол для предусмотренного улучшения. Свет выключен, эффекты отсутствуют.</p><p>Нынешние позы с оружием — поиск внешности, не готовые входы для авторига. Нажмите на изображение для оригинала.</p></header><main class="grid">${data.variants.map(v=>`<article id="${v.id}"><h2>${v.name}</h2><a href="${v.id}.png"><img src="${v.id}.png" alt="Стрелок — ${v.name}, вариант для выбора" loading="lazy"></a><p>${v.description}</p></article>`).join('')}</main></html>`);
+ const p=path.join(root,'docs/DESIGN.md');let design=fs.readFileSync(p,'utf8');const marker=selected?'**Стрелок людей · B «Гранёный»':'**Стрелок людей · поиск внешности 2026-10-29.**';
+ if(!design.includes(marker))design=design.replace('### Люди\n','### Люди\n\n'+marker+' После выбранного рабочего B подготовлены [четыре варианта A–D](concepts/human-rifleman-directions/gallery.html): линейный, гранёный, полевой и компактный с булл-пап. Все — предложения одного типа лёгкой пехоты, выбор автора ещё не сделан. Сохраняются стрельба с места, одна винтовка против земли/воздуха и предусмотренное визуальное удлинение ствола после исследования. [Описание подготовки](concepts/human-rifleman-directions/README.md) учитывает хват, наведение, жёсткую броню, цвет владельца и полный набор анимаций. Игровые модели и клипы ещё не созданы.\n');
+ fs.writeFileSync(p,design);
+ const h=path.join(root,'tools/docs/build-handbook.cjs');let builder=fs.readFileSync(h,'utf8');if(!builder.includes("['Стрелок людей · A–D'"))builder=builder.replace('const legacyCards = [',"const legacyCards = [\n  ['Стрелок людей · A–D', 'Варианты для выбора', 'Следующий юнит после рабочего B. Четыре предложения лёгкого стрелка в песочно-графитовом языке людей; выбор ещё не сделан. Одна винтовка против земли/воздуха, стрельба с места. Галерея: docs/concepts/human-rifleman-directions/gallery.html. Подготовка и анимации описаны, игровые модели ещё не созданы.', 'human-rifleman-directions/overview.png'],");fs.writeFileSync(h,builder);
+ for(const v of data.variants){const meta=await sharp(path.join(dir,v.id+'.png')).metadata();if(!meta.width||!meta.height)throw Error('Invalid image '+v.id);}
+ if(selected){
+  const p=path.join(dir,'gallery.html');let page=fs.readFileSync(p,'utf8');page=page.replace('Выбор внешности ещё не сделан.','Выбран автором B «Гранёный». Остальные варианты — история поиска.');page=page.replace('<nav>','<nav><a href="modeling/gallery.html">Выбранный B · A-поза и паспорт</a>');fs.writeFileSync(p,page);
+  const h=path.join(root,'tools/docs/build-handbook.cjs');let handbook=fs.readFileSync(h,'utf8');handbook=handbook.replace(/^  \['Стрелок людей · A–D'.*\r?\n/m,'');fs.writeFileSync(h,handbook);
+ }
+ console.log('Saved and checked four rifleman concepts, prompts, gallery, comparison sheet and production notes.');
+}
+build().catch(e=>{console.error(e);process.exitCode=1;});

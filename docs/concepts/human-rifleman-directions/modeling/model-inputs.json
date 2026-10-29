@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-29",
+  "approvedDesign": "human-rifleman B «Гранёный»",
+  "pose": "A",
+  "bodyInputs": [
+    "front.png"
+  ],
+  "supplementaryBodyReference": [
+    "rear.png"
+  ],
+  "appearanceOnly": [
+    "appearance.png"
+  ],
+  "excluded": [
+    "drafts/side-draft.png",
+    "model-sheet.png",
+    "../overview.png",
+    "appearance.png"
+  ],
+  "weapon": {
+    "separate": true,
+    "status": "not created; image tool rejected standalone generation",
+    "appearanceReference": "appearance.png"
+  },
+  "priority": "Selected B defines design; front.png defines neutral A-pose. Reconcile rear with front and appearance on common geometry before multi-view generation. Never use armed appearance or side draft as body model input.",
+  "scope": "Artistic references, not a mesh, measured orthographic drawing, rig or animation set"
+}

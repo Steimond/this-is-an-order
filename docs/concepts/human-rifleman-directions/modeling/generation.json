@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-29",
+  "mode": "built-in imagegen",
+  "selected": "B «Гранёный»",
+  "pose": "A",
+  "reference": "../b.png",
+  "views": [
+    {
+      "id": "front",
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-b127fb00-38e3-4506-b635-ac4b1735228a.png",
+      "prompt": "Use case: precise-object-edit. Transform ONLY POSE and CAMERA of the EXACT selected soldier B in reference. Preserve exact human anatomy, helmet with graphite brow and narrow dark visor, two angled sand chest plates separated by narrow graphite center strip, small sand shoulder plates, sand forearm guards, thigh plates, knee pads, graphite cloth exposed between plates, same utility belt and sand/graphite boots, same restrained orange paint patches. Not a redesign. Create a clean FULL BODY FRONT character MODELING REFERENCE in symmetric A-POSE, arms straight relaxed diagonally down and out at exactly 40 degrees BELOW horizontal on both sides, enough gap between hands and hips, elbows extended naturally, open relaxed gloved hands with visible separated fingers and thumbs, no fists. Legs straight hip-width apart, parallel feet forward flat on ground, balanced centered pelvis, head facing straight forward, no contrapposto or action. REMOVE the rifle entirely from image; no weapon, strap in hands or extra objects. Preserve original equipment, do not add backpack, armor, grenade or extra accessories. Orthographic front view at torso height, no perspective from above, fully visible head to soles and hands, generous margin. Plain warm gray studio background, diffuse light and soft ground shadow. Sand matte plates, graphite fabric, unlit black visor, orange paint not emission. No glow, smoke, effects, text, border or insets. Single portrait image.",
+      "status": "artistic A-pose reference"
+    },
+    {
+      "id": "rear",
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-1715fdb5-2793-4817-aea2-5de059ebc66a.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is SELECTED B appearance reference. Image 2 is SAME B converted to A-POSE, use image 2 as exact pose and proportion anchor. Render this SAME soldier in exact SAME symmetric A-POSE viewed directly from BEHIND. Change only camera 180 degrees, NOT pose or design. Arms straight diagonally down/out, legs straight hip-width feet parallel, open relaxed hands, preserve elbow/wrist positions and head height. Full rear body head to soles with generous margin on warm gray neutral studio floor. Orthographic at torso height, no perspective from above. Sand angular helmet, small shoulder caps, forearm guards, thigh armor, small knee/side shin plates, graphite flexible clothing, utility belt. Simple close-fitting sand back armor panel continuing selected front vest, no new backpack or antennas, no new weapons, no front chest plate on rear. Rear surfaces use restrained construction consistent with B, not redesign. No weapon anywhere, no text/insets, no glow; all lights OFF. Keep fixed restrained orange paint accents and weathering. Single portrait modeling reference.",
+      "status": "artistic A-pose reference"
+    },
+    {
+      "id": "side-draft",
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-41dd9bfe-7a2e-4963-9001-9f1f4a836d46.png",
+      "prompt": "Use case: precise-object-edit. Image 1 selected soldier B, image 2 exact front A-pose. Make same character, SAME symmetric A-pose, viewed in true RIGHT SIDE PROFILE with face/nose pointing LEFT. Rotate camera ONLY, do not rotate arms into neutral hanging posture or extend them forward: arms remain diagonally 40-45 degrees down/out laterally from torso, so near arm partly occludes hip in side projection. Same body height, foot positions, head and torso, same two angled chest plates, thin sand armor, graphite cloth, sand thigh/knee/side shin armor, restrained orange paint. Orthographic torso height, no perspective from above. No weapon or props, no backpack, no added gear. Hands relaxed open, no fists, body full head to soles with margin. Neutral warm gray studio background diffuse light all lamps OFF. SINGLE portrait image, no text, no borders or inserts. Preserve exact B identity and proportions.",
+      "status": "draft; pose mismatch; exclude"
+    }
+  ],
+  "weapon": {
+    "status": "standalone generation rejected by image tool; not created",
+    "reference": "../b.png",
+    "includeInBodyInput": false
+  }
+}
