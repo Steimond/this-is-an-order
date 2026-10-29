@@ -1,0 +1,24 @@
+{
+  "approved": "Missile AA F, 2026-10-29",
+  "inputs": [
+    "../f.png",
+    "model-sheet.png"
+  ],
+  "geometryReferences": [
+    "guide.png",
+    "blockout.obj"
+  ],
+  "neutral": "all lights OFF, caps CLOSED, machinery at rest, no firing/launch effects; orange is diffuse paint",
+  "authority": "f.png for exact silhouette/proportions, shared geometry for axes and occlusion; artistic sheet has TOP pose/direction errors",
+  "separateGroups": [
+    "fixed base",
+    "yaw U-cradle",
+    "pitch selector housing",
+    "index rotor with 3 containers",
+    "3 cap panels",
+    "launch VFX"
+  ],
+  "exclude": [
+    "active selector preview screenshots"
+  ]
+}

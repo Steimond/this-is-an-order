@@ -1,0 +1,73 @@
+{
+  "geometrySha256": "b56f1243102bc74274b4c881532cad5d3483d409dd4f3c43a6767392c01f8551",
+  "viewCount": 7,
+  "allViewsSameGeometry": true,
+  "allViewsSamePose": true,
+  "allViewsSameOrthographicScale": true,
+  "cameraDirections": [
+    {
+      "id": "front",
+      "label": "FRONT / -Y",
+      "direction": [
+        0,
+        -1,
+        0
+      ]
+    },
+    {
+      "id": "right",
+      "label": "RIGHT / +X",
+      "direction": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "rear",
+      "label": "REAR / +Y",
+      "direction": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "top",
+      "label": "TOP / +Z",
+      "direction": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "left",
+      "label": "LEFT / -X",
+      "direction": [
+        -1,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "front-three-quarter",
+      "label": "FRONT 3/4",
+      "direction": [
+        1,
+        -1,
+        0.75
+      ]
+    },
+    {
+      "id": "rear-three-quarter",
+      "label": "REAR 3/4",
+      "direction": [
+        -1,
+        1,
+        0.75
+      ]
+    }
+  ],
+  "notVerified": "exact equivalence of proxy proportions/detail to image; unseen details are proposals"
+}

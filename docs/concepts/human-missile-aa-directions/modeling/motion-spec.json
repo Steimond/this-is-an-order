@@ -1,0 +1,82 @@
+{
+  "variant": "F Container drum",
+  "approvedDate": "2026-10-29",
+  "constructionFootprintCells": [
+    2,
+    2
+  ],
+  "units": "4 arbitrary horizontal units = 2 cells; not meters",
+  "axes": "X right, Y rear, Z up, front -Y",
+  "hierarchy": {
+    "fixed": [
+      "foundation",
+      "lower equipment base"
+    ],
+    "yaw": {
+      "axis": [
+        0,
+        0,
+        1
+      ],
+      "children": [
+        "U cradle",
+        "pitch pivot"
+      ]
+    },
+    "pitch": {
+      "pivot": [
+        0,
+        0,
+        1.65
+      ],
+      "axis": [
+        -1,
+        0,
+        0
+      ],
+      "children": [
+        "selector bearing housing",
+        "index pivot"
+      ]
+    },
+    "index": {
+      "localAxis": "longitudinal container axis; world [0,-cos(elevation),sin(elevation)]",
+      "children": [
+        "selector hub",
+        "3 containers",
+        "3 closed launch caps",
+        "orange markers"
+      ]
+    }
+  },
+  "neutralElevationDegrees": 55,
+  "selectorStepDegrees": 120,
+  "containerCount": 3,
+  "sequence": "aim at actual aerial target; optional visual selector indexing; separate launch cap event and rocket/VFX; do not impose unapproved firing delay",
+  "idle": "no endless rotation or production cycle",
+  "targetLayer": "air only",
+  "neutralModelingState": "all caps closed, lights OFF, no launch flame/smoke/glow, no exposed missile",
+  "balance": {
+    "metal": 100,
+    "plasma": 25,
+    "buildSeconds": 25,
+    "health": 500,
+    "range": 8,
+    "dps": 18,
+    "requirement": "workshop",
+    "finiteAmmo": false,
+    "manualReload": false,
+    "multiTargetSalvo": "not introduced",
+    "missileFlightParameters": "not chosen"
+  },
+  "validation": {
+    "fixedBaseFits2x2": true,
+    "neutralUpperRadius": 1.855598205079872,
+    "sampledSweepRadius": 2.4188018297800626,
+    "sampledContainerMinHeight": 0.8021328580556785,
+    "sampledElevation": "30..75 degrees by 5",
+    "sampledIndex": "0..350 degrees by 10",
+    "limits": "upper container envelope above base checked; U-cradle/bearings/caps exact clearances and adjacent building placement still require final mesh validation; do not claim all moving parts fit 2x2"
+  },
+  "limitations": "shared proportion guide only; final mesh UV rig materials and launch VFX not created"
+}

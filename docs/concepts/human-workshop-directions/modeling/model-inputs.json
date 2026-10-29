@@ -1,23 +1,25 @@
 {
-  "status": "neutral modeling references; light state separated",
-  "geometryAndBaseColorInputs": [
-    "hero-neutral.png",
-    "model-sheet.png"
+  "revision": "corrected-v3",
+  "date": "2026-10-29",
+  "approvedDesign": "Мастерская F",
+  "inputs": [
+    "corrected-v3/hero.png",
+    "corrected-v3/front.png",
+    "corrected-v3/right.png",
+    "corrected-v3/rear.png",
+    "corrected-v3/top.png",
+    "corrected-v3/front-three-quarter.png",
+    "corrected-v3/rear-three-quarter.png"
   ],
-  "proportionGuide": "guide.png",
-  "blockout": "blockout.obj",
-  "excludeFromModelingInputs": [
-    "../f.png",
-    "lighting-studies/model-sheet-lit.png"
+  "contactSheet": "corrected-v3/model-sheet.png",
+  "exclude": [
+    "model-sheet.before-repair.png",
+    "model-inputs.pre-audit.json",
+    "consistency-v2/structural-sheet.png",
+    "corrected-v3/generation-sheet.png",
+    "active animation previews"
   ],
-  "effectSpecificationOnly": "light-spec.json",
-  "materialRules": {
-    "emissionInBaseColor": false,
-    "allReferenceLights": "off, including background indicator lamps",
-    "panelLenses": "dark neutral smoked graphite; preserve frames",
-    "orangePaint": "ordinary diffuse paint, not emission",
-    "emissiveMasks": "separate, unlit in base reference"
-  },
-  "notes": "Appearance concepts and lit examples are not inputs for AI mesh/albedo generation."
+  "priority": "Approved neutral hero defines silhouette and relative proportions; corrected views explain the same building. Do not use old rejected sheets or coarse proxy as an alternative design.",
+  "materials": "All lamps and VFX OFF. Orange is diffuse paint. Closed doors and covers.",
+  "scope": "Detailed artistic reference, not a dimensioned CAD drawing or a finished 3D mesh."
 }
-

@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-29",
+  "entries": [
+    {
+      "id": "hq",
+      "name": "Штаб C",
+      "hero": "human-hq-directions/c-closed.png",
+      "modeling": "human-hq-directions/modeling"
+    },
+    {
+      "id": "supply",
+      "name": "Склад F",
+      "hero": "human-supply-directions/protected/f.png",
+      "modeling": "human-supply-directions/protected/modeling"
+    },
+    {
+      "id": "extractor",
+      "name": "Экстрактор E",
+      "hero": "human-plasma-extractor-directions/enclosed/e.png",
+      "modeling": "human-plasma-extractor-directions/enclosed/modeling"
+    },
+    {
+      "id": "barracks",
+      "name": "Казарма F2",
+      "hero": "human-barracks-directions/work-cycles/f2.png",
+      "modeling": "human-barracks-directions/work-cycles/modeling"
+    },
+    {
+      "id": "workshop",
+      "name": "Мастерская F",
+      "hero": "human-workshop-directions/modeling/hero-neutral.png",
+      "modeling": "human-workshop-directions/modeling"
+    },
+    {
+      "id": "operations",
+      "name": "Оперативный центр G",
+      "hero": "human-operations-directions/g.png",
+      "modeling": "human-operations-directions/modeling"
+    },
+    {
+      "id": "factory",
+      "name": "Завод D",
+      "hero": "human-factory-directions/round-2/d.png",
+      "modeling": "human-factory-directions/round-2/modeling"
+    },
+    {
+      "id": "aerodrome",
+      "name": "Аэродром D",
+      "hero": "human-aerodrome-directions/modeling/hero-neutral.png",
+      "modeling": "human-aerodrome-directions/modeling"
+    },
+    {
+      "id": "command",
+      "name": "Командный модуль A",
+      "hero": "human-command-module-directions/round-2/modeling/hero-neutral.png",
+      "modeling": "human-command-module-directions/round-2/modeling"
+    },
+    {
+      "id": "ground",
+      "name": "Наземная турель C",
+      "hero": "human-ground-turret-directions/c.png",
+      "modeling": "human-ground-turret-directions/modeling"
+    },
+    {
+      "id": "aa",
+      "name": "ПВО F",
+      "hero": "human-missile-aa-directions/f.png",
+      "modeling": "human-missile-aa-directions/modeling"
+    }
+  ]
+}

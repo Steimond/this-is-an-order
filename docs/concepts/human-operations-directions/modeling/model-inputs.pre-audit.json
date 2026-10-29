@@ -1,0 +1,13 @@
+{
+  "status": "neutral input references for selected G",
+  "geometryAndBaseColorInputs": [
+    "../g.png",
+    "model-sheet.png"
+  ],
+  "proportionGuide": "guide.png",
+  "blockout": "blockout.obj",
+  "neutralState": "all lamps off; no emission in albedo",
+  "effectSpecOnly": "light-spec.json",
+  "exclude": "active light preview and screenshots of it; not base-color inputs"
+}
+

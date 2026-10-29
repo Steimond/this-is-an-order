@@ -1,0 +1,23 @@
+{
+  "status": "neutral modeling references; light state separated",
+  "geometryAndBaseColorInputs": [
+    "hero-neutral.png",
+    "model-sheet.png"
+  ],
+  "proportionGuide": "guide.png",
+  "blockout": "blockout.obj",
+  "excludeFromModelingInputs": [
+    "../f.png",
+    "lighting-studies/model-sheet-lit.png"
+  ],
+  "effectSpecificationOnly": "light-spec.json",
+  "materialRules": {
+    "emissionInBaseColor": false,
+    "allReferenceLights": "off, including background indicator lamps",
+    "panelLenses": "dark neutral smoked graphite; preserve frames",
+    "orangePaint": "ordinary diffuse paint, not emission",
+    "emissiveMasks": "separate, unlit in base reference"
+  },
+  "notes": "Appearance concepts and lit examples are not inputs for AI mesh/albedo generation."
+}
+

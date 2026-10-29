@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-29",
+  "approvedDesign": "human-worker B «Клин», round-2",
+  "inputs": [
+    "hero-neutral.png"
+  ],
+  "supplementaryArtisticViews": [
+    "front.png",
+    "side.png",
+    "rear.png"
+  ],
+  "exclude": [
+    "model-sheet.png",
+    "../overview.png",
+    "../../overview.png",
+    "active animation previews"
+  ],
+  "priority": "Selected hero defines silhouette. Additional views are artistic explanations with perspective/proportion differences; reconcile on a common volume before multi-view generation.",
+  "status": "Design reference only; not a finished mesh, rig or animation set",
+  "lights": "All OFF",
+  "unresolved": [
+    "Arm reach into rear bed",
+    "Rear transfer mechanism",
+    "Common geometry and scale",
+    "Full animation set and Unity import"
+  ]
+}

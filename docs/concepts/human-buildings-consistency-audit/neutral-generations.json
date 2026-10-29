@@ -1,0 +1,21 @@
+{
+  "mode": "built-in imagegen",
+  "entries": {
+    "hq": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1814e-1d3d-7092-9f3e-2a37971fb7bb\\exec-2af3219d-28d8-4101-a3e0-2eb3387fcc59.png",
+      "prompt": "Edit this approved RTS building reference ONLY to turn OFF every lamp and emissive effect. Preserve the EXACT architecture, silhouette, proportions, camera, details, closed doors and all sand/graphite/orange diffuse painted surfaces. Every amber/yellow light becomes a dark neutral gray physical lens with its existing frame preserved. No bright emission, bloom, colored illumination or active pattern. Keep neutral white studio light and ordinary reflections. Do not add/remove or move geometry, do not stylize or reshape anything. One identical front-three-quarter hero, whole uncropped object. Small title 'NEUTRAL MODEL INPUT / LIGHTS OFF'."
+    },
+    "supply": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1814e-1d3d-7092-9f3e-2a37971fb7bb\\exec-9322174e-3a79-4b9a-b6f6-4830271f4055.png",
+      "prompt": "Edit this approved RTS building reference ONLY to turn OFF every lamp and emissive effect. Preserve the EXACT architecture, silhouette, proportions, camera, details, closed doors and all sand/graphite/orange diffuse painted surfaces. Every amber/yellow light becomes a dark neutral gray physical lens with its existing frame preserved. No bright emission, bloom, colored illumination or active pattern. Keep neutral white studio light and ordinary reflections. Do not add/remove or move geometry, do not stylize or reshape anything. One identical front-three-quarter hero, whole uncropped object. Small title 'NEUTRAL MODEL INPUT / LIGHTS OFF'."
+    },
+    "extractor": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1814e-1d3d-7092-9f3e-2a37971fb7bb\\exec-e99471bc-99e1-4136-8bed-5564283a9538.png",
+      "prompt": "Edit this approved RTS building reference ONLY into a neutral modeling input with ALL EFFECTS OFF. Preserve exact architecture, silhouette, proportions, arrangement, camera, closed hatches and every sand/graphite/orange diffuse paint surface. Turn every amber/yellow lamp into a dark neutral gray lens inside its original frame. Keep the right-side diagonal pipe, every collar, mounting and rear process window exactly in place, but their glass must be dark smoked neutral gray with NO visible purple flowing contents or electric arcs. Physical pipe and window remain; plasma is a separate future effect. No bloom, emission, active light, colored spill, sparks, smoke or particles. Ordinary neutral white studio lighting/reflections only. Do not change or add geometry. Complete uncropped identical front-three-quarter hero. Small title 'NEUTRAL MODEL INPUT / EFFECTS OFF'."
+    },
+    "barracks": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1814e-1d3d-7092-9f3e-2a37971fb7bb\\exec-397909e9-322f-4aa8-8107-71530e308ce1.png",
+      "prompt": "Edit this approved RTS building reference ONLY into a neutral modeling input with ALL EFFECTS OFF. Preserve exact architecture, silhouette, proportions, arrangement, camera, closed hatches and every sand/graphite/orange diffuse paint surface. Turn every amber/yellow lamp into a dark neutral gray lens inside its original frame. Keep EXACTLY TWO orange/sand carriages, their rails and actuators at their existing parked positions. No bloom, emission, active light, colored spill, sparks, smoke or particles. Ordinary neutral white studio lighting/reflections only. Do not change or add geometry. Complete uncropped identical front-three-quarter hero. Small title 'NEUTRAL MODEL INPUT / EFFECTS OFF'."
+    }
+  }
+}

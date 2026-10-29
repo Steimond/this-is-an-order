@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Здания: стройка, повреждения, разрушение</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#171e23;color:#e7e5de;font:17px/1.55 system-ui,sans-serif}main{max-width:1340px;margin:auto;padding:28px}h1{font-size:32px;line-height:1.2;margin:0 0 14px}h2{font-size:24px;margin:0}h3{font-size:19px;margin:6px 0}p{color:#c4cbd0}a{color:#e5b371}header{margin-bottom:30px}nav{display:flex;flex-wrap:wrap;gap:20px}.note{padding:16px;background:#243139;border-left:3px solid #c7a273}.controls{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin:16px 0}select,button{font:inherit;color:#e7e5de;background:#2e3b43;border:1px solid #63747d;border-radius:6px;padding:8px 12px}button{cursor:pointer}button:disabled{opacity:.5}input[type=range]{accent-color:#d3a66f;flex:1;min-width:120px}label{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.pair{display:grid;grid-template-columns:1fr 1fr;gap:22px}figure{margin:0}figcaption{display:flex;justify-content:space-between;gap:12px}svg{display:block;width:100%;height:auto;background:#202a30;border-radius:9px}section{padding:24px 0;border-top:1px solid #42515a}.value{min-width:4ch;font-variant-numeric:tabular-nums}.stages{display:flex;flex-wrap:wrap;gap:10px;color:#aebbc2;font-size:14px}.stages span{padding:4px 7px;background:#25323a;border-radius:4px}.legend{display:flex;gap:18px;flex-wrap:wrap}.legend b{font-weight:600}.comparison{overflow:auto}table{width:100%;border-collapse:collapse;min-width:650px}td,th{border-bottom:1px solid #42515a;text-align:left;vertical-align:top;padding:12px}th{color:#e5b371}.state{color:#e5b371;min-height:1.6em}footer{margin:25px 0}code{color:#e5b371}@media(max-width:750px){main{padding:16px}.pair{grid-template-columns:1fr}h1{font-size:27px}label{width:100%}}
+</style></head><body><main>
+<header><h1>Как здание собирается, повреждается и гибнет</h1><p class="note"><strong>Предложения для выбора.</strong> На 29 октября внешний вид всех 11 зданий людей выбран; последней утверждена ПВО F. Здесь условные схемы последовательностей, а не новые модельные референсы или эффекты, уже работающие в Unity.</p><nav><a href="README.md">Полное предложение и техническое обоснование</a><a href="../human-missile-aa-directions/modeling/gallery.html">Утверждённая ПВО F</a><a href="../../PROJECT.html">Справочник проекта</a></nav>
+<p><strong>Рекомендация:</strong> несколько крупных частей + материал состояний + отдельные эффекты. Стройка людей — монтаж каркаса и панелей; гибель людей — локальное обрушение; гибель Резонанса — потеря твёрдой формы. Последние два решения пока предложены.</p>
+<div class="controls"><label for="method">Сравнить подход <select id="method"><option value="hybrid">Части + шейдер + эффекты — рекомендую</option><option value="shader">Только готовый меш и шейдер</option><option value="models">Отдельные модели стадий</option></select></label></div><p id="method-note" aria-live="polite"></p></header>
+
+<section data-mode="build"><h2>1. Строительство</h2><p>У людей — основание, каркас, панели, затем оборудование. У Резонанса сохраняется понятный принцип нанитной сборки; схема справа лишь напоминает его.</p><div class="controls"><label for="build">Прогресс <output id="build-value" class="value">65%</output></label><input id="build" type="range" min="0" max="100" value="65" aria-label="Прогресс строительства"><button data-play="build">Воспроизвести стройку</button></div><div class="pair"><figure><figcaption><b>Люди</b><span id="build-human-label" class="state"></span></figcaption><svg id="build-human" viewBox="0 0 520 300" role="img" aria-label="Стадия строительства людей"></svg></figure><figure><figcaption><b>Резонанс</b><span id="build-resonance-label" class="state"></span></figcaption><svg id="build-resonance" viewBox="0 0 520 300" role="img" aria-label="Стадия нанитной сборки"></svg></figure></div><p class="stages"><span>0–10% основание</span><span>10–30% каркас</span><span>30–75% секции</span><span>75–95% оборудование</span><span>95–100% проверка</span></p><p>Проценты условные. Уход строителя останавливает монтаж на достигнутом этапе; это не команда паузы производства. У Резонанса прогресс следует доступности питания по правилам сети.</p></section>
+
+<section data-mode="damage"><h2>2. Повреждение живого здания</h2><p>Силуэт и способности сохраняются. Сначала меняются поверхность и локальные эффекты; отдельный повреждённый меш нужен только для существенного изменения формы.</p><div class="controls"><label for="damage">Оставшееся HP <output id="damage-value" class="value">40%</output></label><input id="damage" type="range" min="1" max="100" value="40" aria-label="Оставшийся процент HP"><button data-play="damage">Повреждение → ремонт</button></div><div class="pair"><figure><figcaption><b>Люди</b><span id="damage-human-label" class="state"></span></figcaption><svg id="damage-human" viewBox="0 0 520 300" role="img" aria-label="Следы повреждения здания людей"></svg></figure><figure><figcaption><b>Резонанс</b><span id="damage-resonance-label" class="state"></span></figcaption><svg id="damage-resonance" viewBox="0 0 520 300" role="img" aria-label="Следы повреждения Резонанса"></svg></figure></div><p>Для макета следы обратимы при ремонте. Точные пороги дыма и степень загрязнения пока не выбраны. Ни один механизм не отрывается до гибели здания.</p></section>
+
+<section data-mode="death"><h2>3. Уничтожение</h2><p>Люди — панели складываются внутрь основания. Резонанс — панели сходятся к основанию, появляется низкий графитовый остаток. Это не переработка и не возврат ресурсов.</p><div class="controls"><label for="death">Фаза <output id="death-value" class="value">55%</output></label><input id="death" type="range" min="0" max="100" value="55" aria-label="Фаза уничтожения"><button data-play="death">Воспроизвести разрушение</button></div><div class="pair"><figure><figcaption><b>Люди</b><span id="death-human-label" class="state"></span></figcaption><svg id="death-human" viewBox="0 0 520 300" role="img" aria-label="Локальное обрушение здания людей"></svg></figure><figure><figcaption><b>Резонанс</b><span id="death-resonance-label" class="state"></span></figcaption><svg id="death-resonance" viewBox="0 0 520 300" role="img" aria-label="Потеря формы здания Резонанса"></svg></figure></div><p>Срок жизни остатков, их коллизии и блокирование сетки не выбраны. Схема намеренно не добавляет физику обломков, урон соседям или новые правила проходимости.</p></section>
+
+<section><h2>Что решает шейдер, а где нужна геометрия</h2><div class="comparison"><table><thead><tr><th>Задача</th><th>Шейдер</th><th>Дополнительные части</th></tr></thead><tbody><tr><td>Появление и копоть</td><td>Подходит: маски, цвет, шероховатость, видимость</td><td>Каркас нужен, если стройка должна выглядеть монтажом</td></tr><tr><td>Дыра в стене и толщина разлома</td><td>Удаление пикселей не создаёт внутреннюю стенку</td><td>Закрытые срезы или подготовленный повреждённый участок</td></tr><tr><td>Реальное изменение силуэта</td><td>Возможна деформация подготовленных вершин</td><td>Группы панелей, pivot и траектории либо отдельный меш</td></tr><tr><td>Обрушение без дорогой физики</td><td>Маски и исчезновение мелких остатков</td><td>Несколько крупных частей по заданным траекториям</td></tr></tbody></table></div></section>
+<footer><p>Схема не доказывает производительность и не показывает финальный стиль частиц. В Unity ещё нужно проверить тени, bounds, видимость, соседние здания, ремонт и массовую нагрузку.</p><p><a href="README.md">Прочитать предложение, список ассетов и проверенные источники Unity →</a></p></footer>
+</main><script>
+(()=>{'use strict';
+const method=document.getElementById('method'),modes=['build','damage','death'],jobs=new Map();
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=x=>{x=clamp(x);return x*x*(3-2*x);};
+const poly=(points,fill,extra='')=>`<polygon points="${points}" fill="${fill}" stroke="#59656b" stroke-width="1.5" ${extra}/>`;
+const colors={human:['#c9b99c','#ac997b','#dfcdb0'],resonance:['#cbd1d4','#8f9ca5','#e4e8e9']};
+function scene(faction,mode,value,id){
+ const c=colors[faction],p=value/100,isH=faction==='human',approach=method.value;
+ const definitions=`<defs><clipPath id="clip-${id}"><rect x="0" y="${240-210*p}" width="520" height="${210*p+60}"/></clipPath></defs>`;
+ const base=poly('85,235 295,270 450,201 240,173','#39444c');
+ const faces=[poly('140,120 305,147 305,235 140,208',c[0]),poly('305,147 415,101 415,189 305,235',c[1]),poly('140,120 250,74 415,101 305,147',c[2])];
+ const equipment=`<rect x="232" y="94" width="62" height="20" rx="3" fill="#39444c"/><path d="M245 96H280" stroke="${isH?'#b87938':'#64848b'}" stroke-width="5"/>`;
+ const whole=faces.join('')+equipment;
+ const skeleton='<path d="M140 208V120L250 74L415 101V189M305 235V147L140 120M305 147L415 101M250 74V161M140 208L305 235L415 189M140 120L305 235M305 147L415 189" stroke="#76878f" stroke-width="7" fill="none"/>';
+ let result='',label='';
+ if(mode==='build'){
+  if(isH){
+   label=p<.1?'Основание':p<.3?'Каркас':p<.75?'Монтаж секций':p<.95?'Оборудование':'Проверка';
+   if(approach==='shader')result=`<g clip-path="url(#clip-${id})">${whole}</g>`;
+   else{const q=approach==='models'?Math.floor(p*5)/5:p;result=`<g opacity="${clamp(q/.1)}">${base}</g><g opacity="${clamp((q-.1)/.13)}">${skeleton}</g>`;
+   faces.forEach((face,i)=>{const t=clamp((q-(.28+i*.18))/.18);if(t>0)result+=`<g opacity="${approach==='models'?1:t}" transform="translate(${(1-t)*(i===1?35:-30)} ${(1-t)*-18})">${face}</g>`;});
+   if(q>.82)result+=`<g opacity="${clamp((q-.82)/.13)}">${equipment}</g>`;}
+   if(p<1&&p>0)result+='<g><rect x="82" y="191" width="22" height="20" rx="3" fill="#b87938"/><path d="M103 199L132 180" stroke="#b87938" stroke-width="5"/></g>';
+  }else{
+   label=p<.2?'Потеря формы Нода':p<.7?'Нанитная сборка':'Уплотнение оболочки';
+   const liquid=clamp(p/.18)*(1-ease((p-.72)/.28));
+   result=`<ellipse cx="261" cy="213" rx="${45+90*clamp(p/.6)}" ry="27" fill="#39444c" opacity="${liquid}"/><g opacity="${1-clamp(p/.2)}"><circle cx="225" cy="186" r="22" fill="#bec8cd"/></g><g clip-path="url(#clip-${id})">${whole}</g>`;
+  }
+  return [definitions+base+result,label];
+ }
+ if(mode==='damage'){
+  const d=1-p;label=d<.25?'Лёгкие следы':d<.65?'Заметные повреждения':'Тяжёлое повреждение';
+  result=base+whole;
+  for(let i=0;i<4;i++)result+=`<ellipse cx="${175+i*42}" cy="${163+i%2*22}" rx="${14+d*6}" ry="${5+d*6}" fill="#282e31" opacity="${d*.72}" transform="rotate(12 ${175+i*42} ${163+i%2*22})"/>`;
+  if(d>.45){if(isH){for(let i=0;i<4;i++)result+=`<circle cx="${335+Math.sin(i*2)*10}" cy="${113-i*18}" r="${8+i*3}" fill="#738087" opacity="${(d-.45)*(1-i*.17)}"/>`;}else result+=`<path d="M354 129L345 154L357 169L350 190M214 150L205 169L218 190" fill="none" stroke="#35434a" stroke-width="${2+d*4}"/><ellipse cx="350" cy="211" rx="22" ry="7" fill="#39444c" opacity="${d}"/>`;}
+  return [definitions+result,label];
+ }
+ label=p<.15?'Остановка механизмов':p<.65?(isH?'Локальное обрушение':'Потеря формы'):'Низкий остаток';
+ const q=ease((p-.12)/.65);result=base;
+ if(approach==='shader')result+=`<g opacity="${1-q}" transform="translate(0 ${q*55})">${whole}</g>`;
+ else{faces.forEach((face,i)=>{const v=approach==='models'?Math.floor(q*3)/3:q,sx=1-v*.16,sy=1-v*.88;result+=`<g opacity="${1-v*.65}" transform="translate(${260*(1-sx)+(i-1)*v*12} ${210*(1-sy)}) scale(${sx} ${sy}) rotate(${v*(i===1?-12:8)} 270 210)">${face}</g>`;});if(q<.5)result+=`<g opacity="${1-q*2}">${equipment}</g>`;}
+ if(isH){result+=`<ellipse cx="274" cy="218" rx="${25+q*85}" ry="${6+q*13}" fill="#ac9c85" opacity="${q*.7}"/>`;if(p>.18&&p<.88)for(let i=0;i<5;i++)result+=`<circle cx="${180+i*42}" cy="${190-Math.sin(p*Math.PI)*15}" r="${12+Math.sin(p*Math.PI)*10}" fill="#b4a893" opacity="${Math.sin(p*Math.PI)*.15}"/>`;}
+ else result+=`<ellipse cx="270" cy="217" rx="${30+q*95}" ry="${8+q*16}" fill="#344149" opacity="${q*.9}"/>`;
+ if(q>.4)for(let i=0;i<3;i++)result+=poly(`${193+i*54},${216+i%2*10} ${220+i*54},${207+i%2*10} ${240+i*54},${222+i%2*10}`,isH?'#a79579':'#9ca7ae',`opacity="${q*.85}"`);
+ return [definitions+result,label];
+}
+function render(mode){const input=document.getElementById(mode),value=Number(input.value);document.getElementById(mode+'-value').textContent=value+'%';for(const faction of ['human','resonance']){const id=mode+'-'+faction,[svg,label]=scene(faction,mode,value,id);document.getElementById(id).innerHTML=svg;document.getElementById(id+'-label').textContent=label;}}
+function notes(){document.getElementById('method-note').textContent={hybrid:'Части дают силуэт, шейдер смягчает переходы, эффекты обозначают процесс. Предлагаемый основной путь.',shader:'Самый дешёвый художественный набор, но исчезновение поверхности не превращается в убедительный монтаж или обвал.',models:'Переходы между заранее подготовленными стадиями хорошо контролируются, но увеличивают объём моделирования и правок.'}[method.value];}
+for(const mode of modes){const input=document.getElementById(mode),button=document.querySelector(`[data-play="${mode}"]`);input.addEventListener('input',()=>{jobs.delete(mode);button.disabled=false;render(mode);});button.addEventListener('click',()=>{const token={},start=performance.now(),duration=mode==='damage'?6500:5500;jobs.set(mode,token);button.disabled=true;function tick(now){if(jobs.get(mode)!==token)return;const p=clamp((now-start)/duration);input.value=Math.round(mode==='damage'?100-92*Math.sin(p*Math.PI):100*p);render(mode);if(p<1)requestAnimationFrame(tick);else{jobs.delete(mode);button.disabled=false;}}requestAnimationFrame(tick);});render(mode);}
+method.addEventListener('change',()=>{notes();modes.forEach(render);});notes();
+})();
+</script></body></html>

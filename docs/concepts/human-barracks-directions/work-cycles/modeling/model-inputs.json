@@ -1,0 +1,25 @@
+{
+  "revision": "corrected-v3",
+  "date": "2026-10-29",
+  "approvedDesign": "Казарма F2",
+  "inputs": [
+    "corrected-v3/hero.png",
+    "corrected-v3/front.png",
+    "corrected-v3/right.png",
+    "corrected-v3/rear.png",
+    "corrected-v3/top.png",
+    "corrected-v3/front-three-quarter.png",
+    "corrected-v3/rear-three-quarter.png"
+  ],
+  "contactSheet": "corrected-v3/model-sheet.png",
+  "exclude": [
+    "model-sheet.before-repair.png",
+    "model-inputs.pre-audit.json",
+    "consistency-v2/structural-sheet.png",
+    "corrected-v3/generation-sheet.png",
+    "active animation previews"
+  ],
+  "priority": "Approved neutral hero defines silhouette and relative proportions; corrected views explain the same building. Do not use old rejected sheets or coarse proxy as an alternative design.",
+  "materials": "All lamps and VFX OFF. Orange is diffuse paint. Closed doors and covers.",
+  "scope": "Detailed artistic reference, not a dimensioned CAD drawing or a finished 3D mesh."
+}

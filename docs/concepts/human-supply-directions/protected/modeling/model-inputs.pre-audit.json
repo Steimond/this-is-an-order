@@ -1,0 +1,22 @@
+{
+  "auditDate": "2026-10-29",
+  "approvedDesign": "Склад F",
+  "status": "Audit complete; exact detailed multiview modeling NOT cleared",
+  "inputs": [
+    "consistency-v2/hero.png"
+  ],
+  "structuralReferences": [
+    "consistency-v2/structural-sheet.png",
+    "consistency-v2/geometry.obj"
+  ],
+  "exclude": [
+    "model-sheet.png",
+    "model-inputs.pre-audit.json",
+    "active previews and screenshots"
+  ],
+  "priority": "approved original 3/4 sets silhouette and detail; neutral hero for appearance; structural views for counts/axes/occlusion only",
+  "geometryLimit": "Точную толщину балки/стойки и зазоры рамы сверять по основному виду, не по старому листу.",
+  "doNot": "Do not combine contradictory artistic views, or treat this coarse structural proxy as exact proportions/detail",
+  "next": "Refine one detailed volume against approved 3/4, then render final viewpoints from that volume",
+  "audit": "../../../../human-buildings-consistency-audit/gallery.html"
+}

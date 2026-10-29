@@ -1,0 +1,18 @@
+{
+  "approved": "Human factory R2-D Vertical assembly",
+  "inputs": [
+    "../d.png",
+    "model-sheet.png"
+  ],
+  "proportionReferences": [
+    "guide.png",
+    "blockout.obj"
+  ],
+  "exclude": [
+    "active animation preview",
+    "screenshots of active effects"
+  ],
+  "neutralState": "all lamps OFF, carriage parked, vehicle gate CLOSED, no emissive or active pattern baked into albedo",
+  "geometryAuthority": "guide.png/blockout.obj for projection consistency; d.png for approved surface character; model-sheet is an artistic turnaround with perspective errors",
+  "separateMovingGroup": "one orange carriage with all attached clamps; fixed guides and closed tower shell"
+}
