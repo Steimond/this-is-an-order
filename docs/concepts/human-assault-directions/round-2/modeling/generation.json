@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-29",
+  "mode": "built-in imagegen",
+  "selected": "B «Воротник», round 2",
+  "pose": "A",
+  "reference": "../b.png",
+  "views": [
+    {
+      "id": "rear-draft",
+      "prompt": "Use case: precise-object-edit. Re-render EXACT SAME selected human assault infantry B «Collar» from reference, change ONLY CAMERA, keep SAME A-POSE. Heavy sand/beige suit with broad sloping shoulder plates, high rigid armored collar encircling side/back of recessed helmet (face open), exact angular torso plate pattern, armored abdomen and hips, graphite load-bearing exoskeleton hip/knee/ankle rails and actuators, thick sand thigh/knee/shin plates and boots. Restrained orange fixed paint, graphite flexible joints, all optics and lamps OFF. Same natural human height/proportions, broad silhouette, no slimming, no new backpack or antenna. A-POSE: arms straight diagonally down/out 40-45 degrees below horizontal, elbows naturally extended, relaxed open empty gloved hands, legs straight hip-width feet parallel, upright pelvis/head; DO NOT change pose, hang arms or make action stance. NO equipment anywhere: no shield, rifle, shotgun, blade or extra props. Full body head-to-soles and fingertips, generous margin, plain warm gray studio floor/background, diffuse light, no text/inset/frame, no glow/smoke/VFX. Hidden surfaces should be practical simple continuations of existing armor/frame, not a new design. Requested camera: STRAIGHT REAR elevation, orthographic torso-height view from exactly behind. Preserve same lateral arm spread and leg placement as front. Show rear collar, simple close-fitting sand back armor and existing external spine/hip support frame, no giant backpack, no front chest plates copied onto rear, no new service module. One portrait reference.",
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-13ce5990-9830-447c-bef0-7eaaf6b0133f.png",
+      "status": "rejected: anterior armor repeated on rear"
+    },
+    {
+      "id": "rear",
+      "prompt": "Use case: precise-object-edit. Correct this REAR A-POSE reference of selected heavy human soldier. Keep EXACT silhouette, symmetric A-pose, head height, high collar, shoulder width, all arm/leg positions and palette. Camera stays directly BEHIND the person. Fix rear-facing construction: replace mirrored front chest/belly armor on back with a single broad simple sand dorsal plate and narrow graphite spine support underneath; NO chest pectorals on back. Remove anterior thigh/kneecap/shin shells from posterior-facing central surfaces: rear thighs show graphite trouser cloth with wraparound straps and sand OUTSIDE thigh panels only; REAR knee hollows are graphite flexible cloth NOT kneecap armor; calves have simple modest rear service covers and outside graphite support rails, not duplicate front shin guards; rear pelvis is graphite seat fabric and small belt center mount, not front codpiece. Keep all external hip/knee/ankle pivots correctly at SIDES, feet show heels not toe fronts, elbows rear flex points not front forearm guards. Preserve original broad heavy body and equipment family, sand/graphite/orange, no backpack. Hands relaxed empty in same A-pose. Full body on same neutral gray background. No weapon or shield, no text or glow. One portrait.",
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-54a9f95d-0b82-42e6-8623-9844efd3a24b.png",
+      "status": "artistic reference; reconcile on common geometry"
+    },
+    {
+      "id": "three-quarter",
+      "prompt": "Use case: precise-object-edit. Re-render EXACT SAME selected human assault infantry B «Collar» from reference, change ONLY CAMERA, keep SAME A-POSE. Heavy sand/beige suit with broad sloping shoulder plates, high rigid armored collar encircling side/back of recessed helmet (face open), exact angular torso plate pattern, armored abdomen and hips, graphite load-bearing exoskeleton hip/knee/ankle rails and actuators, thick sand thigh/knee/shin plates and boots. Restrained orange fixed paint, graphite flexible joints, all optics and lamps OFF. Same natural human height/proportions, broad silhouette, no slimming, no new backpack or antenna. A-POSE: arms straight diagonally down/out 40-45 degrees below horizontal, elbows naturally extended, relaxed open empty gloved hands, legs straight hip-width feet parallel, upright pelvis/head; DO NOT change pose, hang arms or make action stance. NO equipment anywhere: no shield, rifle, shotgun, blade or extra props. Full body head-to-soles and fingertips, generous margin, plain warm gray studio floor/background, diffuse light, no text/inset/frame, no glow/smoke/VFX. Hidden surfaces should be practical simple continuations of existing armor/frame, not a new design. Requested camera: FRONT RIGHT THREE-QUARTER view, camera at torso height, rotate CAMERA about 35 degrees around same person. Reference 1 is approved front defining silhouette/armor, reference 2 explains corrected rear construction. SAME A-POSE held in world: arms remain straight spread diagonally down/out laterally, hands empty, no combat stance. Show depth of high collar and graphite outside leg/shoulder support rails, keep exact front armor and human proportions. One portrait.",
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-a1738a99-3512-44b6-8919-d9c0c301d831.png",
+      "status": "artistic reference; reconcile on common geometry"
+    }
+  ]
+}

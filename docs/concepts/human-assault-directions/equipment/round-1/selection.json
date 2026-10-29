@@ -1,0 +1,14 @@
+{
+  "selected": "c",
+  "name": "Плечо",
+  "date": "2026-10-29",
+  "scope": "Щит C: контур, верхний обзорный вырез и боковая выемка-опора",
+  "reference": "c.png",
+  "modeling": "materials/round-1/README.md",
+  "shotgun": "Тип одобрен; показанная в C компоновка — референс сопряжения, отдельная модель ещё не подготовлена",
+  "materials": "materials/round-1/gallery.html",
+  "materialStatus": "selected by author 2026-10-29",
+  "materialSelected": "a",
+  "materialName": "Графит и керамика",
+  "materialReference": "materials/round-1/a.png"
+}

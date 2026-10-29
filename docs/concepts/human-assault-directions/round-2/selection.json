@@ -1,0 +1,10 @@
+{
+  "selected": "b",
+  "name": "Воротник",
+  "round": 2,
+  "date": "2026-10-29",
+  "pose": "A",
+  "bodyReference": "b.png",
+  "modeling": "modeling/gallery.html",
+  "equipment": "Обязательны отдельные щит и автоматическое штурмовое ружьё; конкретный вариант ещё не выбран"
+}

@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-29",
+  "approvedDesign": "human-assault B «Воротник», round-2",
+  "pose": "A",
+  "bodyInputs": [
+    "front.png"
+  ],
+  "supplementaryArtisticViews": [
+    "rear.png",
+    "three-quarter.png"
+  ],
+  "exclude": [
+    "drafts/rear-draft.png",
+    "model-sheet.png",
+    "../comparison.png",
+    "../overview.png",
+    "../../a.png",
+    "../../b.png",
+    "../../c.png",
+    "../../d.png"
+  ],
+  "priority": "Selected unchanged front defines silhouette and A-pose. Corrected rear and 3/4 explain same body; reconcile all views on common geometry before multi-view generation. Draft rear repeats anterior surfaces and is rejected.",
+  "equipment": {
+    "required": [
+      "shield C «Плечо»",
+      "automatic shotgun"
+    ],
+    "selectedShield": "C",
+    "shapeReference": "../../equipment/round-1/c.png",
+    "materials": "../../equipment/round-1/materials/round-1/gallery.html",
+    "status": "Shield shape C and material A selected; separate shield/shotgun inputs and rear mounting not ready",
+    "selectedMaterial": "A «Графит и керамика»",
+    "appearanceReference": "../../equipment/round-1/materials/round-1/a.png"
+  },
+  "scope": "Artistic reference package, not a finished mesh, rig, verified joint range or animation set",
+  "lights": "OFF"
+}
