@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-29",
+  "tool": "built-in imagegen",
+  "status": "two illustrated proposals, none selected",
+  "variants": [
+    {
+      "id": "a",
+      "name": "A «Погон»",
+      "description": "Низкий открытый погон, компактная люлька и короткие вертикальные опоры. Лучше отделяется от танка в развёрнутом состоянии. На боковом кадре поворот меньше запрошенной четверти круга, угол возвышения меняется; точный вид сбоку и кинематика требуют уточнения.",
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-8534172d-aa51-4f1b-9412-1cd550dddf84.png",
+      "prompt": "Use case: stylized-concept. Asset: fictional RTS human-faction self-propelled HOWITZER design exploration A, not selected, visual concept only. Reference image 1 is the approved human tank: borrow ONLY hard angular faction panel language/material quality, NOT tank turret silhouette or hull proportions. Create a clean high resolution 2x2 concept sheet, four equally sized spacious panels on neutral warm gray studio background, no text. All panels SAME vehicle, SAME elevated front-left camera, SAME stationary hull orientation with hull nose facing lower-left, SAME paint layout and track design. TOP LEFT: travel state, supports folded, cannon lowered forward in cradle. TOP RIGHT: deployed, four short corner outriggers extended onto ground, gun raised and aimed forward. BOTTOM LEFT: identical deployed hull and fixed outriggers, ONLY upper gun group rotated 90 degrees aiming over vehicle's left side. BOTTOM RIGHT: identical deployed hull and fixed outriggers, ONLY upper gun group rotated 180 degrees aiming rearward. Hull must NEVER rotate between panels. Design A: squat broad tracked chassis with two continuous tracks and a flat unobstructed deck, NO tall cabin, exposed central dark cylindrical turntable bearing under a compact open faceted U-shaped artillery cradle, stout single elevated barrel and compact rectangular breech/counterweight moving together above the ring. Gun group raised enough above low deck to read plausible full-circle clearance, underside clean, no hull-attached braces crossing turntable. Low folded travel silhouette versus clear open raised artillery silhouette in deployed panels. Hard planar sand armor on chassis, dark graphite cradle and barrel, contrasting warm off-white breech cover, small restrained orange service accents, steel track surfaces. Avoid bloated shapes, tank-like wide cheek turret, rockets, second guns, crew, shells, explosions, effects, logos, dimensions, technical construction diagrams. One design repeated consistently in four states, full silhouettes uncropped, generous separation between panels. Visually show 360-degree aiming concept, not engineering proof.",
+      "status": "proposal, not selected",
+      "reference": "../human-tank-directions/round-2/modeling/hero-neutral.png"
+    },
+    {
+      "id": "c",
+      "name": "C «Подъёмник»",
+      "description": "Поднятая над палубой платформа и широкие наклонные опоры. В походном состоянии слишком близка к танку; нижние кадры не дают уверенного различия строго бокового и заднего направления. Подъёмный механизм и опоры — предложения, не утверждённая конструкция.",
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-32d68f69-57f7-405c-9ea6-7fcc31008ab4.png",
+      "prompt": "Use case: stylized-concept. Asset: fictional science-fiction RTS human howitzer visual concept C, candidate not selected. Reference image 1 provides faction palette and hard faceted styling only. Create a spacious 2x2 studio concept sheet, warm gray background, no labels/text. Same vehicle and identical elevated front-left camera in all panels, chassis remains fixed with nose lower-left, rear upper-right. TOP LEFT travel: central upper artillery platform lowered, barrel horizontal pointing forward, outriggers stowed flush along hull sides. TOP RIGHT deployed forward: a short squat central lift pedestal raises the circular rotating upper platform visibly above low deck, gun elevated, four broad oblique outriggers splayed out to ground at chassis corners. BOTTOM LEFT deployed SIDE: fixed hull nose still lower-left, only circular upper artillery platform swivels a quarter turn with elevated barrel projecting across the visible flank toward lower-right, clearly different from forward aim. BOTTOM RIGHT deployed BACK: same fixed hull nose lower-left, upper platform swivels half turn and elevated barrel points upper-right over rear deck. Exactly one vehicle design repeated in four states. C silhouette: shorter, broad industrial tracked chassis with clipped angular corners and low unobstructed deck, central squat graphite pedestal and small circular traverse ring carrying compact open artillery carriage, pale angular structural side cheeks around rear breech, elevated single barrel and a distinct squared rear counterweight. Strong separation between fixed lifting pedestal and rotating upper carriage; no cables/braces tying rotating group to outriggers. Unlike tank, open air below the gun carriage and broad splayed deployment stance. Hull stays supported on tracks, no walking legs, no hovering, no tall front cabin, no extra guns. Sand chassis, graphite working structure and barrel, warm off-white side covers, restrained orange details, steel tracks and modest wear. Angular hard surfaces, no bulbous forms, no people, ammunition display, blast or effects, no construction specifications. Visual shape exploration only; states are concept sketches not mechanical validation.",
+      "status": "proposal, not selected",
+      "reference": "../human-tank-directions/round-2/modeling/hero-neutral.png"
+    }
+  ],
+  "notGenerated": [
+    {
+      "id": "b",
+      "name": "B «Закрытая башня»",
+      "status": "input rejected by tool safety system; no image produced",
+      "category": "violence",
+      "requestId": "dd6310d2-6956-4cf2-a5c3-f46b55b1258a",
+      "description": "Closed taller narrower artillery turret with contrasting pale upper housing. No retry or fallback performed."
+    }
+  ],
+  "caution": "Panels are artistic state studies, not renders of shared geometry. Intended quarter-turns were not reproduced exactly; do not claim full-circle clearance verified."
+}

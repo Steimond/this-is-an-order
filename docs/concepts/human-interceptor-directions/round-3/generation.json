@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-30",
+  "tool": "built-in imagegen",
+  "status": "single central fan and nozzle revision for review; armament remains proposal",
+  "views": {
+    "nozzle-back": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-05a45db2-7e73-4a31-8a13-4064f6b17791.png",
+      "prompt": "Use case: precise-object-edit. Edit reference fictional RTS interceptor D Serp. Preserve its nose, canopy, forward-swept main wings, identical single sickle wingtips curved toward cabin, twin tail FINS, sand/graphite orange materials, two provisional underwing missiles, camera and warm gray background. Change ONLY propulsion layout to ONE centerline lift fan and ONE centerline rear engine/nozzle. Remove BOTH small shoulder lift fans and replace those spaces with continuous matching armor. Install ONE LARGE circular lift turbine embedded in the CENTRAL dorsal fuselage immediately behind canopy, on symmetry axis, dark fan blades visible in open round well; integral to body not a protruding pod. Remove BOTH separated aft engine tubes/nozzles. Rebuild aft central hull as ONE integrated engine tapering to ONE dark round rear exhaust exactly on centerline between tail fins. Rear nozzle currently points straight BACK horizontally; show articulated ring joints enabling later downward rotation but keep rearward now. No second engine/nozzle/fan. Preserve D wing silhouette, do not copy any real aircraft external appearance. All object uncropped, neutral suspended studio, no flames/glow/text/diagrams."
+    },
+    "nozzle-down": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-700aa4f8-0e2c-4a3d-a0dc-33fd90681209.png",
+      "prompt": "Use case: precise-object-edit. Preserve reference image EXACTLY: entire fighter, camera, wings, single forward sickle wingtips, centerline large open lift fan, body, twin tail FINS, missiles, colors and background. Change ONLY ONE rear centerline exhaust nozzle: rotate articulated end DOWNWARD through a right angle, showing a compact curved elbow and mouth facing GROUND for hover. Retain ONE engine and ONE nozzle, not two; collar at same rear centerline point. Do not deform tail fins or add parts elsewhere. Fan remains open same position. No flame/glow/text."
+    },
+    "rear-guide": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-07063524-8648-48f6-b6ae-effd1d7faae1.png",
+      "prompt": "Use case: precise-object-edit. Reference is authoritative updated fictional fighter: ONE large central embedded lift fan behind cockpit and ONE rear centerline articulated nozzle, twin tail FINS, forward-swept wings with single mirrored sickle ends curling toward cockpit, sand graphite orange and two underwing missiles. Change camera to REAR LEFT THREE QUARTER at low enough angle to clearly see ONE rear centerline nozzle elbow bent DOWN, mouth toward ground. Show only ONE large engine on symmetry axis, no lateral extra engines or lift fans. Preserve all design features, no redesign. Fan stays open, hovering neutral above gray studio ground, no flame/effects/glow/text, whole aircraft uncropped. Nozzle back is a rounded curved elbow continuous from rear engine; outlet on bottom, not rear facing."
+    }
+  }
+}

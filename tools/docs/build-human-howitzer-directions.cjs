@@ -1,0 +1,17 @@
+const fs=require('node:fs'),path=require('node:path'),{createRequire}=require('node:module');
+const sharp=createRequire(path.join(path.dirname(process.execPath),'../node_modules/package.json'))('sharp');
+const dir=path.resolve(__dirname,'../../docs/concepts/human-howitzer-directions');
+const data=JSON.parse(fs.readFileSync(path.join(dir,'generation.json'),'utf8'));
+const esc=s=>s.replaceAll('&','&amp;').replaceAll('<','&lt;');
+(async()=>{
+ const layers=[];
+ for(let i=0;i<data.variants.length;i++){
+  const v=data.variants[i];fs.copyFileSync(v.source,path.join(dir,v.id+'.png'));fs.writeFileSync(path.join(dir,v.id+'.prompt.md'),v.prompt+'\n');
+  layers.push({input:Buffer.from(`<svg width="1536" height="60"><text x="20" y="40" font-family="Arial" font-size="28" fill="#efba78">${esc(v.name)} · ВАРИАНТ ДЛЯ ОБСУЖДЕНИЯ</text></svg>`),left:0,top:i*1084});
+  layers.push({input:await sharp(path.join(dir,v.id+'.png')).resize(1536,1024,{fit:'contain',background:'#20282e'}).png().toBuffer(),left:0,top:i*1084+60});
+ }
+ await sharp({create:{width:1536,height:2168,channels:3,background:'#20282e'}}).composite(layers).png().toFile(path.join(dir,'overview.png'));
+ const css='body{margin:0;background:#182027;color:#e4e6e7;font:16px/1.6 system-ui}header,main{max-width:1440px;margin:auto;padding:24px}a{color:#efba78}nav{display:flex;gap:20px;flex-wrap:wrap}article{background:#25313a;padding:20px;margin:28px 0;border-radius:12px}img{display:block;width:100%;height:auto}.note{padding:16px;border-left:4px solid #efba78;background:#25313a}h1,h2{line-height:1.25}';
+ fs.writeFileSync(path.join(dir,'gallery.html'),`<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Гаубица людей · варианты A и C</title><style>${css}</style><header><h1>Гаубица людей · выбор компоновки</h1><p>29 октября 2026. Два новых предложения с учётом кругового наведения. Ни одно не выбрано. Прежний предварительный эскиз остаётся историей.</p><nav><a href="#a">A · Погон</a><a href="#c">C · Подъёмник</a><a href="overview.png">Общий лист</a><a href="README.md">Механика и статус</a><a href="../human-tank-directions/round-2/modeling/gallery.html">Выбранный танк</a><a href="../../PROJECT.html#art">Дизайн</a></nav><p>На каждом листе: сверху слева — походное состояние; сверху справа — развёрнутое орудие вперёд; снизу — попытка показать поворот вбок и назад при неподвижном корпусе. Нижние кадры не воспроизводят точные четверть/пол-оборота: сравниваем характер силуэта и устройство верхней группы.</p><p class="note"><strong>Требование автора: наведение и стрельба 360° в развёрнутом состоянии.</strong> Рисунки не подтверждают полный круг и зазоры. После выбора нужна единая геометрия, проверка люльки/ствола/отдачи над корпусом и опорами, обратное складывание. Число опор, подъёмник и погон пока не утверждены.</p></header><main>${data.variants.map(v=>`<article id="${v.id}"><h2>${v.name}</h2><a href="${v.id}.png"><img src="${v.id}.png" alt="Гаубица ${v.name}: художественные варианты состояний" loading="lazy"></a><p>${v.description}</p></article>`).join('')}<article><h2>B · закрытая башня · изображения нет</h2><p>Запрос отклонён фильтром генератора с категорией violence. Вариант не создан; буквы сохранены, чтобы не смешивать историю запросов с готовыми изображениями.</p></article></main></html>`);
+ console.log('Built howitzer A/C proposals, gallery, overview and exact generated prompts. No selection made.');
+})().catch(e=>{console.error(e);process.exitCode=1;});

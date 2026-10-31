@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-29",
+  "approvedDesign": "human-howitzer C Стрела round-2",
+  "inputs": [
+    "deployed.png"
+  ],
+  "supportingStates": [
+    "travel.png"
+  ],
+  "exclude": [
+    "states-sheet.png",
+    "../overview.png",
+    "model-sheet.png"
+  ],
+  "priority": "Deployed is exact selected C and primary single-image input. Travel is accepted artistic folding reference. Other elevations are manual construction aids, not exact projections of a common mesh. Do not mix states as camera views.",
+  "required": "Retract barrel into housing up to muzzle brake in travel; extend on deployment with ground supports; full 360-degree deployed aiming/firing.",
+  "pending": [
+    "shared geometry",
+    "full-circle clearance",
+    "rig and animation set",
+    "Unity verification"
+  ],
+  "supportingViews": [
+    "front.png",
+    "side.png",
+    "rear.png",
+    "top.png"
+  ],
+  "referenceStatus": "Six reference images and overview prepared. Reconcile stance/proportions/panel joints; hidden rear/roof details are constructive proposals, not separately approved."
+}

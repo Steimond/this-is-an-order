@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-29",
+  "tool": "built-in imagegen",
+  "views": {
+    "front": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-3bbc4cc2-42fe-4154-9104-45a56cfbc3bd.png",
+      "prompt": "Use case: precise-object-edit. Asset: game vehicle modeling reference. Input image 1 is the authoritative selected tank, not a style example. Show the EXACT SAME tank in a straight FRONT elevation, camera level on its longitudinal center axis, orthographic-like with no perspective convergence. Whole vehicle centered and uncropped on plain warm gray studio backdrop. Turret aligned forward, gun level pointing directly toward camera and foreshortened, hatches closed, lights off. Preserve the low wide angular sand hull, two continuous tracks, dark lower nose central rectangular plate and two towing loops, orange small fender patches, central angular turret with broad flat roof and prominent faceted sand cheeks, deep graphite mantlet, dark cannon with sand collars and slotted dark muzzle plus small orange ring. Preserve relative width/height and original heavy hard-edged silhouette. Do not inflate rounded forms, move turret rearward, add cupola, extra weapons or mechanical features. Same sand, graphite, pale service panels, steel and subtle local wear. Neutral construction reference, no effects, no text, no diagram, one view only.",
+      "reference": "hero-neutral.png",
+      "file": "front.png"
+    },
+    "side": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-ad34e0d4-6c2f-4880-b0e7-b99f8c281003.png",
+      "prompt": "Use case: precise-object-edit. Asset: game vehicle modeling reference. Input image 1 is the authoritative selected tank. Change ONLY camera to a complete true LEFT SIDE elevation, vehicle front and cannon pointing LEFT, camera level perpendicular to hull, orthographic-like no perspective convergence. Whole vehicle including muzzle and both ends of track in frame with margin, plain warm gray backdrop. Preserve SAME relative hull length/height, central turret position and dimensions, low angular sand hull with graphite lower side skirts, pale rear service panels, continuous track and exposed lower road wheels matching reference. Turret has broad flat low roof, angular bulky sand cheek at front, dark graphite mantlet, pale rear service panel and rear grille; no round cupola. Exactly one long level dark cannon with sand collar midway and near mantlet, orange ring by the aggressive faceted dark muzzle brake with side slots, identical to reference. All hatches closed lights off. Keep hard flat plates, subtle wear, small orange accents. No extra weapons or attachments, no rounded inflatable armor, no rear-mounted turret, no effects, no text, one side view only.",
+      "reference": "hero-neutral.png",
+      "file": "side.png"
+    },
+    "rear": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-8c132382-58de-4866-9460-6b328ad18a71.png",
+      "prompt": "Use case: precise-object-edit. Asset: game vehicle modeling reference. Image 1 is the authoritative selected tank. Show this SAME vehicle from directly BEHIND, level camera centered on longitudinal axis, orthographic-like straight rear elevation, whole vehicle uncropped on warm gray studio background. Hull and turret stay aligned forward away from viewer, cannon points away and is occluded by turret; do NOT turn turret back towards viewer. Preserve low wide angular sand hull, central angular flat-roof turret with pale side service panels, small orange corner accents and graphite structural zones, two continuous dark steel tracks of original width and height. Construct previously hidden rear surfaces conservatively from existing panel language: restrained faceted rear turret bustle with service panels and recessed grille, hull rear with recessed dark cooling grille, closed sand service plates, two low tow points. Rear is recognizably maintenance/engine side, not a mirror of sloped front/mantlet. No new weapon, tanks, large exhaust stacks, racks, dozer blade, rear cannon or extra machinery. Hatches closed, lights off, subtle local wear, no text, no effects, one rear view only. Keep original proportions and hard angular armor; no inflated rounded form.",
+      "reference": "hero-neutral.png",
+      "file": "rear.png"
+    },
+    "top": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-f33c298d-d957-434b-9c2a-316d7804284c.png",
+      "prompt": "Use case: precise-object-edit. Asset: game vehicle modeling reference. Image 1 is authoritative selected tank. Change camera ONLY to true TOP DOWN overhead plan, orthographic-like no perspective convergence, all vertical surfaces foreshortened, vehicle nose and cannon point UP the image. Whole vehicle including muzzle uncropped with margin on warm gray neutral studio ground. Preserve same low angular sand hull footprint, TWO continuous tracks under parallel side skirts, turret centered laterally on original central ring, broad angular sand turret cheeks flanking deep graphite mantlet, flat roof with existing closed flush hatches and small optics, faceted rear bustle with pale service panels. ONE cannon on centerline straight forward with dark tube, sand collar midway and at mantlet, small orange ring immediately behind dark slotted angular muzzle brake matching reference. Roof layout must read coherent simple flat armor assemblies derived from the reference, forward hull sloping glacis ahead of turret and engine service deck behind. Preserve sand/graphite/pale service panels/steel/small orange accents, subtle wear. No new weapons, spare barrels, external racks, cupolas, large round hatches, rounded inflatable armor, rear mounted turret or extra tracks. Hatches closed lights off, no effects, no text, single overhead view.",
+      "reference": "hero-neutral.png",
+      "file": "top.png"
+    }
+  }
+}

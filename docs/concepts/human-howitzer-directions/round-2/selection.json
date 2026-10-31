@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-29",
+  "selected": "c",
+  "name": "Стрела",
+  "round": 2,
+  "reference": "c.png",
+  "deployment": "Ground stabilizers deploy; barrel extends to selected image length. In travel barrel retracts inside outer housing up to muzzle brake.",
+  "aiming": "360-degree aiming and firing while deployed, fixed hull and supports",
+  "travelReference": "modeling/travel.png",
+  "status": "Selected deployed appearance; travel derived reference prepared; common mesh, animations and clearance verification pending"
+}

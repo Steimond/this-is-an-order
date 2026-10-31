@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-29",
+  "approvedDesign": "human mobile AA E Плечо",
+  "inputs": [
+    "hero-neutral.png"
+  ],
+  "supportingViews": [
+    "front.png",
+    "side.png",
+    "top.png"
+  ],
+  "missing": [
+    "rear.png"
+  ],
+  "exclude": [
+    "model-sheet.png",
+    "drafts/",
+    "../overview.png"
+  ],
+  "priority": "Neutral hero defines selected shape; additional artistic views need reconciliation on common mesh. Preserve six wheels and asymmetric sides. Rear reference blocked by tool safety filter; pack incomplete.",
+  "sides": "Vehicle right: single twin-container cassette; vehicle left: sensor/service box. Do not mirror.",
+  "pending": [
+    "rear reference",
+    "shared geometry and clearances",
+    "projectile rules",
+    "rig and animations",
+    "Unity verification"
+  ]
+}

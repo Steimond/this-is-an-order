@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-30",
+  "tool": "built-in imagegen",
+  "title": "Робо-пёс G «Блок» · боковой гранатомёт",
+  "views": {
+    "hero-neutral": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-91a1f1d4-0d74-427b-b916-ca471ef08c64.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is selected G Block fictional human-faction robot dog. Preserve EXACT body, head, FOUR legs, feet stance, joints, materials, proportions, camera, plain warm gray background and lighting. Change ONLY smoke-grenade projector position/orientation: completely REMOVE the existing forward-facing projector and mount from top of back, close its former mount with a matching plain low service plate. Put ONE same compact short projector on the VISIBLE LEFT FLANK of the dog, attached close to upper side of torso between shoulder and hip, above leg movement space. Its SHORT tube is angled STEEPLY UPWARD about 65 degrees above ground, muzzle clearly pointing toward sky, not horizontally forwards. Place low enough that attachment visibly belongs to SIDE, not perched on spine. Keep compact pale faceted housing, dark short muzzle and small orange paint. Fixed close mounting, no large turret, no extra projector, no long cannon. Leave head/neck and all four legs unobstructed; do not change dog silhouette or add tail/ears. Neutral inactive, no smoke, glow, EMP, explosion, text or technical diagrams. One complete uncropped vehicle."
+    },
+    "front": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-b9ba39c6-a2a3-454a-aaa6-a21c98fcd861.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is authoritative selected G Block fictional human robot dog AFTER projector relocation. Change ONLY camera; preserve EXACT squat rectangular sand/graphite body, short faceted forward sensor head/neck, FOUR legs and neutral foot stance, broad toes, no tail, low back service cover. ONE compact smoke projector fixed on VEHICLE LEFT upper FLANK (not spine), muzzle tilted steeply skyward at SAME angle as reference, no original top projector remains. Same closed cool materials, unlit optics, small orange paint, no smoke/EMP/explosion/glow/text, warm gray studio background. Whole object uncropped with margin, orthographic-like view, not a redesign. Do not add ears, tail, launcher, cables or extra legs. Camera directly FRONT, level and centered on dog's longitudinal axis. Projector on dog's LEFT appears viewer RIGHT, angled upward, its side bracket visible over/behind left shoulder without occluding head. Both front legs visible, rear legs naturally behind them; keep four total, not six. Same ground level and body width-height proportions."
+    },
+    "side": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-4709db59-f5dc-49f1-90b2-b4880c9f7324.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is authoritative selected G Block fictional human robot dog AFTER projector relocation. Change ONLY camera; preserve EXACT squat rectangular sand/graphite body, short faceted forward sensor head/neck, FOUR legs and neutral foot stance, broad toes, no tail, low back service cover. ONE compact smoke projector fixed on VEHICLE LEFT upper FLANK (not spine), muzzle tilted steeply skyward at SAME angle as reference, no original top projector remains. Same closed cool materials, unlit optics, small orange paint, no smoke/EMP/explosion/glow/text, warm gray studio background. Whole object uncropped with margin, orthographic-like view, not a redesign. Do not add ears, tail, launcher, cables or extra legs. Camera exact LEFT SIDE elevation, dog facing LEFT, level perpendicular to torso, not three-quarter. Left flank is NEAR camera: clearly show the single short projector attached to SIDE of torso between shoulder and hip, angled steeply skyward as reference, not placed on top and not facing horizontally forward. Preserve original body length, same leg placement (far legs naturally overlap), head/neck and squat no-tail silhouette. Near legs do not hide the flank mounting."
+    },
+    "rear": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-6cc04203-3133-4568-b1ec-b7ff37e2df08.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is authoritative selected G Block fictional human robot dog AFTER projector relocation. Change ONLY camera; preserve EXACT squat rectangular sand/graphite body, short faceted forward sensor head/neck, FOUR legs and neutral foot stance, broad toes, no tail, low back service cover. ONE compact smoke projector fixed on VEHICLE LEFT upper FLANK (not spine), muzzle tilted steeply skyward at SAME angle as reference, no original top projector remains. Same closed cool materials, unlit optics, small orange paint, no smoke/EMP/explosion/glow/text, warm gray studio background. Whole object uncropped with margin, orthographic-like view, not a redesign. Do not add ears, tail, launcher, cables or extra legs. Camera directly REAR centered on longitudinal axis, head still points FORWARD away from viewer. Projector on dog's LEFT appears viewer LEFT, still steeply skyward. Show rear service panels conservatively derived from same sand/graphite body, no tail, no new head/optics on rear. FOUR total legs naturally overlap by perspective. Maintain compact torso, hip joints and foot stance. No front chest plate copied to rear or new exposed inner mechanism."
+    },
+    "top": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-cc475556-f72f-4f4e-9159-d4d6b364f558.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is authoritative selected G Block fictional human robot dog AFTER projector relocation. Change ONLY camera; preserve EXACT squat rectangular sand/graphite body, short faceted forward sensor head/neck, FOUR legs and neutral foot stance, broad toes, no tail, low back service cover. ONE compact smoke projector fixed on VEHICLE LEFT upper FLANK (not spine), muzzle tilted steeply skyward at SAME angle as reference, no original top projector remains. Same closed cool materials, unlit optics, small orange paint, no smoke/EMP/explosion/glow/text, warm gray studio background. Whole object uncropped with margin, orthographic-like view, not a redesign. Do not add ears, tail, launcher, cables or extra legs. Camera true TOP DOWN overhead plan, nose/head points UP image. Keep all FOUR feet and legs visible in original neutral stance, no extra limbs. One short skyward projector attached on dog's LEFT FLANK appears image LEFT, NOT on spine and not a second weapon. Correct overhead sensor orientation: head faces forward toward top of image, sensor lenses on vertical front face, plain sand top head cover visible, no upward-facing eyes. Roof low matching service panels, no new gear, total silhouette uncropped with margin."
+    }
+  },
+  "objects": {
+    "dog": {
+      "inputs": [
+        "hero-neutral.png"
+      ],
+      "supportingViews": [
+        "front.png",
+        "side.png",
+        "rear.png",
+        "top.png"
+      ]
+    }
+  },
+  "note": "Основной G с перенесённым боковым гранатомётом задаёт форму. Четыре ноги, нейтральная опорная стойка. Дополнительные виды художественные: суставы, пропорции и стыки свести на одной модели. Угол и крепление не являются проверенной кинематикой.",
+  "exclude": [
+    "../g.png",
+    "../overview.png",
+    "model-sheet.png"
+  ]
+}

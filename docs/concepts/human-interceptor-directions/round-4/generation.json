@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-30",
+  "tool": "built-in imagegen",
+  "status": "sharp wingtip revision for user review",
+  "views": {
+    "nozzle-back": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-8cdf0126-5021-46e4-a4d5-ca78ea7b0da5.png",
+      "prompt": "Use case: precise-object-edit. Edit ONLY both rounded hooked wingtips of the reference fictional aircraft. Preserve ALL other pixels/design: wings sweep and span, fuselage, ONE central large lift turbine, ONE rearward nozzle, twin fins, missiles, paint, camera and background. Replace smooth rounded C-like hook at EACH wingtip with a sharp angular faceted single forward-INWARD pointing sickle. Mirror-symmetric geometry: straight outer edge, one hard chamfered diagonal turn, straight inner cutout edge, long narrow triangular POINT pointing toward cockpit/nose. Like a polygonal hooked blade made of straight segments, NOT smooth circular crescents, NOT swollen rounded tips, NOT forked prongs. Both tips stay flat in wing plane and identical reflected shapes; no vertical winglets. Crisp severe industrial hard-surface design, sand top/orange small marking/graphite sharp inside bevel consistent existing wing. Keep total size restrained and all object uncropped. No other changes or text."
+    },
+    "nozzle-down": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-d252df8e-5c53-436f-9891-814524e4651a.png",
+      "prompt": "Use case: precise-object-edit. Keep reference image EXACT including new sharp angular polygonal wingtips, ONE central fan, wings/body/twin fins, missiles, camera and paint. Change ONLY ONE rear centerline nozzle from pointing backward to bent DOWN 90 degrees via articulated elbow, mouth facing ground for hover. Do not alter any other shape. No extra engines, fans, effects, text."
+    }
+  }
+}

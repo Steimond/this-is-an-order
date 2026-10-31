@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-30",
+  "approvedDesign": "Робо-пёс G «Блок» · боковой гранатомёт",
+  "objects": {
+    "dog": {
+      "inputs": [
+        "hero-neutral.png"
+      ],
+      "supportingViews": [
+        "front.png",
+        "side.png",
+        "rear.png",
+        "top.png"
+      ]
+    }
+  },
+  "exclude": [
+    "../g.png",
+    "../overview.png",
+    "model-sheet.png",
+    "history-before-forward-correction/"
+  ],
+  "priority": "Гранатомёт на левом боку, ствол направлен ВПЕРЁД к голове с наклоном вверх, вдоль корпуса, без разворота наружу. Основной вид задаёт форму; ракурсы художественные, свести на одной сетке. Точный угол не утверждён числом. Четыре ноги, нейтральная стойка.",
+  "pending": [
+    "shared geometry",
+    "scale and contact checks",
+    "UV and owner masks",
+    "rig and full animation set",
+    "Unity verification"
+  ]
+}

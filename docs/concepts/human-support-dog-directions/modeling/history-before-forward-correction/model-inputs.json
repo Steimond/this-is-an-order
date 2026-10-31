@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-30",
+  "approvedDesign": "Робо-пёс G «Блок» · боковой гранатомёт",
+  "objects": {
+    "dog": {
+      "inputs": [
+        "hero-neutral.png"
+      ],
+      "supportingViews": [
+        "front.png",
+        "side.png",
+        "rear.png",
+        "top.png"
+      ]
+    }
+  },
+  "exclude": [
+    "../g.png",
+    "../overview.png",
+    "model-sheet.png"
+  ],
+  "priority": "Основной G с перенесённым боковым гранатомётом задаёт форму. Четыре ноги, нейтральная опорная стойка. Дополнительные виды художественные: суставы, пропорции и стыки свести на одной модели. Угол и крепление не являются проверенной кинематикой.",
+  "pending": [
+    "shared geometry",
+    "scale and contact checks",
+    "UV and owner masks",
+    "rig and full animation set",
+    "Unity verification"
+  ]
+}

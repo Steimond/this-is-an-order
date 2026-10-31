@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-29",
+  "approvedDesign": "human-tank A «Скоба», round-2, barrel appearance from D",
+  "inputs": [
+    "hero-neutral.png"
+  ],
+  "referencesOnly": {
+    "originalBody": "../a.png",
+    "barrelOnly": "../d.png"
+  },
+  "exclude": [
+    "../overview.png",
+    "../howitzer-preview.png",
+    "../b.png",
+    "../c.png",
+    "../d.png",
+    "model-sheet.png"
+  ],
+  "priority": "Final hero defines selected A hull/turret and D barrel. Do not use whole D as alternate tank design or mix original A barrel into final views.",
+  "scope": "Five artistic references prepared. Hero is authoritative; supplementary elevations are not exact projections from a shared mesh. Hidden rear/roof details proposed, not separately approved. Common mesh, rig and animations pending.",
+  "howitzer": "Not selected; must support 360-degree aiming/firing in deployed state; preview does not verify this",
+  "supportingViews": [
+    "front.png",
+    "side.png",
+    "rear.png",
+    "top.png"
+  ],
+  "multiViewCaution": "Default single-image input: hero-neutral.png. Use supplementary views for manual construction; reconcile panel layout, proportions and running gear in one mesh before automated multi-view input."
+}

@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-29",
+  "tool": "built-in imagegen",
+  "reference": "../e.png",
+  "views": {
+    "hero-neutral": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-d5aba81a-093b-49a8-b8f5-dea6fe194c3e.png",
+      "prompt": "Use case: precise-object-edit. Input image 1 is the selected E Shoulder fictional RTS six-wheeled mobile anti-air vehicle. Make only ONE very small change: turn OFF the two bright white front headlights; glass should be dark non-emissive with subtle studio reflections. Keep all pixels and design as close as possible: exact camera, dimensions, SIX wheels three per side, ONE offset elevated closed two-container cassette, opposite sensor head and rectangular side service enclosure, low auxiliary machine gun, original sand/ivory/graphite panels, orange accents and wear. Do not mirror or relocate the asymmetric upper assembly, add matching launcher, reshape hull, change pose, open container covers or modify weapons. Neutral model input, no text, no effects, complete vehicle and same warm gray backdrop.",
+      "status": "prepared artistic reference"
+    },
+    "front": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-392603c7-ad7a-429c-b056-bafbcbb23aad.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is authoritative selected E Shoulder fictional RTS mobile anti-air vehicle, not a style example. Change ONLY camera. Preserve EXACT SIX rubber-tired wheels, three per side, low angular sand hull, ONE asymmetric elevated closed double-container launcher cassette on VEHICLE RIGHT (viewer LEFT in front view), sensor head and large rectangular service enclosure on VEHICLE LEFT (viewer RIGHT in front view), graphite low turret on central ring and small auxiliary hull machine gun. Do NOT mirror, swap sides, add second launcher, make a symmetrical turret, change wheel count, add tracks or support legs. Turret aligned forward, cassette same moderate elevation as reference. Hatches and container covers closed, ALL lights off, no effects/text. Same sand/ivory/graphite materials and restrained orange. Neutral warm gray studio background, orthographic-like elevation, entire silhouette uncropped with margin. Camera directly FRONT on vehicle centerline. Level front elevation. The single double-container cassette occupies viewer LEFT above hull, sensor/service box viewer RIGHT; preserve asymmetry explicitly. Six wheels naturally overlap in front view, do not spread them laterally.",
+      "status": "prepared artistic reference"
+    },
+    "side": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-84e6e3c1-49a1-4f5a-a41a-f82a4a0b6595.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is authoritative selected E Shoulder fictional RTS mobile anti-air vehicle, not a style example. Change ONLY camera. Preserve EXACT SIX rubber-tired wheels, three per side, low angular sand hull, ONE asymmetric elevated closed double-container launcher cassette on VEHICLE RIGHT (viewer LEFT in front view), sensor head and large rectangular service enclosure on VEHICLE LEFT (viewer RIGHT in front view), graphite low turret on central ring and small auxiliary hull machine gun. Do NOT mirror, swap sides, add second launcher, make a symmetrical turret, change wheel count, add tracks or support legs. Turret aligned forward, cassette same moderate elevation as reference. Hatches and container covers closed, ALL lights off, no effects/text. Same sand/ivory/graphite materials and restrained orange. Neutral warm gray studio background, orthographic-like elevation, entire silhouette uncropped with margin. Camera directly VEHICLE LEFT side, front LEFT rear RIGHT, camera perpendicular to hull. Exact level side elevation, no three-quarter. Show THREE wheels on near side. Sensor head and service enclosure are NEAR camera; launcher is on FAR side, partly occluded naturally, but do not move it to near side for visibility. Preserve same wheelbase/low hull length, angled launcher and compact sensor. No new vents beyond conservative reference continuation.",
+      "status": "prepared artistic reference"
+    },
+    "top": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-ab9d1c9e-95ee-42a9-9230-9e5d9cc36446.png",
+      "prompt": "Use case: precise-object-edit. Edit this overhead game-vehicle reference with ONE correction: the small sensor head at image LEFT of center is incorrectly showing its front optical lenses to the overhead camera, as though looking upward. Rotate ONLY that sensor head into forward-looking pose, facing toward the vehicle nose at TOP of image. From the overhead camera show the sensor's plain dark faceted TOP cover with NO visible optical apertures on its top surface; lenses lie on its front vertical face facing top of image and are naturally occluded. Preserve sensor location, size, neck and body. Keep EVERYTHING ELSE unchanged: true top camera, six wheels, single twin closed cassette on image right, asymmetry, chassis, colors, panels and existing pose. No text, no new parts, no effects.",
+      "status": "prepared artistic reference"
+    },
+    "top-before-repair": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-948ee726-3776-4f74-ac01-831affc0c78d.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is authoritative selected E Shoulder fictional RTS mobile anti-air vehicle, not a style example. Change ONLY camera. Preserve EXACT SIX rubber-tired wheels, three per side, low angular sand hull, ONE asymmetric elevated closed double-container launcher cassette on VEHICLE RIGHT (viewer LEFT in front view), sensor head and large rectangular service enclosure on VEHICLE LEFT (viewer RIGHT in front view), graphite low turret on central ring and small auxiliary hull machine gun. Do NOT mirror, swap sides, add second launcher, make a symmetrical turret, change wheel count, add tracks or support legs. Turret aligned forward, cassette same moderate elevation as reference. Hatches and container covers closed, ALL lights off, no effects/text. Same sand/ivory/graphite materials and restrained orange. Neutral warm gray studio background, orthographic-like elevation, entire silhouette uncropped with margin. Camera true TOP DOWN overhead plan, nose points UP image. Maintain one forward-oriented upper assembly. Since nose points up, VEHICLE RIGHT is image RIGHT: the single double-container cassette must be on image RIGHT, sensor and service enclosure image LEFT. Preserve SIX wheels three per side, identical wheelbase and spacing from selected hero. Launcher retains same elevation, projection naturally shortened. Derive roof panels conservatively from hero, no extra hatches, pods or duplicates. All six tires naturally visible outside fenders, one low auxiliary gun pointing forward on hull roof. No perspective three-quarter.",
+      "status": "excluded draft"
+    }
+  },
+  "missing": [
+    {
+      "view": "rear",
+      "status": "input rejected by tool safety system; no rear image",
+      "category": "violence",
+      "requestId": "44cd5c1b-33c7-4d8c-9b4a-45264fd4d8d4"
+    }
+  ]
+}

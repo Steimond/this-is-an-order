@@ -1,0 +1,1 @@
+Use case: precise-object-edit. Keep reference image EXACT including new sharp angular polygonal wingtips, ONE central fan, wings/body/twin fins, missiles, camera and paint. Change ONLY ONE rear centerline nozzle from pointing backward to bent DOWN 90 degrees via articulated elbow, mouth facing ground for hover. Do not alter any other shape. No extra engines, fans, effects, text.

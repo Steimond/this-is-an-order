@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-30",
+  "approvedDesign": "Снайпер C «Капюшон»",
+  "objects": {
+    "body": {
+      "inputs": [
+        "body-front.png"
+      ],
+      "supportingViews": [
+        "body-rear.png"
+      ],
+      "manualGuideOnly": [
+        "body-side.png"
+      ]
+    },
+    "weapon": {
+      "inputs": [
+        "rifle.png"
+      ]
+    }
+  },
+  "exclude": [
+    "../c.png",
+    "../overview.png",
+    "model-sheet.png"
+  ],
+  "priority": "Тело в A-позе и винтовка отдельно. Боковой вид только вспомогательный: положение рук свести по фронту. Скрытые детали рюкзака предложены конструктивно. Масштаб/хват и единая сетка ещё не проверены.",
+  "pending": [
+    "shared geometry",
+    "scale and contact checks",
+    "UV and owner masks",
+    "rig and full animation set",
+    "Unity verification"
+  ]
+}

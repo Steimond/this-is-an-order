@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-30",
+  "tool": "built-in imagegen",
+  "title": "Робо-пёс G «Блок» · боковой гранатомёт",
+  "views": {
+    "hero-neutral": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-dac155bb-92e5-412c-8307-a3bec4f3f4a2.png",
+      "prompt": "Use case: precise-object-edit. Edit the attached annotated robot dog image. Keep EXACT dog head, body, four legs, neutral stance, materials, camera, lighting and background. Remove all red sketch marks. The red sketch specifies ONE change to the existing short side-mounted smoke grenade projector: ROTATE THE WHOLE PROJECTOR on its existing visible left flank bracket so the muzzle points FORWARD toward the dog's HEAD (image upper-left), inclined approximately 40 degrees UP above the dog's horizontal spine. Breech stays near rear side bracket, muzzle is forward and higher, following red diagonal outline. This is a compact diagonal forward-up tube alongside the torso, not a near-vertical tube leaning toward the rear as in original. Preserve same short dark tube and pale angular housing, compact size and orange stripe; no lengthening into a cannon. Side mounting remains, not top mounting. No other changes, no extra launcher, no tail, no smoke, glow or diagrams. Complete uncropped dog."
+    },
+    "side": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-7ba36b1e-6f2b-433d-b182-7819ced6a346.png",
+      "prompt": "Use case: precise-object-edit. Reference image 1 is authoritative corrected G Block robot dog. Preserve identical dog proportions, four legs, head, feet stance, sand/graphite materials, orange marks, compact side-mounted smoke projector and warm gray studio lighting. Only change camera. Projector is on dog's LEFT flank, breech aft and muzzle FORWARD toward HEAD and UP at about 40 degrees above spine, not sideways or rearward or near vertical. Same short tube/housing on same side bracket. No extra launcher or tail, no effects/text/glow, complete object with margin, orthographic-like. Exact LEFT SIDE elevation, dog head points LEFT. Show projector angled diagonally UP-LEFT toward head, breech down-right attached between shoulder and hip. Keep legs unchanged, far legs may overlap naturally."
+    },
+    "front": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-13cff4e4-e098-4a40-8bd6-4d8f2c5ae4ee.png",
+      "prompt": "Use case: precise-object-edit. Reference image 1 is authoritative corrected G Block robot dog. Preserve identical dog proportions, four legs, head, feet stance, sand/graphite materials, orange marks, compact side-mounted smoke projector and warm gray studio lighting. Only change camera. Projector is on dog's LEFT flank, breech aft and muzzle FORWARD toward HEAD and UP at about 40 degrees above spine, not sideways or rearward or near vertical. Same short tube/housing on same side bracket. No extra launcher or tail, no effects/text/glow, complete object with margin, orthographic-like. Camera directly FRONT centered level, head faces viewer, four legs overlap naturally. Dog's LEFT side projector appears viewer RIGHT, aimed forward toward viewer and upward in longitudinal vertical plane, no lateral outward lean. Show muzzle opening foreshortened behind/above left shoulder, same mount."
+    },
+    "rear": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-9be33d03-5785-4cb7-ae49-4bee82765943.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is rear-view edit target. Image 2 is authoritative three-quarter orientation reference. Preserve image 1 camera, robot body, head, four legs, panels, stance and lighting EXACTLY. Correct ONLY projector tube: its LEFTWARD sideways lean in image 1 is wrong. Keep same flank mount viewer LEFT but align short projector in dog's longitudinal sagittal plane, aimed toward HEAD AWAY FROM CAMERA and upward ~40 degrees. In this exact rear projection it should appear vertically aligned over its mount, with NO outward lateral lean. Show closed rear/breech/housing, not open muzzle. Same compact size, sand housing orange stripe. No other edits."
+    },
+    "top": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-9ea336a7-d03f-4d00-9f6e-90d9e077c2f7.png",
+      "prompt": "Use case: precise-object-edit. Reference image 1 is authoritative corrected G Block robot dog. Preserve identical dog proportions, four legs, head, feet stance, sand/graphite materials, orange marks, compact side-mounted smoke projector and warm gray studio lighting. Only change camera. Projector is on dog's LEFT flank, breech aft and muzzle FORWARD toward HEAD and UP at about 40 degrees above spine, not sideways or rearward or near vertical. Same short tube/housing on same side bracket. No extra launcher or tail, no effects/text/glow, complete object with margin, orthographic-like. True TOP-DOWN overhead plan, dog HEAD points UP image. Four legs, no tail. Single projector fixed LEFT of torso (image LEFT), its longitudinal axis PARALLEL to spine in plan view: muzzle points straight toward image TOP, NOT diagonally left, not outboard, not toward rear. Tube inclined forward-up in elevation means shortened visible length from overhead. Body stays rectangular. Optics on front vertical face of head not upward."
+    }
+  },
+  "objects": {
+    "dog": {
+      "inputs": [
+        "hero-neutral.png"
+      ],
+      "supportingViews": [
+        "front.png",
+        "side.png",
+        "rear.png",
+        "top.png"
+      ]
+    }
+  },
+  "note": "Гранатомёт на левом боку, ствол направлен ВПЕРЁД к голове с наклоном вверх, вдоль корпуса, без разворота наружу. Основной вид задаёт форму; ракурсы художественные, свести на одной сетке. Точный угол не утверждён числом. Четыре ноги, нейтральная стойка.",
+  "exclude": [
+    "../g.png",
+    "../overview.png",
+    "model-sheet.png",
+    "history-before-forward-correction/"
+  ]
+}

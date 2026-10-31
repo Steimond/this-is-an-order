@@ -1,0 +1,11 @@
+{
+  "selected": "a",
+  "name": "Скоба",
+  "round": 2,
+  "date": "2026-10-29",
+  "barrelReference": "d.png",
+  "approvedCombination": "Корпус и центральная гранёная башня A; ствол и дульная часть по D того же прохода",
+  "hero": "modeling/hero-neutral.png",
+  "modeling": "modeling/gallery.html",
+  "howitzer": "Не выбрана; обязательное круговое наведение/стрельба 360° в развёрнутом состоянии"
+}

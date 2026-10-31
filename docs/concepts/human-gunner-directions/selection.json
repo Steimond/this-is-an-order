@@ -1,0 +1,10 @@
+{
+  "date": "2026-10-29",
+  "selected": "c",
+  "name": "Кожух",
+  "reference": "c.png",
+  "modeling": "modeling/gallery.html",
+  "bodyPose": "A",
+  "approvedAppearance": "Graphite central torso armor, pale side plates and sand limb armor; rotary minigun with long faceted pale partial shroud. Body and weapon separate.",
+  "pending": ["common geometry", "weapon scale and grip", "supply connection", "rig and full animation set", "Unity verification"]
+}

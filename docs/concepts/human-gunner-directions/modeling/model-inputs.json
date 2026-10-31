@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-29",
+  "approvedDesign": "human gunner C Кожух",
+  "pose": "A",
+  "objects": {
+    "body": {
+      "inputs": [
+        "body-front.png"
+      ],
+      "supportingViews": [
+        "body-rear.png"
+      ],
+      "manualGuideOnly": [
+        "body-side.png"
+      ]
+    },
+    "weapon": {
+      "inputs": [
+        "minigun.png"
+      ],
+      "supportingViews": [
+        "minigun-opposite.png"
+      ]
+    }
+  },
+  "exclude": [
+    "model-sheet.png",
+    "../c.png",
+    "../overview.png"
+  ],
+  "priority": "Two separate objects and generation jobs; never mix body and weapon in one model input. Original C defines design. Additional artistic views need reconciliation; side body pose/panels are manual guides only.",
+  "pending": [
+    "shared geometry",
+    "weapon scale and grip",
+    "supply connection",
+    "rig and full animation set",
+    "Unity verification"
+  ]
+}

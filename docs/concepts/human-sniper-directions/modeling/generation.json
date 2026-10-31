@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-30",
+  "tool": "built-in imagegen",
+  "title": "Снайпер C «Капюшон»",
+  "views": {
+    "body-front": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-92ce9d97-249d-4a31-8e97-9e2a4520dad5.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is selected C Hood human sniper concept sheet. Extract as a separate high quality modeling reference ONLY the human body on LEFT, preserving exactly its closed faceted dark-face helmet under SHORT sand fabric hood/scarf, small ivory chest armor, graphite fabric suit, sand small shoulder/forearm/knee/shin plates, utility belt, proportions and A-pose. Full upright figure centered with generous margin, front view, empty hands with separated fingers, feet same distance, arms same spread. Remove rifle and stand completely. Warm gray studio background, same neutral lighting, all lights off. No held equipment, new cloak/cape, long coat, thicker armor, antenna or extra shoulder gear. Original short hood does not confer invisibility. One body only, no text/effects."
+    },
+    "body-rear": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-46432ab1-502b-47bd-86a7-1725b6e8bd1d.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is authoritative C Hood human sniper body. Show SAME exact figure from directly REAR in SAME neutral A-pose with identical arm angle, feet spacing and human proportions, front camera simply moved behind. Preserve short sand hood around closed helmet, neck-length scarf not cape, graphite woven suit, small ivory/sand shoulder/limb armor and belt pouches. Conservatively complete previously hidden back as compact shallow dark utility pack with small pale service panel, straps matching front, no tall aerial or new equipment. Hood covers back of helmet naturally, no front visor on rear. Arms remain in A-pose, empty hands/fingers visible, no weapon, stand or walking stance. Whole body uncropped with margin on same warm gray studio backdrop, no text/effects/glow. No heavier armor or redesign."
+    },
+    "body-side": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-fd06cb25-bfeb-4fdd-8e49-af9a1e24f392.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is authoritative C Hood human sniper body in A-pose. Produce exact LEFT SIDE elevation, figure faces image LEFT, same body proportions, same A-pose in 3D and feet spacing. Do not change pose: arms stay spread laterally as in front so naturally overlap in side projection, no forward reaching, bent gun-holding arms or walking stride. Preserve short sand hood/scarf over closed faceted helmet, graphite cloth, small ivory chest and sand limb plates. Include only compact shallow back pack if needed, no cape or new antenna. Whole body uncropped with margin, empty visible hands, lights off, warm gray studio background, no weapon/stand/text/effects. Keep slim silhouette and original armor thickness."
+    },
+    "rifle": {
+      "source": "C:\\Users\\user\\.codex\\generated_images\\01a1870e-2289-73e3-af85-019d5accc0e7\\exec-3c434c5b-e526-4b3f-93e6-3bc0142986b5.png",
+      "prompt": "Use case: precise-object-edit. Image 1 is selected C Hood fictional human sniper concept sheet. Produce a separate image of ONLY the exact precision rifle displayed on RIGHT, removing person and entire studio stand. Same side view, stock LEFT, single barrel RIGHT, complete weapon uncropped with margin against warm gray neutral studio background. Preserve exact angular pale upper body/partial fore-end shroud, graphite underside and open stock geometry, single compact sand/dark scope, long thin dark barrel with existing faceted slotted muzzle. Do not add parts, extra sights, bipod, cables or ammunition; no redesign or length change. Weapon visually at rest, no light/glow/firing, no labels/technical diagrams or construction specifications. Soft studio shadow only, standalone game-art modeling reference."
+    }
+  },
+  "objects": {
+    "body": {
+      "inputs": [
+        "body-front.png"
+      ],
+      "supportingViews": [
+        "body-rear.png"
+      ],
+      "manualGuideOnly": [
+        "body-side.png"
+      ]
+    },
+    "weapon": {
+      "inputs": [
+        "rifle.png"
+      ]
+    }
+  },
+  "note": "Тело в A-позе и винтовка отдельно. Боковой вид только вспомогательный: положение рук свести по фронту. Скрытые детали рюкзака предложены конструктивно. Масштаб/хват и единая сетка ещё не проверены.",
+  "exclude": [
+    "../c.png",
+    "../overview.png",
+    "model-sheet.png"
+  ]
+}
